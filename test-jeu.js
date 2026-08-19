@@ -40,7 +40,7 @@ const doit = [
   ['le RADAR (dessin)',         /function dessinerRadar\(/],
   ['le RADAR appele dans la boucle', /dessinerRadar\(\)/],
   ['la surface de debogage D',  /window\.D = \{/],
-  ['avatar animé par défaut (Quaternius)', /perso:\s*'assets\/perso-quaternius\.glb'/],
+  ['avatar Ranger Quaternius par défaut', /Male_Ranger\.gltf/],
   ['avatar animé par un mixer',          /new THREE\.AnimationMixer/],
 ];
 for (const [nom, re] of doit) v('présent : ' + nom, re.test(script));
@@ -64,7 +64,7 @@ v('arme en main visible en 3e personne', /epeeMain/.test(script));
 v('le corps bouge au combat (elanCombat)', /elanCombat/.test(script));
 v('frappe sur le squelette (bras droit)', /RightArm\$/.test(script) && /brasD/.test(script));
 v('reglage de la frappe (reglerFrappe)', /reglerFrappe/.test(script));
-v('personnage anime (Sword_Attack)', /Sword_Attack/.test(script) && /perso-quaternius\.glb/.test(script));
+v('personnage anime (Sword_Attack via animSuper)', /Sword_Attack/.test(script) && /animSuper/.test(script));
 v('anim attaque jouee a la frappe (jouerAttaque)', /function jouerAttaque/.test(script));
 v('attaque calee au rythme du combo (fluide)', /timeScale/.test(script));
 v('reglage epee en direct (reglerEpee)', /reglerEpee/.test(script));
@@ -72,14 +72,14 @@ v('sauvegarde de partie (localStorage)', /localStorage/.test(script) && /functio
 v('reprise auto au demarrage', /chargerPartie\(\)/.test(script));
 v('choix de joueur Patrick/Hamda', /choix-joueur/.test(html) && /Hamda/.test(html));
 v('sauvegarde par joueur (cle nommee)', /'kotoage:'/.test(script));
-v('plafond plus haut (HT>=5)', /const HT = 5\.2/.test(script));
+v('plafond très haut (HT>=8)', /const HT = 9\.0/.test(script));
 v('couloirs elargis (2 cases)', /grid\[y\+1\]\[x\]=FLOOR/.test(script) && /grid\[y\]\[x\+1\]=FLOOR/.test(script));
 v('avatar par joueur (persoHamda)', /perso-hamda\.glb/.test(script) && /perso.*\+.*joueurNom|'perso' \+ /.test(script));
 v('guerrier a defier dans le donjon (poserGuerrier)', /function poserGuerrier/.test(script) && /function majGuerrier/.test(script));
 v('touche G pour defier', /KeyG/.test(script));
 v('trainee de lame (effet anime au coup)', /trainee/.test(script));
 v('auto-baisse de qualite si ca rame (autoFps)', /autoFps/.test(script) && /baisserQualite\(\)/.test(script));
-v('enchainement varie (combo)', /const COMBO = \[/.test(script) && /attaques\[/.test(script));
+v('combos epee et poings (touche X)', /attaquesEpee/.test(script) && /attaquesPoings/.test(script) && /KeyX/.test(script));
 v('projectiles elementaires (feu/eau/vent)', /function lancerProjectile/.test(script) && /'feu'|feu:/.test(script));
 v('menu pause present', /id="menu-pause"/.test(html));
 v('creation de skills (localStorage par joueur)', /kotoage-skills-/.test(script) && /function ouvrirPause/.test(script));

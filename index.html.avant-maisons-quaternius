@@ -553,11 +553,6 @@ const A_CHARGER = {
   propLit:     'assets/props/Bed_Twin1.gltf',
   propBanc:    'assets/props/Bench.gltf',
   propEnclume: 'assets/props/Anvil.gltf',
-  vFloor:   'assets/village/Floor_WoodDark.gltf',
-  vWall:    'assets/village/Wall_Plaster_Straight.gltf',
-  vWallDoor:'assets/village/Wall_Plaster_Door_Flat.gltf',
-  vWallWin: 'assets/village/Wall_Plaster_Window_Thin_Round.gltf',
-  vRoof:    'assets/village/Roof_2x4_RoundTile.gltf',
   archer:  KENNEY.foret  + 'character-archer.glb',
   cloture: KENNEY.foret  + 'fence.glb',
 };
@@ -1285,7 +1280,7 @@ function batir(){
   flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
   decors=[]; objets=[];
   if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
-  ondes = []; tranches = []; projectiles = []; flashs = [];
+  ondes = []; tranches = []; projectiles = [];
   murIM=null;
 
   construireMurs();
@@ -1711,19 +1706,6 @@ function teinterPerso(perso, nom){
     if('roughness' in o.material) o.material.roughness = 0.85;
   });
 }
-function toonifier(g){
-  g.traverse(o=>{
-    if(!o.isMesh || !o.material) return;
-    const anc = Array.isArray(o.material) ? o.material[0] : o.material;
-    const m = new THREE.MeshToonMaterial({
-      map: anc.map || null,
-      color: anc.color ? anc.color.clone() : new THREE.Color(0xffffff),
-      gradientMap: NUANCIER,
-      transparent: anc.transparent, alphaTest: anc.alphaTest || (anc.map ? 0.5 : 0),
-    });
-    o.material = m;   // MeshToonMaterial gère le skinning automatiquement (r169)
-  });
-}
 function installerAvatar(){
   // (re)construit l'avatar du joueur courant ; nettoie le précédent (changement de joueur)
   if(avatar.userData && avatar.userData.perso){ avatar.remove(avatar.userData.perso); }
@@ -1744,7 +1726,6 @@ function installerAvatar(){
   perso.rotation.y = estMixamo ? Math.PI : 0;   // Mixamo regarde +Z (demi-tour) ; Quaternius regarde déjà -Z
   avatar.userData.persoFace = perso;
   perso.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
-  toonifier(perso);   // cel-shading : paliers d'ombre nets (look manga)
   avatar.add(perso);
   avatar.userData = { perso };
   if(anims.length){
@@ -1758,10 +1739,8 @@ function installerAvatar(){
     for(const clip of anims){ const k = canonAnim(clip.name); if(k && !actionsPerso[k]) actionsPerso[k] = mixerPerso.clipAction(clip); }
     // enchaînement varié façon Naruto (taijutsu) : jab -> cross -> coupe -> coupe
     const parNom = {}; for(const clip of anims) parNom[clip.name] = clip;
-    const mk = arr => arr.map(n => parNom[n] ? mixerPerso.clipAction(parNom[n]) : actionsPerso.attaque);
-    actionsPerso.attaquesEpee   = mk(['Sword_Attack','Sword_Attack','Sword_Attack','Sword_Attack']);
-    actionsPerso.attaquesPoings = mk(['Punch_Jab','Punch_Cross','Punch_Jab','Punch_Cross']);
-    actionsPerso.attaques = actionsPerso.attaquesEpee;
+    const COMBO = ['Punch_Jab','Punch_Cross','Sword_Attack','Sword_Attack'];
+    actionsPerso.attaques = COMBO.map(n => parNom[n] ? mixerPerso.clipAction(parNom[n]) : actionsPerso.attaque);
     jouerAnim('idle');
   }
 
@@ -1798,9 +1777,7 @@ function jouerAnim(nom){
   actionCourante = a;
 }
 function jouerAttaque(){
-  const set = (armeMode==='poings' && actionsPerso.attaquesPoings) ? actionsPerso.attaquesPoings
-            : (actionsPerso.attaquesEpee || actionsPerso.attaques);
-  const a = (set && set[joueur.combo % set.length]) || actionsPerso.attaque;
+  const a = (actionsPerso.attaques && actionsPerso.attaques[joueur.combo % actionsPerso.attaques.length]) || actionsPerso.attaque;
   if(!a) return false;
   // caler la vitesse du swing sur le rythme du combo : il finit son arc, fluide
   const fenetre = ([0.40,0.30,0.44,0.62][joueur.combo] || 0.40) * 1.1;
@@ -1850,24 +1827,6 @@ function poserMontagnes(){
   m.matrixAutoUpdate = false; m.updateMatrix();
   monde.add(m);
 }
-function poserPropRaw(nom,x,y,z,ech,rotY){ const m=MODELES[nom]; if(!m) return null; const g=m.clone(true); g.position.set(x,y,z); g.rotation.y=rotY||0; g.scale.setScalar(ech||1); g.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; }); return g; }
-function maisonQuaternius(m){
-  const S=T, sc=T/2, g=new THREE.Group();
-  const wallH = 2.4*sc;
-  for(let i=0;i<m.w;i++) for(let j=0;j<m.h;j++){ const f=poserPropRaw('vFloor',(i-m.w/2+0.5)*S,0.02,(j-m.h/2+0.5)*S,sc,0); if(f) g.add(f); }
-  const put=(nom,ux,uz,rot)=>{ const w=poserPropRaw(nom,ux,0,uz,sc,rot); if(w) g.add(w); };
-  for(let i=0;i<m.w;i++){ const ux=(i-m.w/2+0.5)*S;
-    put(i===Math.floor(m.w/2)?'vWallDoor':(i%2?'vWallWin':'vWall'), ux, -m.h/2*S, 0);
-    put(i%2?'vWallWin':'vWall', ux, m.h/2*S, Math.PI);
-  }
-  for(let j=0;j<m.h;j++){ const uz=(j-m.h/2+0.5)*S;
-    put('vWall', -m.w/2*S, uz, Math.PI/2);
-    put('vWall',  m.w/2*S, uz, -Math.PI/2);
-  }
-  for(let i=0;i<m.w;i++){ const r=poserPropRaw('vRoof',(i-m.w/2+0.5)*S,wallH,0,sc,0); if(r) g.add(r); }
-  g.position.set((m.x+m.w/2)*T,0,(m.y+m.h/2)*T);
-  return g;
-}
 function batirDehors(){
   hemi.color.setHex(0x5b6ba8); hemi.groundColor.setHex(0x171d30); hemi.intensity = 1.05;   // village : clair de lune
   while(monde.children.length){
@@ -1878,7 +1837,7 @@ function batirDehors(){
   flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
   decors=[]; objets=[]; murIM=null; villageois=[];
   if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
-  ondes = []; tranches = []; projectiles = []; flashs = [];
+  ondes = []; tranches = []; projectiles = [];
 
   /* --- le ciel : la photo si on l'a, sinon le dôme peint --- */
   if(cielReel){
@@ -1998,8 +1957,130 @@ function batirDehors(){
 
   /* --- les deux maisons, à colombages --- */
   for(const m of MAISONS){
-    const g = maisonQuaternius(m);
-    if(g){ styliser(g, 0.02); monde.add(g); }
+    const g = new THREE.Group();
+    const lx = m.w*T*0.82, lz = m.h*T*0.82;
+    const hh = m.etage ? 6.2 : 4.4;                 // certaines ont un étage de plus
+    const couverture = m.chaume ? 'toit-chaume' : 'toit-tuiles';
+
+    const mur_ = new THREE.Mesh(new THREE.BoxGeometry(lx, hh, lz),
+      mat('mur-crepi', 2.4, 1.6, 0xf0e6d0));
+    mur_.position.y = hh/2;
+
+    // le toit, en tuiles, avec un vrai débord
+    const toit = new THREE.Mesh(new THREE.CylinderGeometry(lz*0.34, lz*0.34, lx*1.14, 3, 1, false),
+      mat(couverture, 3, 2, m.chaume ? 0xc8a86a : 0xffffff));
+    toit.rotation.set(0, 0, Math.PI/2);
+    toit.rotation.y = Math.PI/2;
+    toit.position.y = hh + lz*0.14;
+
+    // un second corps de bâtiment, plus bas : la silhouette cesse d'être une boîte
+    // un étage en surplomb : la façade cesse d'être un plan, sans croiser le toit
+    const encorbellement = new THREE.Mesh(
+      new THREE.BoxGeometry(lx*1.12, hh*0.34, lz*1.12),
+      mat('mur-crepi', 2.6, 0.7, 0xe8dcc4));
+    encorbellement.position.y = hh*0.72;
+    g.add(encorbellement);
+
+    /* --- LES COLOMBAGES ---
+       C'est ça qui fait la maison allemande : un cadre de poutres, des croix
+       de Saint-André entre les montants, et des V sous la toiture. */
+    const poutre = mat('bois', 1, 1, 0x8a7050);
+    function barre(lon, ep=0.16){ return new THREE.Mesh(new THREE.BoxGeometry(lon, ep, ep), poutre); }
+
+    for(const [face, larg, prof] of [['z', lx, lz/2+0.02], ['z-', lx, -lz/2-0.02],
+                                     ['x', lz, lx/2+0.02], ['x-', lz, -lx/2-0.02]]){
+      const horizontal = face.startsWith('z');
+      const pose = (b, u, y, rot=0)=>{
+        if(horizontal){ b.position.set(u, y, prof); b.rotation.z = rot; }
+        else          { b.position.set(prof, y, u); b.rotation.set(0, Math.PI/2, rot); }
+        g.add(b);
+      };
+      // sablières haute et basse
+      for(const y of [0.14, hh*0.52, hh-0.14]) pose(barre(larg), 0, y);
+      // poteaux verticaux
+      const N = 4;
+      for(let i=0;i<=N;i++){
+        const u = -larg/2 + i*(larg/N);
+        const p = barre(hh); pose(p, u, hh/2, Math.PI/2);
+      }
+      // croix de Saint-André dans deux travées sur trois
+      for(let i=0;i<N;i++){
+        if(i % 3 === 2) continue;
+        const u = -larg/2 + (i+0.5)*(larg/N);
+        const l = Math.hypot(larg/N, hh*0.52);
+        for(const sens of [1, -1]){
+          const d = barre(l*0.96, 0.13);
+          pose(d, u, hh*0.26, sens*Math.atan2(hh*0.52, larg/N));
+        }
+      }
+    }
+
+    // la porte et deux fenêtres, sur la face qui regarde le centre
+    const versCentre = (m.x < W/2) ? 1 : -1;
+    const porte_ = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.16),
+      mat('bois', 1, 1.6, 0x6b5030));
+    porte_.position.set(0, 0.98, versCentre*(lz/2 + 0.05));
+    const poignee = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8),
+      new THREE.MeshToonMaterial({ color:0xd8b45a, gradientMap:NUANCIER }));
+    poignee.position.set(0.36, 1.0, versCentre*(lz/2 + 0.14));
+    g.add(porte_, poignee);
+
+    const boisF = mat('bois', 0.6, 0.6, 0x6b5030);
+    const rangees = m.etage ? [2.2, 4.6] : [2.2];
+    for(const fy of rangees){
+      for(const fx of [-lx*0.28, lx*0.28]){
+        const cadre = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.14), boisF);
+        cadre.position.set(fx, fy, versCentre*(lz/2 + 0.04));
+        const vitre = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.1),
+          new THREE.MeshBasicMaterial({ color:0xffd07a }));
+        vitre.position.set(fx, fy, versCentre*(lz/2 + 0.11));
+        g.add(cadre, vitre);
+        // les volets, de part et d'autre
+        for(const c of [-1, 1]){
+          const v = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.9, 0.07), boisF);
+          v.position.set(fx + c*0.63, fy, versCentre*(lz/2 + 0.12));
+          v.rotation.y = c*0.35*versCentre;
+          g.add(v);
+        }
+      }
+    }
+
+    // la cheminée, en pierre irrégulière
+    const chem = new THREE.Mesh(new THREE.BoxGeometry(0.66, 1.7, 0.66),
+      mat('mur-pierre', 1.2, 2.4));
+    chem.position.set(lx*0.28, hh + 1.0, -lz*0.2);
+    const couronne = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.16, 0.82),
+      mat('mur-pierre', 1, 0.3, 0xa09480));
+    couronne.position.set(lx*0.28, hh + 1.9, -lz*0.2);
+    g.add(chem, couronne);
+
+    // du lierre qui grimpe sur un pignon
+    const feuille = new THREE.IcosahedronGeometry(0.17, 0);
+    const vert = new THREE.MeshToonMaterial({ color:0x50682f, gradientMap:NUANCIER });
+    for(let i=0;i<12;i++){
+      const f = new THREE.Mesh(feuille, vert);
+      const h2 = Math.random()*hh*0.95;
+      f.position.set(-lx/2 - 0.06,
+                     0.15 + h2,
+                     (Math.random()-0.5)*lz*0.9);
+      f.scale.setScalar(0.6 + Math.random()*0.8);
+      f.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+      g.add(f);
+    }
+
+    g.add(mur_, toit);
+    g.position.set((m.x + m.w/2)*T, 0, (m.y + m.h/2)*T);
+    fondre(g);                      // quarante morceaux → quatre blocs
+    monde.add(g);
+
+    for(let i=0;i<7;i++){
+      const f = new THREE.Sprite(new THREE.SpriteMaterial({
+        map:texHalo, color:0xf0f0f0, transparent:true, opacity:0.32, depthWrite:false }));
+      f.position.set(g.position.x + lx*0.28, hh + 2.2 + i*0.75, g.position.z - lz*0.2);
+      f.scale.setScalar(0.7 + i*0.28);
+      monde.add(f);
+      flammes.push({ sp:f, ph:i*0.9, x:f.position.x, z:f.position.z, fumee:true, base:hh+2.2+i*0.75 });
+    }
   }
 
   /* --- les fanions, tendus au-dessus de la place --- */
@@ -2472,7 +2553,6 @@ function frapper(){
       if(cos < 0.15) continue;            // viser, mais pas au millimètre
     }
     e.vie -= (joueur.epee ? 3 : 1) + (troisieme ? 2 : 0) + (tourbillon ? 4 : 0);
-    flashImpact(e.x*T, 1.0, e.y*T);
     if(e.vie <= 0){ e.vie = 0; e.mort = 0.55; }
     touche = true;
     joueur.secousse = tourbillon ? 0.75 : (troisieme ? 0.5 : 0.3);
@@ -2486,7 +2566,7 @@ function frapper(){
     const gx = guerrier.x - joueur.x, gz = guerrier.z - joueur.z, gd = Math.hypot(gx,gz);
     if(gd < 3.0 && (gx*avant.x + gz*avant.z)/(gd||1) > 0.15){
       guerrier.vie -= (joueur.epee?3:2) + (troisieme?2:0) + (tourbillon?3:0);
-      touche = true; window.Sons?.impact(); flashImpact(guerrier.x, 1.1, guerrier.z); hitstop = Math.max(hitstop, 0.055);
+      touche = true; window.Sons?.impact();
       if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !', 3); }
       else guerrier.jouer('hit');
     }
@@ -2512,15 +2592,14 @@ function frapper(){
   }
   const note = [300, 360, 240, 440][joueur.combo];
   bip(touche?note:170, touche?0.09:0.05, 'square', touche?0.07:0.03);
-  if(touche){ bip(troisieme?90:140, troisieme?0.3:0.22, 'sawtooth', 0.07, 0.05); window.Sons?.impact();
-    hitstop = Math.max(hitstop, tourbillon?0.09:0.055); joueur.secousse = Math.max(joueur.secousse, tourbillon?0.9:0.55); }
+  if(touche){ bip(troisieme?90:140, troisieme?0.3:0.22, 'sawtooth', 0.07, 0.05); window.Sons?.impact(); }
 }
 
 function blesser(vx, vz){
   if(joueur.inv>0) return;
   joueur.vie--; joueur.inv = 1.9;
   window.Sons?.degat();
-  hitstop = Math.max(hitstop, 0.075); joueur.secousse = 0.85;
+  joueur.secousse = 0.55;
   dessinerCoeurs(joueur.vie);
   bip(110,0.26,'sawtooth',0.11);
   montrerCoup(vx, vz);
@@ -2634,10 +2713,12 @@ function effacerPartie(){ try{ localStorage.removeItem(cleSauvegarde()); }catch(
 
 function commencer(){
   const sv = chargerPartie();
-  niveau = departNiveau;                    // le choix Village (0) / Donjon (1) prime toujours
-  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; }
-  else  { joueur.vie = joueur.vieMax = 3; }
-  joueur.cle = false;
+  if(sv){                                   // on reprend là où on s'était arrêté
+    niveau = sv.niveau; joueur.vie = sv.vie; joueur.vieMax = sv.vieMax;
+    joueur.epee = sv.epee; joueur.cle = false; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[];
+  } else {
+    niveau = departNiveau; joueur.vie = joueur.vieMax = 3;
+  }
   etat = 'jeu';
   installerAvatar();                        // (re)construit l'avatar du joueur choisi
   document.getElementById('titre').classList.add('parti');
@@ -3302,12 +3383,6 @@ addEventListener('keydown', ev=>{
   if(ev.code === 'Tab' || ev.code === 'KeyE'){ ev.preventDefault(); basculerStatut(); }
   if(ev.code === 'KeyF'){ ev.preventDefault(); basculerVue(); }
   if(ev.code === 'KeyP'){ ev.preventDefault(); baisserQualite(); }
-  if(ev.code === 'KeyX'){ ev.preventDefault();
-    armeMode = armeMode==='epee' ? 'poings' : 'epee';
-    const em = avatar.userData.epeeMain; if(em) em.visible = (armeMode==='epee');
-    arme.visible = (vue===1 && armeMode==='epee');
-    dire(armeMode==='epee' ? 'Épée dégainée. ⚔️' : 'À mains nues — taijutsu. 👊', 2);
-  }
   if(ev.code === 'KeyG'){ ev.preventDefault();
     if(guerrier && guerrier.vie>0 && guerrier.etat==='dort'){
       const d = Math.hypot(joueur.x-guerrier.x, joueur.z-guerrier.z);
@@ -3411,12 +3486,6 @@ function dessinerJauge(){
 }
 
 /* une onde qui court au sol : elle te touche quand son bord te dépasse */
-function flashImpact(x, y, z){
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8),
-    new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false }));
-  m.position.set(x, y, z); monde.add(m);
-  flashs.push({ obj:m, vie:0.16 });
-}
 function lancerOnde(x, z){
   const m = new THREE.Mesh(
     new THREE.RingGeometry(0.4, 0.75, 40),
@@ -3467,13 +3536,13 @@ function majProjectiles(dt){
     // ennemis
     for(const e of (ennemis||[])){
       if(e.vie<=0) continue;
-      if(Math.hypot(e.x*T-px, e.y*T-pz) < 1.1){ e.vie -= p.degat; if(e.vie<=0){ e.vie=0; e.mort=0.55; } window.Sons?.impact(); flashImpact(px,1.1,pz); hitstop=Math.max(hitstop,0.05); fini = true; break; }
+      if(Math.hypot(e.x*T-px, e.y*T-pz) < 1.1){ e.vie -= p.degat; if(e.vie<=0){ e.vie=0; e.mort=0.55; } window.Sons?.impact(); fini = true; break; }
     }
     // le boss
     if(!fini && boss && boss.mort<=0 && Math.hypot(boss.x-px, boss.z-pz) < 2.2){ frapperBoss(p.degat); fini = true; }
     // le guerrier
     if(!fini && guerrier && guerrier.vie>0 && Math.hypot(guerrier.x-px, guerrier.z-pz) < 1.6){
-      guerrier.vie -= p.degat; guerrier.jouer('hit'); window.Sons?.impact(); flashImpact(px,1.1,pz); hitstop=Math.max(hitstop,0.05);
+      guerrier.vie -= p.degat; guerrier.jouer('hit'); window.Sons?.impact();
       if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !',3); }
       fini = true;
     }
@@ -3694,13 +3763,6 @@ function majOndes(dt){
     if(o.r > 14){ monde.remove(o.obj); ondes.splice(i,1); }
   }
   majProjectiles(dt);
-  for(let i=flashs.length-1;i>=0;i--){
-    const f = flashs[i]; f.vie -= dt;
-    const k = Math.max(0, f.vie/0.16);
-    f.obj.scale.setScalar(0.5 + (1-k)*2.4);
-    f.obj.material.opacity = k*0.95;
-    if(f.vie <= 0){ monde.remove(f.obj); flashs.splice(i,1); }
-  }
 }
 
 /* Trois crans de qualité. On commence au plus beau ; la touche P descend
@@ -3828,13 +3890,8 @@ function majGuerrier(dt){
     if(G.cd <= 0){ G.cd = 1.5; if(d < 2.7) blesser(G.x - joueur.x, G.z - joueur.z); } }
 }
 let autoFps = { acc:0, n:0 };
-let hitstop = 0;   // fige le jeu un instant au contact = impact (retour Gemini)
-let armeMode = 'epee';   // 'epee' ou 'poings' (touche X)
-let flashs = [];
 function boucle(){
-  const dtReal = Math.min(0.05, horloge.getDelta());
-  let dt = dtReal;
-  if(hitstop > 0){ hitstop -= dtReal; dt = 0.0008; }   // impact : quasi-gel, mais on rend encore
+  const dt = Math.min(0.05, horloge.getDelta());
   const t  = horloge.elapsedTime;
 
   // AUTO-QUALITÉ : si ça rame sur une machine faible, on descend un cran tout seul
@@ -3861,7 +3918,7 @@ function boucle(){
     if(touches.ArrowRight || touches.KeyL) joueur.lacet -= dt*2.0;
     if(touches.ArrowUp)   joueur.tangage = Math.min( 1.35, joueur.tangage + dt*1.4);
     if(touches.ArrowDown) joueur.tangage = Math.max(-1.35, joueur.tangage - dt*1.4);
-    const v = (court?8.0:3.7) * dt;   // marche posée ; Shift = fonce (Naruto)
+    const v = (court?8.0:4.6) * dt;   // base = ancienne course ; Shift = fonce (Naruto)
     if(av||la){
       const n = Math.hypot(av,la);
       const sx = (-Math.sin(joueur.lacet)*av + Math.cos(joueur.lacet)*la)/n*v;
@@ -3919,14 +3976,13 @@ function boucle(){
         if(mur(cx, cz)){ vise = Math.max(0.9, d - 0.45); break; }
       }
     }
-    if(vise < reculCam) reculCam = vise;                       // mur proche : on rentre TOUT DE SUITE (pas de clip)
-    else reculCam += (vise - reculCam) * Math.min(1, dt*7);   // s'éloigner reste doux
+    reculCam += (vise - reculCam) * Math.min(1, dt*7);
     const pres = Math.min(1, reculCam);
     camera.position.set(0.5*pres, 0.30*pres, reculCam);
     camera.rotation.x = -0.15*pres;        // légère plongée, sinon on lui coupe les pieds
     if(vue === 3){ tete.updateMatrixWorld(true);
       const _wp = new THREE.Vector3(); camera.getWorldPosition(_wp);
-      if(_wp.y < 0.7) camera.position.y += (0.7 - _wp.y);   // reste bien au-dessus du sol
+      if(_wp.y < 0.5) camera.position.y += (0.5 - _wp.y);   // reste au-dessus du sol
     }
     // en vue extérieure, la lampe sort du corps : sinon on s'éclaire de l'intérieur
     lampe.position.set(0, -0.15 + 0.4*pres, 0.25 - 1.7*pres);
@@ -3943,33 +3999,24 @@ function boucle(){
       joueur.atkPrev = joueur.atkCd;
       if((joueur.animAtk||0) > 0) joueur.animAtk -= dt;   // l'attaque prime sur la marche
       else jouerAnim(anim);
-      if(mixerPerso && actionCourante && (anim==='walk'||anim==='sprint'))
-        actionCourante.timeScale = court ? 2.2 : 1.3;   // les pieds suivent la vitesse -> moins de glisse
-      else if(actionCourante && actionCourante.timeScale!==1 && anim==='idle') actionCourante.timeScale = 1;
       if(mixerPerso) mixerPerso.update(dt);
 
       // -- LA FRAPPE : un vrai geste de bras sur le squelette, APRÈS le mixer --
       avatar.rotation.x = 0;
       const em = avatar.userData.epeeMain;
-      if(joueur.atkCd > 0){
-        const dA = [0.40,0.30,0.44,0.62][joueur.combo % 4] || 0.40;
+      if(!actionsPerso.attaque && joueur.atkCd > 0){
+        const dA = [0.40,0.30,0.44,0.62][joueur.combo] || 0.40;
         const kA = joueur.atkCd / dA;                    // 1 -> 0 sur le coup
         const elanCombat = Math.sin(kA*Math.PI);         // 0 -> 1 -> 0
-        const sensA = (joueur.combo % 2) ? -1 : 1;       // alterne gauche/droite CHAQUE coup
-        // AVATAR : fente + torsion alternée + tourbillon au 4e -> combo VARIÉ par-dessus l'anim
+        const sensA = joueur.combo === 1 ? -1 : 1;       // le 2e part en revers
+        const bras = avatar.userData.brasD, avb = avatar.userData.avBrasD, buste = avatar.userData.buste;
+        if(bras)  bras.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.bras*sensA));
+        if(avb)   avb.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.avbras));
+        if(buste) buste.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),  elanCombat*FRAPPE.buste*sensA));
         const fx = -Math.sin(joueur.lacet), fz = -Math.cos(joueur.lacet);
-        avatar.position.x += fx * elanCombat * 0.28;
-        avatar.position.z += fz * elanCombat * 0.28;
-        if(joueur.combo % 4 === 3) avatar.rotation.y += (1-kA) * Math.PI * 2;   // tourbillon
-        else                       avatar.rotation.y += elanCombat * 0.55 * sensA;  // slash G/D
-        avatar.rotation.x = elanCombat * 0.18;
-        // le bras procédural seulement si le modèle n'a PAS d'anim d'attaque
-        if(!actionsPerso.attaque){
-          const bras = avatar.userData.brasD, avb = avatar.userData.avBrasD, buste = avatar.userData.buste;
-          if(bras)  bras.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.bras*sensA));
-          if(avb)   avb.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.avbras));
-          if(buste) buste.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),  elanCombat*FRAPPE.buste*sensA));
-        }
+        avatar.position.x += fx * elanCombat * FRAPPE.fente;
+        avatar.position.z += fz * elanCombat * FRAPPE.fente;
+        if(joueur.combo === 3) avatar.rotation.y += (1-kA) * Math.PI * 2;   // le tourbillon reste
         if(em && em.userData.base) em.rotation.z = em.userData.base.z + elanCombat * 1.2 * sensA;
       } else if(em && em.userData.base){
         em.rotation.z = em.userData.base.z;
