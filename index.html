@@ -1,0 +1,4448 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>LE PETIT DONJON — 3D</title>
+<style>
+  :root{ --or:#e8b661; --sang:#c8392f; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#05060a;
+    font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;color:#e8dcc0}
+  canvas{display:block}
+
+  /* ---- voile d'ambiance par-dessus la 3D ---- */
+  #voile{position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:
+      radial-gradient(ellipse at 50% 45%, transparent 66%, rgba(6,14,30,.14) 88%, rgba(6,14,30,.38) 100%);
+    mix-blend-mode:multiply}
+
+  /* ---- ATH ---- */
+  #ath{position:fixed;inset:0;pointer-events:none;z-index:10;
+    opacity:0;transition:opacity .6s}
+  #ath.on{opacity:1}
+  .coin{position:absolute;padding:20px 24px}
+  #coeurs{left:0;bottom:0;display:flex;gap:9px;align-items:flex-end}
+  .coeur{width:26px;height:24px;position:relative;filter:drop-shadow(0 2px 6px #000)}
+  .coeur svg{width:100%;height:100%;display:block}
+  .coeur.vide{opacity:.22;filter:none}
+  .coeur.perte{animation:bat .45s ease-out}
+  @keyframes bat{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+
+  #etage{right:0;bottom:0;text-align:right;letter-spacing:.24em;
+    font-size:12px;text-transform:uppercase;color:#8b7f66}
+  #etage b{display:block;font-size:30px;letter-spacing:.06em;color:var(--or);
+    text-shadow:0 0 22px rgba(232,182,97,.5);font-weight:400;line-height:1.1}
+
+  #cle{left:0;top:0;display:flex;align-items:center;gap:10px;
+    font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#6d6350;
+    transition:color .4s}
+  #cle.ok{color:var(--or);text-shadow:0 0 18px rgba(232,182,97,.55)}
+  #cle svg{width:20px;height:20px}
+
+  /* ---- messages ---- */
+  #msg{position:absolute;left:50%;bottom:16%;transform:translateX(-50%);
+    text-align:center;font-size:19px;letter-spacing:.05em;
+    text-shadow:0 2px 20px #000, 0 0 40px rgba(0,0,0,.9);
+    opacity:0;transition:opacity .5s;max-width:70%;line-height:1.5}
+  #msg.on{opacity:1}
+
+  /* ---- écrans ---- */
+  .ecran{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:26px;text-align:center;
+    background:radial-gradient(ellipse at 50% 42%, #14100c 0%, #06060a 62%, #000 100%);
+    transition:opacity .7s}
+  .ecran.parti{opacity:0;pointer-events:none}
+  .pause-tab{opacity:.55}
+  .pause-tab.on{opacity:1;outline:2px solid #8fb8e8}
+  .ecran h1{font-size:min(11vw,74px);letter-spacing:.16em;font-weight:400;
+    color:var(--or);text-shadow:0 0 60px rgba(232,182,97,.35);line-height:1}
+  .ecran h1 span{display:block;font-size:.3em;letter-spacing:.55em;color:#7b6f58;
+    margin-bottom:.9em;text-shadow:none}
+  .ecran p{color:#9d917a;font-size:15px;letter-spacing:.06em;line-height:2}
+  .ecran kbd{display:inline-block;min-width:26px;padding:3px 8px;margin:0 2px;
+    border:1px solid #3d3428;border-radius:5px;background:#15130f;color:var(--or);
+    font-family:inherit;font-size:13px}
+  .bouton{margin-top:12px;padding:15px 46px;border:1px solid #5c4a2a;
+    background:linear-gradient(180deg,#1d1811,#100d09);color:var(--or);
+    font-family:inherit;font-size:16px;letter-spacing:.3em;text-transform:uppercase;
+    cursor:pointer;transition:.35s;border-radius:2px}
+  .bouton:hover{background:linear-gradient(180deg,#2b2317,#171208);
+    box-shadow:0 0 40px rgba(232,182,97,.22);letter-spacing:.42em}
+  #mort h1{color:var(--sang);text-shadow:0 0 70px rgba(200,57,47,.45)}
+
+  /* ---- viseur ---- */
+  #viseur{position:fixed;left:50%;top:50%;width:3px;height:3px;margin:-1.5px;
+    border-radius:50%;background:rgba(232,220,192,.5);z-index:9;pointer-events:none;
+    opacity:0;transition:opacity .4s}
+  #viseur.on{opacity:1}
+
+  /* ---- l'esprit du donjon ---- */
+  #esprit{position:fixed;left:50%;top:8%;transform:translateX(-50%);z-index:12;
+    width:min(680px,86vw);pointer-events:none;text-align:center;
+    opacity:0;transition:opacity .45s}
+  #esprit.on{opacity:1}
+  #entendu{font-size:26px;letter-spacing:.03em;color:#cfe6ff;min-height:34px;
+    text-shadow:0 0 26px rgba(90,160,255,.55), 0 2px 16px #000}
+  #entendu.provisoire{opacity:.45;font-style:italic}
+  #repond{margin-top:14px;font-size:18px;line-height:1.6;color:#e8dcc0;
+    text-shadow:0 2px 18px #000, 0 0 44px rgba(0,0,0,.9)}
+
+  #ecoute{position:fixed;left:50%;bottom:11%;transform:translateX(-50%);z-index:12;
+    display:flex;align-items:center;gap:12px;
+    padding:9px 20px;border:1px solid rgba(120,180,255,.35);border-radius:40px;
+    background:rgba(8,14,26,.62);color:#9fc4ee;font-size:12px;letter-spacing:.24em;
+    text-transform:uppercase;opacity:0;transition:opacity .3s;pointer-events:none}
+  #ecoute.on{opacity:1}
+  #ecoute .pastille{width:9px;height:9px;border-radius:50%;background:#5aa0ff;
+    box-shadow:0 0 14px #5aa0ff;animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(.75);opacity:.55}50%{transform:scale(1.35);opacity:1}}
+
+  #saisie{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:14;
+    width:min(560px,84vw);display:none}
+  #saisie.on{display:block}
+  #saisie input{width:100%;padding:14px 20px;border:1px solid #3d5a7a;border-radius:3px;
+    background:rgba(6,10,18,.92);color:#dceaff;font-family:inherit;font-size:17px;
+    letter-spacing:.03em;outline:none}
+  #saisie input:focus{border-color:#5aa0ff;box-shadow:0 0 30px rgba(90,160,255,.28)}
+
+  #pouvoirs{position:fixed;left:50%;bottom:2.5%;transform:translateX(-50%);z-index:11;
+    display:flex;gap:9px;flex-wrap:wrap;justify-content:center;max-width:88vw;
+    opacity:0;transition:opacity .5s}
+  #pouvoirs.on{opacity:1}
+  .pouvoir{padding:7px 15px;border:1px solid #4a3f2a;border-radius:2px;
+    background:rgba(16,13,9,.82);color:#d8be86;font-family:inherit;font-size:11px;
+    letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:.25s}
+  .pouvoir:hover{border-color:#e8b661;color:#f4d79a;box-shadow:0 0 22px rgba(232,182,97,.25)}
+  .pouvoir.neuf{animation:neuf 1.4s ease-out}
+  @keyframes neuf{0%{box-shadow:0 0 60px rgba(232,182,97,.9);transform:scale(1.25)}
+                  100%{box-shadow:0 0 0 rgba(232,182,97,0);transform:scale(1)}}
+
+  #coup{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0}
+  #coup::before{content:'';position:absolute;left:50%;top:50%;
+    width:150vmax;height:150vmax;margin:-75vmax;border-radius:50%;
+    background:conic-gradient(from -35deg,
+      rgba(210,40,30,.62) 0deg, rgba(210,40,30,.18) 34deg,
+      transparent 70deg, transparent 290deg,
+      rgba(210,40,30,.18) 326deg, rgba(210,40,30,.62) 360deg);
+    mask:radial-gradient(circle, transparent 38%, #000 62%);
+    -webkit-mask:radial-gradient(circle, transparent 38%, #000 62%)}
+  #coup.on{animation:coup 1.1s ease-out}
+  @keyframes coup{0%{opacity:1}70%{opacity:.5}100%{opacity:0}}
+
+  /* l'enchaînement en cours */
+  #combo{position:fixed;left:50%;bottom:23%;transform:translateX(-50%);z-index:9;
+    display:flex;gap:7px;opacity:0;transition:opacity .25s;pointer-events:none}
+  #combo.on{opacity:1}
+  #combo i{width:26px;height:4px;border-radius:2px;background:rgba(220,235,255,.18);
+    transition:.18s}
+  #combo i.plein{background:#9fd4ff;box-shadow:0 0 14px #6ab6ff;height:6px;margin-top:-1px}
+  #combo i.final{background:#ffd77a;box-shadow:0 0 20px #ffb43c}
+
+  /* le radar façon Metal Gear, en haut à gauche */
+  #radar{position:fixed;left:14px;top:14px;z-index:20;width:164px;height:164px;
+    border-radius:8px;border:1px solid rgba(90,168,255,.4);
+    background:rgba(6,12,22,.7);box-shadow:0 0 22px rgba(0,0,0,.5);
+    opacity:0;transition:opacity .5s;pointer-events:none}
+  #radar.on{opacity:.92}
+
+  #perf{position:fixed;right:8px;top:8px;z-index:30;font-size:11px;
+    color:#4a4438;letter-spacing:.1em;font-family:monospace}
+</style>
+</head>
+<body>
+
+<div id="voile"></div>
+<div id="coup"></div>
+<div id="viseur"></div>
+
+<div id="ath">
+  <div class="coin" id="cle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <circle cx="8" cy="8" r="4.2"/><path d="M11 11 L20 20 M17 17 l2.5 -2.5 M14.5 14.5 l2 -2"/>
+    </svg><span>clé</span>
+  </div>
+  <div class="coin" id="coeurs"></div>
+  <div class="coin" id="etage"><b>1</b>étage</div>
+  <div id="msg"></div>
+</div>
+
+<div id="esprit"><div id="entendu"></div><div id="repond"></div></div>
+<div id="ecoute"><span class="pastille"></span><span>le donjon écoute</span></div>
+<div id="saisie"><input id="saisie-txt" placeholder="parle à l'esprit du donjon…" autocomplete="off"></div>
+<div id="pouvoirs"></div>
+<div id="combo"><i></i><i></i><i></i><i></i></div>
+
+<div class="ecran" id="titre">
+  <h1><span>le petit</span>DONJON</h1>
+  <p><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> marcher &nbsp;·&nbsp; souris regarder &nbsp;·&nbsp; <kbd>Maj</kbd> courir<br>
+     clic gauche frapper &nbsp;·&nbsp; trouve la clé, ouvre la porte<br>
+     <kbd>Espace</kbd> sauter &nbsp;·&nbsp; clic droit foncer &nbsp;·&nbsp; <kbd>E</kbd> statut &nbsp;·&nbsp; <kbd>F</kbd> se voir &nbsp;·&nbsp; <kbd>←</kbd><kbd>→</kbd> tourner &nbsp;·&nbsp; radar en haut à gauche<br>
+     <b style="color:#8fb8e8">maintiens <kbd>V</kbd> et prononce ton incantation</b> &nbsp;·&nbsp; <kbd>C</kbd> pour l'écrire<br>
+     <span style="color:#7f9ab8">manette Xbox reconnue : sticks, A frapper, B foncer, X parler, Y statut</span></p>
+  <div id="choix-joueur" style="margin-bottom:16px;font-size:15px">
+    <span style="color:#8fb8e8">Joueur :</span>
+    <button class="bouton" data-j="Patrick" style="padding:6px 18px;margin:0 4px;font-size:15px">Patrick</button>
+    <button class="bouton" data-j="Hamda" style="padding:6px 18px;margin:0 4px;font-size:15px">Hamda</button>
+  </div>
+  <button class="bouton" id="jouer">Descendre</button>
+</div>
+
+<div class="ecran parti" id="mort">
+  <h1>MORT</h1>
+  <p id="mort-txt"></p>
+  <button class="bouton" id="rejouer">Recommencer</button>
+</div>
+
+<div class="ecran parti" id="menu-pause">
+  <h1 style="font-size:min(9vw,54px)">PAUSE</h1>
+  <div id="pause-onglets" style="display:flex;gap:12px">
+    <button class="bouton pause-tab on" data-tab="reprendre" style="padding:9px 20px;font-size:16px">Reprendre</button>
+    <button class="bouton pause-tab" data-tab="skills" style="padding:9px 20px;font-size:16px">Créer un skill</button>
+  </div>
+
+  <div id="tab-reprendre" class="pause-panneau">
+    <p style="color:#9fb2cc;max-width:460px">Appuie sur <kbd>Échap</kbd> ou clique Reprendre pour retourner au donjon.</p>
+    <button class="bouton" id="btn-reprendre">Reprendre</button>
+  </div>
+
+  <div id="tab-skills" class="pause-panneau" style="display:none">
+    <div style="width:min(520px,90vw);text-align:left;color:#cfe0f2">
+      <div style="display:grid;grid-template-columns:1fr;gap:9px">
+        <input id="sk-nom" placeholder="Nom du skill (ex. Éruption)" style="padding:9px;border-radius:8px;border:1px solid #2a3546;background:#0e1420;color:#eaf0f8;font:inherit">
+        <select id="sk-elem" style="padding:9px;border-radius:8px;border:1px solid #2a3546;background:#0e1420;color:#eaf0f8;font:inherit">
+          <option value="feu">Feu 🔥</option>
+          <option value="eau">Eau 💧</option>
+          <option value="vent">Vent 🌀</option>
+          <option value="autre">Autre / à définir</option>
+        </select>
+        <input id="sk-inc" placeholder="Incantation (le mot qui le lance, ex. eruption)" style="padding:9px;border-radius:8px;border:1px solid #2a3546;background:#0e1420;color:#eaf0f8;font:inherit">
+        <textarea id="sk-effet" rows="2" placeholder="Effet voulu (on le rendra réel ensuite)" style="padding:9px;border-radius:8px;border:1px solid #2a3546;background:#0e1420;color:#eaf0f8;font:inherit;resize:vertical"></textarea>
+        <button class="bouton" id="sk-creer" style="padding:9px">Créer le skill</button>
+      </div>
+      <div style="margin-top:14px;color:#8fb8e8;font-size:13px;text-transform:uppercase;letter-spacing:.5px">Tes skills</div>
+      <div id="sk-liste" style="margin-top:6px;max-height:170px;overflow:auto;font-size:14px"></div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./three.module.js" } }
+</script>
+<script src="assets/sons.js"></script>
+<script type="module">
+import * as THREE from './three.module.js';
+import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+import { mergeGeometries } from './jsm/utils/BufferGeometryUtils.js';
+import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+
+/* ═══════════════ 1. LE PLAN — repris tel quel du jeu 2D ═══════════════ */
+const W = 28, H = 18;                 // la grille, en cases
+const WALL = 0, FLOOR = 1, DOOR = 2, KEY = 3;
+const T  = 2.6;                       // largeur d'une case, en mètres
+const HT = 5.2;                       // hauteur sous plafond (donjon vaste, pas à l'étroit)
+
+let grid, rooms, keyPos, doorPos, torches, ennemis, niveau = 1;
+
+/* Cinq étages, cinq ambiances. Le premier est court exprès : on doit pouvoir
+   descendre en deux minutes, pas errer. */
+const ETAGES = [
+  { salles:4, faune:['slime'],                 teinte:0x5aa8ff, nom:'les caves' },
+  { salles:5, faune:['paysan','paysan','squelette','slime'],       teinte:0x9d7bff, nom:'l\'ossuaire' },
+  { salles:6, faune:['rat','rat','paysan','squelette'],             teinte:0x36d6a8, nom:'les galeries' },
+  { salles:6, faune:['spectre','spectre','squelette'],             teinte:0xff8ad4, nom:'le voile' },
+  { salles:7, faune:['slime','rat','squelette'],teinte:0xff6a48, nom:'le palier' },
+];
+const DEHORS = { salles:0, faune:[], teinte:0xffd98a, nom:'le hameau' };
+function estDehors(){ return niveau === 0; }
+function etageCourant(){
+  if(estDehors()) return DEHORS;
+  return ETAGES[Math.min(niveau, ETAGES.length) - 1];
+}
+
+const cX = r => Math.floor(r.x + r.w / 2);
+const cY = r => Math.floor(r.y + r.h / 2);
+function creuserSalle(r){ for(let y=r.y;y<r.y+r.h;y++) for(let x=r.x;x<r.x+r.w;x++) grid[y][x]=FLOOR; }
+function creuserH(x1,x2,y){ for(let x=Math.min(x1,x2);x<=Math.max(x1,x2);x++){ grid[y][x]=FLOOR; if(y+1<H-1) grid[y+1][x]=FLOOR; } }
+function creuserV(y1,y2,x){ for(let y=Math.min(y1,y2);y<=Math.max(y1,y2);y++){ grid[y][x]=FLOOR; if(x+1<W-1) grid[y][x+1]=FLOOR; } }
+function posLibre(r){
+  for(let y=r.y;y<r.y+r.h;y++) for(let x=r.x;x<r.x+r.w;x++) if(grid[y][x]===FLOOR) return {x,y};
+  return {x:cX(r), y:cY(r)};
+}
+
+function generer(){
+  grid = [];
+  for(let y=0;y<H;y++) grid.push(new Array(W).fill(WALL));
+  rooms = [];
+  const reglage = etageCourant();
+  for(let i=0;i<120 && rooms.length<reglage.salles;i++){
+    const rw = 5 + (Math.random()*5|0), rh = 4 + (Math.random()*4|0);   // salles plus vastes
+    const r = { x:1+(Math.random()*(W-rw-2)|0), y:1+(Math.random()*(H-rh-2)|0), w:rw, h:rh };
+    let ok = true;
+    for(const o of rooms)
+      if(r.x<o.x+o.w+2 && r.x+r.w+2>o.x && r.y<o.y+o.h+2 && r.y+r.h+2>o.y){ ok=false; break; }
+    if(ok){ rooms.push(r); creuserSalle(r); }
+  }
+  if(rooms.length<3){ generer(); return; }
+  for(let i=1;i<rooms.length;i++){
+    const a=rooms[i-1], b=rooms[i];
+    const ax=cX(a), ay=cY(a), bx=cX(b), by=cY(b);
+    if(Math.random()<0.5){ creuserH(ax,bx,ay); creuserV(ay,by,bx); }
+    else               { creuserV(ay,by,ax); creuserH(ax,bx,by); }
+  }
+  const k = posLibre(rooms[rooms.length-1]); keyPos  = {x:k.x,y:k.y}; grid[k.y][k.x]=KEY;
+  // aux paliers, personne ne ramasse la clé : quelqu'un la garde
+  cleVerrouillee = estPalier(niveau);
+  bossSalle = cleVerrouillee ? { x:cX(rooms[rooms.length-1]), y:cY(rooms[rooms.length-1]) } : null;
+  const d = posLibre(rooms[1]);              doorPos = {x:d.x,y:d.y}; grid[d.y][d.x]=DOOR;
+
+  // torches accrochées aux murs qui donnent sur un sol
+  torches = [];
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+    if(grid[y][x]!==WALL || Math.random()>=0.09) continue;
+    const c = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>grid[y+dy][x+dx]===FLOOR);
+    if(c.length) { const [dx,dy]=c[(Math.random()*c.length)|0]; torches.push({x,y,dx,dy,ph:Math.random()*6}); }
+  }
+
+  // un thème par salle : le donjon cesse d'être des couloirs vides (façon D&D)
+  const POOL = ['piliers','crypte','garde','reserve','sanctuaire'];
+  for(let i=0;i<rooms.length;i++){
+    rooms[i].theme = (i===0) ? null : POOL[(Math.random()*POOL.length)|0];  // l'entrée reste dégagée
+  }
+  const derniere = rooms[rooms.length-1];
+  if(derniere) derniere.theme = bossSalle ? null : 'tresor';   // la dernière salle : la récompense
+
+  ennemis = [];
+  const nb = Math.min(14, 5 + niveau + (Math.random()*3|0));
+  for(let i=0;i<nb;i++){
+    const r = rooms[2 + (Math.random()*(rooms.length-2)|0)];
+    const p = posLibre(r);
+    const type = reglage.faune[(Math.random()*reglage.faune.length)|0];
+    ennemis.push({ x:p.x+.5, y:p.y+.5, type,
+                   vie:(type==='squelette'?2:type==='paysan'?3:1), cd:Math.random()*2,
+                   ph:Math.random()*6, mort:0, obj:null,
+                   phase:'garde', tempo:0 });
+  }
+}
+
+/* ═══════════════ 2. MATIÈRES — tout est peint par le code ═══════════════ */
+function bruit(ctx, w, h, force, taille){
+  const d = ctx.getImageData(0,0,w,h), p = d.data;
+  for(let i=0;i<p.length;i+=4){
+    const n = (Math.random()-0.5)*force;
+    p[i]+=n; p[i+1]+=n; p[i+2]+=n;
+  }
+  ctx.putImageData(d,0,0);
+}
+
+/* pierre appareillée : blocs décalés, joints creusés, salissures */
+function texturePierre(){
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#3a3630'; g.fillRect(0,0,S,S);
+  const bh=S/8;
+  for(let r=0;r<8;r++){
+    const dec=(r%2)*0.5, bw=S/4;
+    for(let i=-1;i<5;i++){
+      const x=(i+dec)*bw, y=r*bh;
+      const t=48+Math.random()*26;
+      g.fillStyle=`rgb(${t-6|0},${t-3|0},${t|0})`;
+      g.fillRect(x+2.5,y+2.5,bw-5,bh-5);
+      // usure : un coin plus clair, un bord plus sombre
+      g.fillStyle=`rgba(220,232,240,${0.05+Math.random()*0.07})`;
+      g.fillRect(x+2.5,y+2.5,bw-5,2.5);
+      g.fillStyle='rgba(0,0,0,.28)';
+      g.fillRect(x+2.5,y+bh-6,bw-5,3.5);
+      // taches d'humidité
+      if(Math.random()<0.35){
+        g.fillStyle=`rgba(20,26,22,${0.1+Math.random()*0.22})`;
+        g.beginPath();
+        g.ellipse(x+bw*Math.random(), y+bh*Math.random(), bw*0.3, bh*0.4, 0, 0, 7);
+        g.fill();
+      }
+    }
+  }
+  bruit(g,S,S,26);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
+  t.anisotropy=4;
+  return t;
+}
+
+/* relief : les joints en noir, les blocs en clair -> bumpMap */
+function textureRelief(){
+  const S=256, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#000'; g.fillRect(0,0,S,S);
+  const bh=S/8;
+  for(let r=0;r<8;r++){
+    const dec=(r%2)*0.5, bw=S/4;
+    for(let i=-1;i<5;i++){
+      const x=(i+dec)*bw, y=r*bh;
+      const v=190+Math.random()*50|0;
+      g.fillStyle=`rgb(${v},${v},${v})`;
+      g.fillRect(x+2,y+2,bw-4,bh-4);
+    }
+  }
+  bruit(g,S,S,40);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,1);
+  return t;
+}
+
+/* dalles au sol, plus larges et plus usées */
+function textureSol(){
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#26241f'; g.fillRect(0,0,S,S);
+  for(let r=0;r<4;r++) for(let i=0;i<4;i++){
+    const x=i*S/4, y=r*S/4, s=S/4, t=40+Math.random()*20;
+    g.fillStyle=`rgb(${t},${t-2|0},${t-6|0})`;
+    g.fillRect(x+3,y+3,s-6,s-6);
+    g.fillStyle=`rgba(0,0,0,${0.06+Math.random()*0.14})`;
+    g.beginPath(); g.ellipse(x+s/2,y+s/2,s*0.42,s*0.36,Math.random()*3,0,7); g.fill();
+  }
+  bruit(g,S,S,22);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
+  t.anisotropy=4;
+  return t;
+}
+
+/* tache lumineuse ronde, pour flammes / halos / poussière */
+function textureHalo(dur=0.5){
+  const S=128, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  const d=g.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2);
+  d.addColorStop(0,'rgba(255,255,255,1)');
+  d.addColorStop(dur,'rgba(255,255,255,.35)');
+  d.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=d; g.fillRect(0,0,S,S);
+  return new THREE.CanvasTexture(c);
+}
+
+/* toit : des rangées de tuiles qui se chevauchent, chacune sa nuance */
+function textureTuiles(){
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#7a2a1e'; g.fillRect(0,0,S,S);
+  const rh = S/10, rw = S/12;
+  for(let r=0;r<11;r++){
+    const dec = (r%2)*0.5;
+    for(let i=-1;i<13;i++){
+      const x=(i+dec)*rw, y=r*rh;
+      const t = 150 + Math.random()*55;
+      g.fillStyle = `rgb(${t|0},${t*0.42|0},${t*0.30|0})`;
+      // une tuile : un rectangle au bord arrondi vers le bas
+      g.beginPath();
+      g.moveTo(x+1, y);
+      g.lineTo(x+rw-1, y);
+      g.lineTo(x+rw-1, y+rh*0.72);
+      g.quadraticCurveTo(x+rw/2, y+rh*1.05, x+1, y+rh*0.72);
+      g.closePath(); g.fill();
+      g.strokeStyle='rgba(60,18,10,.55)'; g.lineWidth=2; g.stroke();
+    }
+  }
+  bruit(g,S,S,16);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+
+/* mur : un crépi crème, sali par le temps */
+function textureCrepi(){
+  const S=256, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#e6dcc2'; g.fillRect(0,0,S,S);
+  for(let i=0;i<260;i++){
+    g.fillStyle=`rgba(${190+Math.random()*40|0},${180+Math.random()*40|0},${155+Math.random()*40|0},.5)`;
+    g.beginPath();
+    g.ellipse(Math.random()*S, Math.random()*S, 3+Math.random()*14, 2+Math.random()*10, Math.random()*3, 0, 7);
+    g.fill();
+  }
+  // traînées d'humidité en bas
+  for(let i=0;i<14;i++){
+    g.fillStyle=`rgba(120,120,95,${0.04+Math.random()*0.07})`;
+    g.fillRect(Math.random()*S, S*0.6+Math.random()*S*0.4, 4+Math.random()*22, S*0.4);
+  }
+  bruit(g,S,S,14);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+
+/* sol : des pavés irréguliers, pour le chemin */
+function texturePaves(){
+  const S=256, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  g.fillStyle='#5d5449'; g.fillRect(0,0,S,S);
+  for(let r=0;r<7;r++) for(let i=0;i<7;i++){
+    const dec=(r%2)*0.5, w=S/7;
+    const x=(i+dec)*w, y=r*w;
+    const t=118+Math.random()*46;
+    g.fillStyle=`rgb(${t|0},${t*0.95|0},${t*0.86|0})`;
+    g.beginPath();
+    g.ellipse(x+w/2, y+w/2, w*0.42, w*0.38, Math.random(), 0, 7);
+    g.fill();
+  }
+  bruit(g,S,S,18);
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.colorSpace=THREE.SRGBColorSpace;
+  return t;
+}
+
+const texTuiles = textureTuiles();
+const texCrepi  = textureCrepi();
+const texPaves  = texturePaves();
+const texMur    = texturePierre();
+const texRelief = textureRelief();
+const texSol    = textureSol();
+const texHalo   = textureHalo();
+const texFlamme = textureHalo(0.28);
+
+/* ═══════════════ 1. LE MAGASIN DE MODÈLES ═══════════════
+   Des modèles tout faits, pris chez Kenney (domaine public, CC0). On les
+   charge une fois au démarrage, et on en pose des copies. Chaque copie passe
+   ensuite par `styliser()`, donc elle prend le même trait et les mêmes
+   paliers de lumière que le reste : les modèles d'un autre s'accordent au
+   style de la maison. */
+
+const KENNEY = {
+  nature : 'assets/nature-kit/Models/GLTF format/',
+  donjon : 'assets/mini-dungeon/Models/GLB format/',
+  foret  : 'assets/mini-forest/Models/GLB format/',
+};
+
+const A_CHARGER = {
+  arbre1:  KENNEY.nature + 'tree_detailed.glb',
+  arbre2:  KENNEY.nature + 'tree_default.glb',
+  arbre3:  KENNEY.nature + 'tree_fat.glb',
+  arbre4:  KENNEY.nature + 'tree_blocks.glb',
+  arbre5:  KENNEY.nature + 'tree_cone.glb',
+  buisson: KENNEY.nature + 'grass_leafsLarge.glb',
+  herbe:   KENNEY.nature + 'grass_large.glb',
+  fleurJ:  KENNEY.nature + 'flower_yellowA.glb',
+  fleurR:  KENNEY.nature + 'flower_redA.glb',
+  fleurV:  KENNEY.nature + 'flower_purpleA.glb',
+  champi:  KENNEY.nature + 'mushroom_redGroup.glb',
+  tonneau: KENNEY.donjon + 'barrel.glb',
+  coffre:  KENNEY.donjon + 'chest.glb',
+  cle:     KENNEY.donjon + 'key.glb',
+  colonne: KENNEY.donjon + 'column.glb',
+  portail: KENNEY.donjon + 'gate.glb',
+  villageois: KENNEY.donjon + 'character-human.glb',
+  perso:      'assets/perso-quaternius.glb',   // personnage animé (baseline)
+  persoCustom:'assets/perso-custom.glb',   // TON avatar (VRoid/RPM/Mixamo, GLB) — 404 si absent, ignoré
+  persoHamda: 'assets/perso-hamda.glb',    // l'avatar de Hamda (style Kirito) — 404 si absent
+  guerrier:   'assets/perso-quaternius.glb',   // 2e instance : le guerrier à défier (étage 1)
+  archer:  KENNEY.foret  + 'character-archer.glb',
+  cloture: KENNEY.foret  + 'fence.glb',
+};
+
+const MODELES = {};
+let ANIM_PERSO = [], ANIM_PERSO_CUSTOM = [], ANIM_MAGE = [];
+let modelesPrets = false;
+
+/* Le ciel photographié. C'est une seule image projetée autour du monde :
+   elle ne coûte RIEN à calculer — pas de géométrie, pas de lumière — et elle
+   apporte des nuages réels, des reliefs au loin, une vraie profondeur.
+   C'est le principe des visites virtuelles d'appartement, appliqué au fond.
+
+   On le met en FOND seulement. S'en servir aussi pour éclairer la scène
+   (`scene.environment`) coûterait cher : mesuré à −40 % d'images/seconde. */
+let cielReel = null;
+function chargerCiel(){
+  return new Promise(res=>{
+    new RGBELoader().load('assets/polyhaven/ciel-montagne.hdr',
+      tex=>{ tex.mapping = THREE.EquirectangularReflectionMapping; cielReel = tex; res(); },
+      undefined,
+      ()=>{ console.warn('ciel introuvable — on garde le dégradé peint'); res(); });
+  });
+}
+
+async function chargerModeles(){
+  chargerCiel();                     // en parallèle, sans bloquer
+  const loader = new GLTFLoader();
+  const noms = Object.keys(A_CHARGER);
+  await Promise.all(noms.map(nom => new Promise(res=>{
+    loader.load(A_CHARGER[nom],
+      gltf => { MODELES[nom] = gltf.scene;
+                gltf.scene.userData.anims = gltf.animations || [];
+                if(nom === 'perso') ANIM_PERSO = gltf.animations || [];
+                if(nom === 'persoCustom') ANIM_PERSO_CUSTOM = gltf.animations || [];
+                if(nom === 'animGeneralK' || nom === 'animMoveK' || nom === 'animSuper') ANIM_MAGE = ANIM_MAGE.concat(gltf.animations || []);
+                res(); },
+      undefined,
+      () => { console.warn('modèle absent :', A_CHARGER[nom]); res(); });
+  })));
+  modelesPrets = true;
+}
+
+/* Fond tous les morceaux d'un groupe qui partagent la même matière en un seul
+   objet. Une maison à colombages passe ainsi de quarante poutres dessinées
+   séparément à trois ou quatre blocs — c'est ce que la carte graphique compte,
+   et c'est ce qui la fait plier. Ce qu'on voit à l'écran est identique. */
+function fondre(groupe){
+  const parMatiere = new Map();
+  groupe.updateMatrixWorld(true);
+  const inverse = groupe.matrixWorld.clone().invert();
+  const morceaux = [];
+  groupe.traverse(o=>{
+    if(!o.isMesh || o.isInstancedMesh || o.userData.estContour) return;
+    morceaux.push(o);
+  });
+  for(const o of morceaux){
+    if(!parMatiere.has(o.material)) parMatiere.set(o.material, []);
+    const g = o.geometry.clone();
+    g.applyMatrix4(inverse.clone().multiply(o.matrixWorld));
+    parMatiere.get(o.material).push(g);
+  }
+  for(const o of morceaux) o.parent && o.parent.remove(o);
+
+  for(const [matiere, geos] of parMatiere){
+    if(!geos.length) continue;
+    let g;
+    try { g = geos.length === 1 ? geos[0] : mergeGeometries(geos, false); }
+    catch(e){ g = geos[0]; }
+    if(!g) continue;
+    const m = new THREE.Mesh(g, matiere);
+    m.castShadow = true; m.receiveShadow = true;
+    groupe.add(m);
+  }
+  return groupe;
+}
+
+/* Pose N copies d'un modèle en UNE SEULE fournée.
+   C'est le geste décisif : cent arbres posés un par un font cent appels de
+   dessin ; posés ainsi, ils en font un seul par morceau du modèle. Sur une
+   carte intégrée, c'est la difference entre 23 et 60 images par seconde. */
+function semer(nom, places){
+  const modele = MODELES[nom];
+  if(!modele || !places.length) return null;
+  const groupe = new THREE.Group();
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  const p = new THREE.Vector3(), sc = new THREE.Vector3();
+
+  modele.updateMatrixWorld(true);
+  modele.traverse(o=>{
+    if(!o.isMesh) return;
+    const mat = o.material.clone();
+    if(mat.metalness !== undefined){ mat.metalness = 0; mat.roughness = 0.85; }
+    if(mat.color && mat.color.g > 0.45 && mat.color.r < 0.45) mat.color.setHex(0x3f7d2e);
+
+    const im = new THREE.InstancedMesh(o.geometry, mat, places.length);
+    const local = o.matrixWorld.clone();
+    places.forEach((pl, i)=>{
+      e.set(0, pl.rot || 0, 0);
+      q.setFromEuler(e);
+      p.set(pl.x, pl.y || 0, pl.z);
+      sc.setScalar(pl.ech || 1);
+      m4.compose(p, q, sc).multiply(local);
+      im.setMatrixAt(i, m4);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = true;
+    im.receiveShadow = true;
+    groupe.add(im);
+  });
+  return groupe;
+}
+
+/* Pose une copie d'un modèle. Renvoie null si le modèle manque — l'appelant
+   retombe alors sur la forme faite à la main. */
+/* Les feuillages du Nature Kit tirent au turquoise (#70e6d6) : joli seul,
+   mais il jure avec notre herbe. On les ramène vers un vert de forêt, avec
+   une variation par arbre pour qu'ils ne soient pas tous identiques. */
+const VERTS = [0x3f7d2e, 0x4c8f34, 0x356b2a, 0x5a9c3c, 0x2f6326];
+function reteinter(g, graine){
+  const vert = VERTS[graine % VERTS.length];
+  g.traverse(o=>{
+    if(!o.isMesh || !o.material || !o.material.color) return;
+    // Les modèles Kenney sont réglés « métal pur » (metalness 1). Sans ciel
+    // réfléchi, un métal ne renvoie rien : il devient NOIR. On les remet en
+    // matière mate, ce qu'ils auraient dû être.
+    if(o.material.metalness !== undefined){
+      o.material.metalness = 0;
+      o.material.roughness = 0.85;
+    }
+    const c = o.material.color;
+    // un feuillage = beaucoup de vert, peu de rouge
+    if(c.g > 0.45 && c.r < 0.45){
+      o.material.color.setHex(vert);
+      o.material.color.offsetHSL(0, 0, (Math.random()-0.5)*0.06);
+    }
+  });
+}
+
+function poser(nom, x, y, z, echelle = 1, rotY = 0){
+  const m = MODELES[nom];
+  if(!m) return null;
+  const g = m.clone(true);
+  g.traverse(o=>{ if(o.isMesh) o.material = o.material.clone(); });
+  reteinter(g, (x*7 + z*13) | 0);
+  g.position.set(x, y, z);
+  g.rotation.y = rotY;
+  g.scale.setScalar(echelle);
+  return g;
+}
+
+/* ═══════════════ 1 ter. LES VRAIES MATIÈRES ═══════════════
+   Des photographies de matière (Poly Haven, domaine public), posées sur des
+   formes simples. C'est le compromis mesuré : la pierre a l'air de pierre,
+   mais on n'a pas le calcul photoréaliste par pixel qui divisait par deux le
+   débit d'images sur une carte intégrée.
+
+   On utilise MeshLambertMaterial et non MeshStandard : l'éclairage y est
+   calculé par sommet et non par pixel. C'est ce qui garde 60 images/seconde. */
+
+const chargeurTex = new THREE.TextureLoader();
+const MATIERES = {};
+
+function matiere(nom, repeteX = 1, repeteY = 1){
+  const cle = nom + repeteX + 'x' + repeteY;
+  if(MATIERES[cle]) return MATIERES[cle];
+  const t = chargeurTex.load('assets/textures/' + nom + '.jpg');
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeteX, repeteY);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  MATIERES[cle] = t;
+  return t;
+}
+
+/* une matière simple, éclairée par sommet : rapide et suffisante */
+function mat(nom, repeteX = 1, repeteY = 1, teinte = 0xffffff){
+  return new THREE.MeshLambertMaterial({ map: matiere(nom, repeteX, repeteY), color: teinte });
+}
+
+/* ═══════════════ 1 bis. LE DEHORS ═══════════════
+   L'étage 0. Ce n'est pas un donjon : c'est une prairie fermée par une
+   palissade, avec deux maisons, quelques arbres, et l'escalier qui descend.
+   On réutilise la même grille que les étages — tout est « sol » sauf le
+   pourtour et l'emprise des maisons — donc les collisions marchent sans une
+   ligne de code en plus. */
+
+/* ── LE PLAN DU VILLAGE ──
+   Une rue principale nord-sud (x = 13) qui descend vers l'escalier du donjon,
+   une rue est-ouest qui la croise à la place, et douze feux répartis le long
+   des deux. Rien n'est aligné, les tailles varient : c'est l'irrégularité qui
+   fait qu'un village a l'air d'un village et non d'un lotissement.
+
+   `sens` dit de quel côté la façade regarde (vers la rue).
+   `etage` ajoute un niveau, `chaume` remplace les tuiles par du chaume. */
+const MAISONS = [
+  // le long de la rue principale, côté ouest
+  { x:9,  y:3,  w:3, h:3, sens: 1, etage:true  },
+  { x:9,  y:8,  w:3, h:2, sens: 1 },
+  { x:9,  y:12, w:3, h:3, sens: 1, chaume:true },
+  // côté est
+  { x:16, y:3,  w:3, h:2, sens:-1, chaume:true },
+  { x:16, y:7,  w:3, h:3, sens:-1, etage:true  },
+  { x:16, y:12, w:3, h:3, sens:-1 },
+  // en retrait, le long de la rue transversale
+  { x:3,  y:6,  w:3, h:3, sens: 1 },
+  { x:3,  y:12, w:2, h:2, sens: 1, chaume:true },
+  { x:22, y:5,  w:3, h:3, sens:-1, chaume:true },
+  { x:22, y:11, w:3, h:2, sens:-1 },
+  // deux fermes isolées, au nord
+  { x:5,  y:2,  w:2, h:2, sens: 1, chaume:true },
+  { x:20, y:2,  w:2, h:2, sens:-1 },
+];
+
+/* les rues : des bandes pavées. {x,y,w,h} en cases. */
+const RUES = [
+  { x:12, y:1,  w:2, h:16 },   // la principale, nord-sud
+  { x:1,  y:8,  w:26, h:2 },   // la transversale, est-ouest
+];
+let arbres = [], entree = null, villageois = [];
+
+function genererDehors(){
+  grid = [];
+  for(let y=0;y<H;y++){
+    const ligne = new Array(W).fill(FLOOR);
+    ligne[0] = WALL; ligne[W-1] = WALL;
+    grid.push(ligne);
+  }
+  for(let x=0;x<W;x++){ grid[0][x] = WALL; grid[H-1][x] = WALL; }
+
+  // les maisons sont des blocs pleins : on les contourne, on n'entre pas
+  for(const m of MAISONS)
+    for(let y=m.y;y<m.y+m.h;y++)
+      for(let x=m.x;x<m.x+m.w;x++)
+        if(y>0 && y<H-1 && x>0 && x<W-1) grid[y][x] = WALL;
+
+  // les arbres : jamais sur une rue, ni devant une façade, ni sur la place
+  arbres = [];
+  const surUneRue = (x, y)=> RUES.some(r=> x>=r.x && x<r.x+r.w && y>=r.y && y<r.y+r.h);
+  for(let i=0;i<40;i++){
+    const x = 1 + (Math.random()*(W-2)|0), y = 1 + (Math.random()*(H-2)|0);
+    if(grid[y][x] !== FLOOR) continue;
+    if(surUneRue(x, y)) continue;
+    if(Math.abs(x-13) < 4 && Math.abs(y-16) < 3) continue;   // la place de l'escalier
+    let colle = false;
+    for(const m of MAISONS)
+      if(x > m.x-2 && x < m.x+m.w+2 && y > m.y-2 && y < m.y+m.h+2) colle = true;
+    if(colle) continue;
+    arbres.push({ x, y, h:1 + Math.random()*0.6, r:Math.random()*3 });
+  }
+
+  // l'escalier vers le donjon : au bout de la rue principale, au sud
+  entree = { x:13, y:16 };
+  doorPos = { x:entree.x, y:entree.y };
+  keyPos = null;
+  torches = [];
+  ennemis = [];
+  cleVerrouillee = false;
+  bossSalle = null;
+  rooms = [{ x:12, y:10, w:2, h:2 }];       // on apparaît sur la place
+  return { x:13, y:10 };
+}
+
+/* ═══════════════ 2 bis. LE STYLE — CEL-SHADING ═══════════════
+   C'est la technique des jeux d'animation japonais, Genshin compris. Deux
+   idées, et aucune image :
+
+   1. La lumière ne fond pas en dégradé : elle tombe par PALIERS. Une zone
+      claire, une zone moyenne, une zone d'ombre, et rien entre les deux.
+      C'est ça qui donne l'aspect « dessiné » plutôt que « photographié ».
+   2. Chaque objet porte un CONTOUR noir. On l'obtient en dessinant une copie
+      de l'objet, gonflée le long de ses normales, à l'envers : seul le
+      pourtour dépasse, et il fait le trait.
+
+   Bonus : c'est moins cher qu'un rendu réaliste. */
+
+/* les paliers de lumière : quatre marches, sans lissage */
+function nuancierToon(marches = 4){
+  const d = new Uint8Array(marches);
+  for(let i=0;i<marches;i++) d[i] = Math.round((i/(marches-1)) * 255);
+  const t = new THREE.DataTexture(d, marches, 1, THREE.RedFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter;   // surtout pas de lissage
+  t.needsUpdate = true;
+  return t;
+}
+const NUANCIER = nuancierToon(4);
+
+/* transforme une matière ordinaire en matière dessinée */
+function enToon(mat){
+  const m = new THREE.MeshToonMaterial({
+    color: mat.color ? mat.color.clone() : new THREE.Color(0xffffff),
+    map: mat.map || null,
+    gradientMap: NUANCIER,
+    transparent: mat.transparent || false,
+    opacity: mat.opacity !== undefined ? mat.opacity : 1,
+    side: mat.side || THREE.FrontSide,
+    emissive: mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000),
+    emissiveIntensity: mat.emissiveIntensity || 0,
+    vertexColors: !!mat.vertexColors,   // sans ça, les modèles importés sortent blancs
+  });
+  return m;
+}
+
+/* le contour : une coque retournée, gonflée le long des normales */
+function matiereContour(epaisseur = 0.012){
+  return new THREE.ShaderMaterial({
+    uniforms: { epaisseur: { value: epaisseur } },
+    vertexShader: `
+      uniform float epaisseur;
+      void main(){
+        vec3 pousse = position + normal * epaisseur;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pousse, 1.0);
+      }`,
+    fragmentShader: `
+      void main(){ gl_FragColor = vec4(0.02, 0.03, 0.06, 1.0); }`,
+    side: THREE.BackSide,
+    depthWrite: true,
+  });
+}
+
+/* pose un contour sur tous les volumes d'un groupe */
+function cerner(racine, epaisseur = 0.014){
+  const aAjouter = [];
+  racine.traverse(o=>{
+    if(!o.isMesh || o.userData.estContour) return;
+    if(o.material && o.material.transparent && o.material.opacity < 0.6) return; // pas sur le translucide
+    aAjouter.push(o);
+  });
+  for(const o of aAjouter){
+    const c = new THREE.Mesh(o.geometry, matiereContour(epaisseur));
+    c.userData.estContour = true;
+    c.renderOrder = -1;
+    o.add(c);
+  }
+  return racine;
+}
+
+/* Convertit tout un groupe au style dessiné, puis pose les contours.
+   Le cache évite de refabriquer dix fois la même matière partagée. */
+const cacheToon = new Map();
+function styliser(racine, epaisseur = 0.014){
+  racine.traverse(o=>{
+    if(!o.isMesh || o.userData.estContour) return;
+    // les volumes projettent leur ombre et la reçoivent ; les contours, non
+    o.castShadow = true;
+    o.receiveShadow = true;
+    if(o.isInstancedMesh) {            // les murs : on convertit, mais pas de contour
+      if(o.material && o.material.isMeshStandardMaterial){
+        let t = cacheToon.get(o.material);
+        if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
+        o.material = t;
+      }
+      return;
+    }
+    if(o.material && o.material.isMeshStandardMaterial){
+      let t = cacheToon.get(o.material);
+      if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
+      o.material = t;
+    }
+  });
+  if(epaisseur > 0) cerner(racine, epaisseur);
+  return racine;
+}
+
+/* ═══════════════ 3. LA SCÈNE ═══════════════ */
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x16233c, 0.022);
+scene.background = new THREE.Color(0x080d18);
+
+const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, 0.05, 80);
+const tete = new THREE.Group();          // porte la caméra : lacet + tangage + roulis
+tete.add(camera);
+scene.add(tete);
+
+const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
+renderer.setPixelRatio(1);          // 1 pixel rendu = 1 pixel écran : le meilleur rapport
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// nuit froide + une braise chaude tenue à la main
+scene.add(new THREE.HemisphereLight(0x5b6ba8, 0x171d30, 1.05));  // clair de lune bleuté
+// le cel-shading a besoin d'une direction franche, sinon tout est plat
+const jour = new THREE.DirectionalLight(0xfff2d8, 2.6);
+jour.position.set(0.5, 1, 0.35);
+scene.add(jour);
+
+/* Le soleil projette de vraies ombres. Sa « caméra d'ombre » ne couvre qu'un
+   carré autour du joueur — on la déplace avec lui, sinon il faudrait couvrir
+   toute la carte et chaque ombre serait floue. */
+jour.castShadow = true;
+jour.shadow.mapSize.set(768, 768);
+jour.shadow.camera.near = 0.5;
+jour.shadow.camera.far = 60;
+jour.shadow.camera.left = -18; jour.shadow.camera.right = 18;
+jour.shadow.camera.top = 18;   jour.shadow.camera.bottom = -18;
+jour.shadow.bias = -0.0012;
+jour.shadow.normalBias = 0.03;
+scene.add(jour.target);
+
+const lampe = new THREE.PointLight(0xbfd8ff, 42, 20, 1.45);
+lampe.position.set(0, -0.15, 0.25);   // réglée aussi dans la boucle, selon la vue
+tete.add(lampe);
+
+/* --- les six torches vivantes : on les déplace vers les plus proches --- */
+const NB_LUM = 6;
+const lumieres = [];
+for(let i=0;i<NB_LUM;i++){
+  const l = new THREE.PointLight(0x5aa8ff, 0, 24, 1.3);
+  l.userData.base = 0x5aa8ff;
+  scene.add(l); lumieres.push(l);
+}
+
+const monde = new THREE.Group();   // tout ce qui est rebâti à chaque étage
+scene.add(monde);
+
+/* ═══════════════ 3 ter. CE QUI TRAÎNE PAR TERRE ═══════════════
+   Deux familles : le décor, qu'on peut casser, et les objets, qu'on ramasse.
+   Un donjon vide ne se lit pas — ce sont ces choses-là qui donnent l'échelle
+   et qui disent que quelqu'un est passé avant toi. */
+
+const GEO = {
+  tonneau : new THREE.CylinderGeometry(0.34, 0.30, 0.72, 10),
+  cercle  : new THREE.TorusGeometry(0.335, 0.028, 5, 12),
+  caisse  : new THREE.BoxGeometry(0.55, 0.55, 0.55),
+  crane   : new THREE.SphereGeometry(0.13, 8, 7),
+  os      : new THREE.CylinderGeometry(0.032, 0.032, 0.4, 5),
+  colonne : new THREE.CylinderGeometry(0.26, 0.30, 1.5, 9),
+  fiole   : new THREE.SphereGeometry(0.11, 10, 9),
+  goulot  : new THREE.CylinderGeometry(0.035, 0.045, 0.11, 6),
+  eclat   : new THREE.OctahedronGeometry(0.13, 0),
+};
+const MAT = {
+  bois    : new THREE.MeshStandardMaterial({ color:0x5b432b, roughness:0.9 }),
+  fer     : new THREE.MeshStandardMaterial({ color:0x3a3d44, roughness:0.6, metalness:0.8 }),
+  ossement: new THREE.MeshStandardMaterial({ color:0xcfc7b2, roughness:0.85 }),
+  pierre  : new THREE.MeshStandardMaterial({ color:0x6b7080, roughness:0.85 }),
+  verre   : new THREE.MeshStandardMaterial({ color:0xff3a5e, emissive:0xc01030,
+              emissiveIntensity:1.6, transparent:true, opacity:0.85, roughness:0.1 }),
+  cristal : new THREE.MeshStandardMaterial({ color:0x7fe0ff, emissive:0x2f9fd0,
+              emissiveIntensity:2.0, transparent:true, opacity:0.9, roughness:0.05 }),
+};
+
+/* un objet à ramasser : il flotte et tourne, on le prend en marchant dessus */
+function poserObjet(type, wx, wz){
+  const g = new THREE.Group();
+  if(type === 'fiole'){
+    const corps = new THREE.Mesh(GEO.fiole, MAT.verre);
+    const col   = new THREE.Mesh(GEO.goulot, MAT.verre);
+    col.position.y = 0.12;
+    g.add(corps, col);
+    g.add(new THREE.PointLight(0xff4a68, 3.5, 3, 1.8));
+  } else {
+    g.add(new THREE.Mesh(GEO.eclat, MAT.cristal));
+    g.add(new THREE.PointLight(0x6fd0ff, 3.5, 3, 1.8));
+  }
+  g.position.set(wx, 0.75, wz);
+  styliser(g, 0.014);
+  monde.add(g);
+  objets.push({ obj:g, type, ph:Math.random()*6 });
+}
+
+/* le décor : posé contre les murs, cassable à l'épée */
+function poserDecor(tx, ty){
+  const wx = tx*T + T/2 + (Math.random()-0.5)*0.7;
+  const wz = ty*T + T/2 + (Math.random()-0.5)*0.7;
+  const r = Math.random();
+  const g = new THREE.Group();
+  let cassable = true, type;
+
+  if(r < 0.34){                                   // un tonneau
+    type = 'tonneau';
+    const modele = poser('tonneau', 0, 0, 0, 1.15, Math.random()*6.283);
+    if(modele){ g.add(modele); }
+    else {
+    const t = new THREE.Mesh(GEO.tonneau, MAT.bois);
+    t.position.y = 0.36;
+    const c1 = new THREE.Mesh(GEO.cercle, MAT.fer); c1.rotation.x = Math.PI/2; c1.position.y = 0.55;
+    const c2 = c1.clone(); c2.position.y = 0.18;
+    g.add(t, c1, c2);
+    }
+  } else if(r < 0.58){                            // une caisse
+    type = 'caisse';
+    const c = new THREE.Mesh(GEO.caisse, MAT.bois);
+    c.position.y = 0.28; c.rotation.y = Math.random()*1.5;
+    g.add(c);
+  } else if(r < 0.85){                            // les restes de quelqu'un
+    type = 'ossuaire'; cassable = false;
+    const cr = new THREE.Mesh(GEO.crane, MAT.ossement);
+    cr.position.set(0, 0.13, 0); cr.rotation.set(0.4, Math.random()*3, 0.3);
+    g.add(cr);
+    for(let i=0;i<3;i++){
+      const o = new THREE.Mesh(GEO.os, MAT.ossement);
+      o.rotation.set(Math.PI/2, 0, Math.random()*3);
+      o.position.set((Math.random()-0.5)*0.5, 0.035, (Math.random()-0.5)*0.5);
+      g.add(o);
+    }
+  } else {                                        // une colonne rompue
+    type = 'colonne'; cassable = false;
+    const c = new THREE.Mesh(GEO.colonne, MAT.pierre);
+    c.position.y = 0.75; c.rotation.set(0.06, Math.random()*3, 0.04);
+    g.add(c);
+  }
+
+  g.position.set(wx, 0, wz);
+  styliser(g, 0.018);
+  monde.add(g);
+  decors.push({ obj:g, x:wx, z:wz, type, cassable, casse:0 });
+}
+
+/* ═══════════════ 4. BÂTIR L'ÉTAGE ═══════════════ */
+let murIM, flammes=[], braises, poussiere, meshCle, porte, meshEnnemis=[];
+let coffre=null, pieges=[], jumeaux=[], decors=[], objets=[];
+
+/* le matériau des murs : fabriqué une seule fois, réutilisé à chaque refonte */
+const geoMur = new THREE.BoxGeometry(T, HT, T);
+const murT = texMur.clone();    murT.needsUpdate = true; murT.repeat.set(2, 2.4);
+const relT = texRelief.clone(); relT.needsUpdate = true; relT.repeat.set(2, 2.4);
+const matMur = new THREE.MeshStandardMaterial({
+  map:murT, bumpMap:relT, bumpScale:0.28, roughness:0.72, metalness:0.06,
+  color:0x8b96a8,
+});
+
+/* Rebâtit toute la pierre d'après la grille. Appelé au départ, et à chaque fois
+   qu'un sort perce un passage ou dresse un mur. */
+function construireMurs(){
+  if(murIM){ monde.remove(murIM); murIM.dispose(); }
+  const murs=[];
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    if(grid[y][x]!==WALL) continue;
+    // on ne bâtit que la pierre qui touche un endroit où l'on marche
+    let vu=false;
+    for(let dy=-1;dy<=1 && !vu;dy++) for(let dx=-1;dx<=1;dx++){
+      const nx=x+dx, ny=y+dy;
+      if(nx<0||ny<0||nx>=W||ny>=H) continue;
+      if(grid[ny][nx]!==WALL){ vu=true; break; }
+    }
+    if(vu) murs.push({x,y});
+  }
+  murIM = new THREE.InstancedMesh(geoMur, matMur, murs.length);
+  const m4 = new THREE.Matrix4(), col = new THREE.Color();
+  murs.forEach((c,i)=>{
+    m4.makeTranslation(c.x*T+T/2, HT/2, c.y*T+T/2);
+    murIM.setMatrixAt(i, m4);
+    const v = 0.78 + Math.random()*0.22;      // chaque bloc a sa teinte
+    col.setRGB(v, v*0.985, v*0.94);
+    murIM.setColorAt(i, col);
+  });
+  murIM.instanceMatrix.needsUpdate = true;
+  murIM.castShadow = true; murIM.receiveShadow = true;
+  monde.add(murIM);
+}
+
+function meublerSalle(r){
+  if(!r || !r.theme) return;
+  // ne pas encombrer la salle du gardien : il lui faut de la place
+  if(bossSalle && cX(r)===bossSalle.x && cY(r)===bossSalle.y) return;
+  const wx = cX(r)*T + T/2, wz = cY(r)*T + T/2;
+  const teinte = etageCourant().teinte;
+  const g = new THREE.Group();
+  const pierre = MAT.pierre, bois = MAT.bois, fer = MAT.fer, os = MAT.ossement;
+
+  if(r.theme === 'piliers'){
+    // deux rangées de colonnes qui montent au plafond : une vraie salle à voûte
+    const hc = HT - 0.2;
+    for(const dx of [-1.9, 1.9]) for(const dz of [-2.4, 0, 2.4]){
+      const c = new THREE.Mesh(GEO.colonne, pierre); c.scale.y = hc/1.5;
+      c.position.set(dx, hc/2, dz); g.add(c);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.95,0.24,0.95), pierre);
+      cap.position.set(dx, hc, dz); g.add(cap);
+      const soc = new THREE.Mesh(new THREE.BoxGeometry(0.95,0.2,0.95), pierre);
+      soc.position.set(dx, 0.1, dz); g.add(soc);
+    }
+  } else if(r.theme === 'crypte'){
+    for(const dz of [-1.5, 1.5]){
+      const base = new THREE.Mesh(new THREE.BoxGeometry(1.7,0.5,0.85), pierre);
+      base.position.set(0,0.25,dz); g.add(base);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(1.82,0.14,0.96), pierre);
+      lid.position.set(0.06,0.57,dz); lid.rotation.y = 0.05; g.add(lid);
+    }
+    for(let i=0;i<6;i++){
+      const o = new THREE.Mesh(GEO.os, os);
+      o.rotation.set(Math.PI/2,0,Math.random()*3);
+      o.position.set((Math.random()-0.5)*2.6, 0.04, (Math.random()-0.5)*2.6); g.add(o);
+    }
+    const cr = new THREE.Mesh(GEO.crane, os); cr.position.set(0.6,0.66,-1.5); g.add(cr);
+  } else if(r.theme === 'garde'){
+    // une table + un râtelier d'armes + des caisses = un corps de garde
+    const plat = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.1,0.75), bois);
+    plat.position.set(0,0.62,0); g.add(plat);
+    for(const sx of [-1,1]) for(const sz of [-1,1]){
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.6,0.1), bois);
+      p.position.set(sx*0.65,0.3,sz*0.3); g.add(p);
+    }
+    const barre = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,1.5,6), bois);
+    barre.rotation.z = Math.PI/2; barre.position.set(0,1.25,-1.9); g.add(barre);
+    for(let i=-1;i<=1;i++){
+      const lame = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.95,0.03), fer);
+      lame.position.set(i*0.42,0.92,-1.9); lame.rotation.z = 0.1*i; g.add(lame);
+    }
+    for(let i=0;i<2;i++){
+      const c = new THREE.Mesh(GEO.caisse, bois);
+      c.position.set(1.4, 0.28+i*0.56, 1.1); c.rotation.y = Math.random(); g.add(c);
+    }
+  } else if(r.theme === 'reserve'){
+    for(let i=0;i<7;i++){
+      const baril = Math.random()<0.6;
+      const m = new THREE.Mesh(baril?GEO.tonneau:GEO.caisse, bois);
+      m.position.set((Math.random()-0.5)*2.8, baril?0.36:0.28, (Math.random()-0.5)*2.8);
+      m.rotation.y = Math.random()*3; g.add(m);
+    }
+  } else if(r.theme === 'tresor'){
+    const dais = new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.2,0.3,12), pierre);
+    dais.position.y = 0.15; g.add(dais);
+    // un coffre composé (primitives, pour fondre proprement)
+    const caisse = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.6,0.75), bois);
+    caisse.position.y = 0.6; g.add(caisse);
+    const couv = new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,1.1,10,1,false,0,Math.PI), bois);
+    couv.rotation.z = Math.PI/2; couv.position.set(0,0.9,0); g.add(couv);
+    const serrure = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.2,0.06), fer);
+    serrure.position.set(0,0.62,0.4); g.add(serrure);
+    // une lueur d'or, sans lumière dynamique (emissive = gratuit)
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.5,12,10),
+      new THREE.MeshBasicMaterial({color:0xffcf6a, transparent:true, opacity:0.16}));
+    halo.position.y = 0.9; g.add(halo);
+    for(let a=0;a<4;a++){
+      const d = new THREE.Mesh(new THREE.CircleGeometry(0.42,12),
+        new THREE.MeshStandardMaterial({color:0x241c14, roughness:0.9}));
+      d.rotation.x = -Math.PI/2; d.position.set(Math.cos(a*1.571)*1.9,0.02,Math.sin(a*1.571)*1.9); g.add(d);
+    }
+  } else if(r.theme === 'sanctuaire'){
+    const base = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.7,0.8), pierre);
+    base.position.y = 0.35; g.add(base);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.14,1.0), pierre);
+    top.position.y = 0.77; g.add(top);
+    const hs = HT - 0.2;
+    for(const dx of [-1.7,1.7]){
+      const c = new THREE.Mesh(GEO.colonne, pierre); c.scale.y = hs/1.5;
+      c.position.set(dx, hs/2, -0.6); g.add(c);
+    }
+    // le sanctuaire, lui, mérite sa lumière
+    const feu = new THREE.PointLight(teinte, 6, 8, 2); feu.position.set(0,1.35,0); g.add(feu);
+    const halo = new THREE.Mesh(new THREE.SphereGeometry(0.17,10,9),
+      new THREE.MeshBasicMaterial({color:teinte})); halo.position.set(0,1.1,0); g.add(halo);
+    const ban = new THREE.Mesh(new THREE.PlaneGeometry(0.95,1.7),
+      new THREE.MeshStandardMaterial({color:teinte, roughness:0.85, side:THREE.DoubleSide,
+        emissive:teinte, emissiveIntensity:0.18}));
+    ban.position.set(0,1.7,-1.25); g.add(ban);
+  }
+
+  // fusion par matière : ~3 dessins/salle au lieu de quinze
+  fondre(g);
+  g.position.set(wx, 0, wz);
+  styliser(g, 0.02);
+  monde.add(g);
+}
+function batir(){
+  // on vide l'étage précédent
+  while(monde.children.length){
+    const o = monde.children.pop();
+    o.traverse?.(n=>{ n.geometry?.dispose?.(); });
+    monde.remove(o);
+  }
+  flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
+  decors=[]; objets=[];
+  if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
+  ondes = []; tranches = []; projectiles = [];
+  murIM=null;
+
+  construireMurs();
+
+  /* --- sol et plafond --- */
+  const solT = texSol.clone(); solT.needsUpdate=true; solT.repeat.set(W, H);
+  const sol = new THREE.Mesh(
+    new THREE.PlaneGeometry(W*T, H*T),
+    new THREE.MeshStandardMaterial({ map:solT, bumpMap:texRelief, bumpScale:0.18, roughness:0.62, color:0x7d8798 }));
+  sol.rotation.x = -Math.PI/2;
+  sol.position.set(W*T/2, 0, H*T/2);
+  sol.receiveShadow = true;
+  monde.add(sol);
+
+  const plaT = texMur.clone(); plaT.needsUpdate=true; plaT.repeat.set(W*0.6, H*0.6);
+  const plafond = new THREE.Mesh(
+    new THREE.PlaneGeometry(W*T, H*T),
+    new THREE.MeshStandardMaterial({ map:plaT, roughness:1, color:0x3a4356 }));
+  plafond.rotation.x = Math.PI/2;
+  plafond.position.set(W*T/2, HT, H*T/2);
+  monde.add(plafond);
+
+  /* --- les torches : un fer, une flamme, une lueur sur le mur --- */
+  const geoFer = new THREE.CylinderGeometry(0.035, 0.055, 0.5, 6);
+  const matFer = new THREE.MeshStandardMaterial({ color:0x1b1713, roughness:0.85, metalness:0.6 });
+  for(const t of torches){
+    const wx = t.x*T+T/2, wz = t.y*T+T/2;
+    const px = wx + t.dx*(T/2+0.06), pz = wz + t.dy*(T/2+0.06);
+    const fer = new THREE.Mesh(geoFer, matFer);
+    fer.position.set(px, 1.95, pz);
+    fer.rotation.set(t.dy*0.42, 0, -t.dx*0.42);
+    monde.add(fer);
+
+    const fl = new THREE.Sprite(new THREE.SpriteMaterial({
+      map:texFlamme, color:etageCourant().teinte, blending:THREE.AdditiveBlending,
+      depthWrite:false, transparent:true, opacity:0.95 }));
+    fl.position.set(px, 2.22, pz);
+    fl.scale.set(0.75, 1.0, 1);
+    monde.add(fl);
+    flammes.push({ sp:fl, ph:t.ph, x:px, z:pz });
+    t.wx=px; t.wz=pz;
+
+    // un éclat de cristal planté dans la pierre, sous la flamme
+    const cristal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.19, 0),
+      new THREE.MeshStandardMaterial({ color:etageCourant().teinte, emissive:etageCourant().teinte,
+        emissiveIntensity:0.75, transparent:true, opacity:0.92,
+        roughness:0.06, metalness:0.1 }));
+    cristal.position.set(px - t.dx*0.1, 1.5, pz - t.dy*0.1);
+    cristal.rotation.set(0.5, Math.random()*3, 0.4);
+    cristal.scale.set(1, 1.9, 1);
+    monde.add(cristal);
+  }
+
+  /* --- les runes au sol, sous les feux --- */
+  {
+    const runeGeo = new THREE.RingGeometry(0.55, 0.95, 24, 1);
+    const runeMat = new THREE.MeshBasicMaterial({ color:etageCourant().teinte, transparent:true,
+      opacity:0.30, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });
+    for(const t of torches){
+      const r = new THREE.Mesh(runeGeo, runeMat);
+      r.rotation.x = -Math.PI/2;
+      r.position.set(t.wx - t.dx*0.9, 0.03, t.wz - t.dy*0.9);
+      monde.add(r);
+    }
+  }
+
+  /* --- braises qui montent des torches --- */
+  const NB_BR = Math.min(260, torches.length*22);
+  const posBr = new Float32Array(NB_BR*3);
+  const brData = [];
+  for(let i=0;i<NB_BR;i++){
+    const t = torches[i % Math.max(1,torches.length)] || {wx:0,wz:0};
+    brData.push({ x:t.wx||0, z:t.wz||0, v:0.35+Math.random()*0.7, a:Math.random()*3.2,
+                  ph:Math.random()*6, ox:(Math.random()-.5)*0.2, oz:(Math.random()-.5)*0.2 });
+  }
+  braises = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posBr,3)),
+    new THREE.PointsMaterial({ map:texHalo, color:0x8fd4ff, size:0.075, sizeAttenuation:true,
+      blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:0.85 }));
+  braises.userData = brData;
+  monde.add(braises);
+
+  /* --- poussière en suspension, elle attrape la lampe --- */
+  const NB_PO = 420, posPo = new Float32Array(NB_PO*3), poData=[];
+  for(let i=0;i<NB_PO;i++){
+    poData.push({ x:Math.random()*W*T, y:Math.random()*HT, z:Math.random()*H*T,
+                  v:0.02+Math.random()*0.05, ph:Math.random()*6 });
+  }
+  poussiere = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posPo,3)),
+    new THREE.PointsMaterial({ map:texHalo, color:0xd9c9a4, size:0.028, sizeAttenuation:true,
+      transparent:true, opacity:0.5, depthWrite:false }));
+  poussiere.userData = poData;
+  monde.add(poussiere);
+
+  /* --- la clé : un anneau d'or qui tourne dans son halo --- */
+  meshCle = new THREE.Group();
+  const orMat = new THREE.MeshStandardMaterial({
+    color:0xe8b661, emissive:0xffa73a, emissiveIntensity:0.85, roughness:0.28, metalness:0.95 });
+  const anneau = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.045, 8, 20), orMat);
+  const tige   = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.42, 0.055), orMat);
+  tige.position.y = -0.3;
+  const dent1  = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.055, 0.055), orMat);
+  dent1.position.set(0.08, -0.42, 0);
+  const dent2  = dent1.clone(); dent2.position.set(0.08, -0.29, 0);
+  meshCle.add(anneau, tige, dent1, dent2);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:texHalo, color:0xffbe55, blending:THREE.AdditiveBlending,
+    depthWrite:false, transparent:true, opacity:0.4 }));
+  halo.scale.set(1.9,1.9,1);
+  meshCle.add(halo);
+  meshCle.position.set(keyPos.x*T+T/2, 1.15, keyPos.y*T+T/2);
+  const lumCle = new THREE.PointLight(0xffb84d, 14, 9, 1.8);
+  meshCle.add(lumCle);
+  monde.add(meshCle);
+
+  /* --- la porte : une arche et un rideau de lumière --- */
+  porte = new THREE.Group();
+  // un vrai escalier qui s'enfonce dans la pierre
+  const marbre = new THREE.MeshStandardMaterial({ color:0x6e7688, roughness:0.6, metalness:0.1 });
+  const NB_M = 7;
+  for(let i=0;i<NB_M;i++){
+    const m = new THREE.Mesh(new THREE.BoxGeometry(T*0.82, 0.16, T/NB_M), marbre);
+    m.position.set(0, -0.08 - i*0.19, -T*0.4 + i*(T*0.9/NB_M));
+    porte.add(m);
+  }
+  // les deux joues de l'escalier, pour qu'il ne flotte pas
+  for(const c of [-1, 1]){
+    const joue = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.5, T*0.95), marbre);
+    joue.position.set(c*T*0.45, -0.75, -T*0.02);
+    porte.add(joue);
+  }
+  // la lueur du fond : c'est elle qui appelle
+  const rideau = new THREE.Mesh(
+    new THREE.PlaneGeometry(T*0.8, 1.5),
+    new THREE.MeshBasicMaterial({ color:0xc8392f, transparent:true, opacity:0.32,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  rideau.rotation.x = -Math.PI/2;
+  rideau.position.set(0, -1.35, T*0.35);
+  const cadre = new THREE.Mesh(
+    new THREE.TorusGeometry(T*0.5, 0.09, 6, 18, Math.PI),
+    new THREE.MeshStandardMaterial({ color:0x2a2118, roughness:0.7, metalness:0.5 }));
+  cadre.position.y = HT*0.55;
+  porte.add(rideau, cadre);
+  porte.position.set(doorPos.x*T+T/2, 0, doorPos.y*T+T/2);
+  const lumPorte = new THREE.PointLight(0xc8392f, 10, 10, 1.8);
+  lumPorte.position.y = -0.9;
+  porte.add(lumPorte);
+  porte.userData = { rideau, cadre, lum:lumPorte };
+  monde.add(porte);
+
+  /* --- ce qui traîne : contre les murs pour le décor, au large pour les objets --- */
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+    if(grid[y][x] !== FLOOR) continue;
+    if(keyPos && x===keyPos.x && y===keyPos.y) continue;
+    if(doorPos && x===doorPos.x && y===doorPos.y) continue;
+    // contre un mur ? alors du décor. Au milieu ? alors parfois un objet.
+    const colle = [[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>grid[y+dy][x+dx]===WALL);
+    if(colle && Math.random() < 0.13) poserDecor(x, y);
+    else if(!colle && Math.random() < 0.035)
+      poserObjet(Math.random() < 0.55 ? 'fiole' : 'eclat', x*T+T/2, y*T+T/2);
+  }
+
+  /* --- chaque salle prend son thème (piliers, crypte, garde, réserve, trésor, sanctuaire) --- */
+  for(const r of rooms) meublerSalle(r);
+
+  /* --- le gardien du palier --- */
+  guerrier = null;
+  if(bossSalle) creerBoss(bossSalle.x, bossSalle.y);
+  if(niveau === 1) poserGuerrier();
+
+  /* --- tout le décor passe au trait --- */
+  styliser(monde, 0.02);
+
+  /* --- les habitants --- */
+  for(const e of ennemis){
+    let g;
+    if(e.type==='squelette'){
+      // des os qui marchent : crâne, cage thoracique, deux bras ballants
+      g = new THREE.Group();
+      const os = new THREE.MeshStandardMaterial({ color:0xd8d2c0, roughness:0.75, metalness:0.05 });
+      const crane = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 9), os);
+      crane.scale.set(1, 1.12, 1.08); crane.position.y = 1.42;
+      const machoire = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.16), os);
+      machoire.position.set(0, 1.26, 0.03);
+      const colonne = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.62, 6), os);
+      colonne.position.y = 0.95;
+      const cote = new THREE.TorusGeometry(0.17, 0.022, 5, 12, Math.PI*1.2);
+      for(let i=0;i<4;i++){
+        const c = new THREE.Mesh(cote, os);
+        c.position.y = 1.16 - i*0.13;
+        c.rotation.set(Math.PI/2, 0, -Math.PI*0.6);
+        g.add(c);
+      }
+      const bassin = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.11, 0.15), os);
+      bassin.position.y = 0.62;
+      for(const cote2 of [-1, 1]){
+        const bras = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.024, 0.55, 5), os);
+        bras.position.set(cote2*0.22, 1.02, 0);
+        g.add(bras);
+        const jambe = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.028, 0.6, 5), os);
+        jambe.position.set(cote2*0.09, 0.3, 0);
+        g.add(jambe);
+      }
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.045, 7, 7),
+        new THREE.MeshBasicMaterial({ color:0xff3a1a }));
+      oeilG.position.set(-0.07, 1.45, 0.16);
+      const oeilD = oeilG.clone(); oeilD.position.x = 0.07;
+      const lueur = new THREE.PointLight(0xff5a2a, 3, 3.5, 2);
+      lueur.position.y = 1.45;
+      g.add(crane, machoire, colonne, bassin, oeilG, oeilD, lueur);
+      g.userData.corps = crane;
+
+    } else if(e.type==='paysan'){
+      // un squelette qui a gardé ses habits de journalier, et son outil
+      g = new THREE.Group();
+      const os   = new THREE.MeshStandardMaterial({ color:0xd8d2c0, roughness:0.8 });
+      const toile= new THREE.MeshStandardMaterial({ color:0x6d5a3c, roughness:0.98 });
+      const paille=new THREE.MeshStandardMaterial({ color:0xbfa15c, roughness:0.95 });
+          const bois = new THREE.MeshStandardMaterial({ color:0x4a3a24, roughness:0.9 });
+
+      const crane = new THREE.Mesh(new THREE.SphereGeometry(0.19, 10, 9), os);
+      crane.scale.set(1, 1.1, 1.07); crane.position.y = 1.4;
+      const machoire = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.06, 0.15), os);
+      machoire.position.set(0, 1.25, 0.03);
+
+      // la tunique : elle tombe du cou aux genoux et cache la cage
+      const tunique = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.23, 0.31, 0.80, 10, 1, true), toile);
+      tunique.position.y = 0.88;
+      tunique.material.side = THREE.DoubleSide;
+      const ceinture = new THREE.Mesh(
+        new THREE.TorusGeometry(0.265, 0.03, 5, 12),
+        new THREE.MeshStandardMaterial({ color:0x3d2f1c, roughness:0.9 }));
+      ceinture.rotation.x = Math.PI/2; ceinture.position.y = 0.78;
+
+      // le chapeau de paille, large, un peu de travers
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.16, 12), paille);
+      cone.position.y = 1.62;
+      const bord = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.02, 14), paille);
+      bord.position.y = 1.53;
+
+      // jambes et bras nus : c'est bien un squelette dessous
+      for(const c of [-1, 1]){
+        const jambe = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.028, 0.5, 5), os);
+        jambe.position.set(c*0.1, 0.25, 0); g.add(jambe);
+      }
+      const brasG = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.024, 0.5, 5), os);
+      brasG.position.set(-0.2, 1.0, 0.16); brasG.rotation.x = -0.7;
+      const brasD = brasG.clone(); brasD.position.x = 0.2;
+
+      // la fourche, tenue des deux mains
+      const outil = new THREE.Group();
+      const manche = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 1.5, 6), bois);
+      manche.position.y = 0.2;
+      outil.add(manche);
+      for(const d of [-0.09, 0, 0.09]){
+        const dent = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.3, 4), os);
+        dent.position.set(d, 1.05, 0);
+        outil.add(dent);
+      }
+      outil.position.set(0.3, 0.55, 0.22);
+      outil.rotation.set(-0.35, 0, -0.22);
+
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.028, 7, 7),
+        new THREE.MeshBasicMaterial({ color:0xff7a1a }));
+      oeilG.position.set(-0.055, 1.42, 0.165);
+      const oeilD = oeilG.clone(); oeilD.position.x = 0.055;
+      const lueur = new THREE.PointLight(0xff8a2a, 1.6, 2.6, 2.2);
+      lueur.position.set(0, 1.42, 0.3);
+
+      g.add(crane, machoire, tunique, ceinture, cone, bord, brasG, brasD, outil, oeilG, oeilD, lueur);
+      g.userData.corps = crane;
+      g.userData.outil = outil;
+      g.userData.lueur = lueur;
+      g.userData.oeils = [oeilG, oeilD];
+
+    } else if(e.type==='spectre'){
+      // il flotte, il est à peine là, et la pierre ne l'arrête pas
+      g = new THREE.Group();
+      const voile = new THREE.Mesh(
+        new THREE.ConeGeometry(0.42, 1.5, 12, 3, true),
+        new THREE.MeshStandardMaterial({ color:0xd8b0ff, emissive:0x7a3fd0,
+          emissiveIntensity:1.4, transparent:true, opacity:0.34,
+          roughness:0.3, side:THREE.DoubleSide, depthWrite:false }));
+      voile.position.y = 0.95; voile.rotation.x = Math.PI;
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8),
+        new THREE.MeshBasicMaterial({ color:0xffd6ff }));
+      oeilG.position.set(-0.1, 1.24, 0.28);
+      const oeilD = oeilG.clone(); oeilD.position.x = 0.1;
+      const lueur = new THREE.PointLight(0xc07aff, 5, 5, 1.9);
+      lueur.position.y = 1.1;
+      g.add(voile, oeilG, oeilD, lueur);
+      g.userData.corps = voile;
+
+    } else if(e.type==='slime'){
+      g = new THREE.Group();
+      const corps = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.42, 3),
+        new THREE.MeshStandardMaterial({ color:0x2fa8d8, emissive:0x0d5f88,
+          emissiveIntensity:0.55, transparent:true, opacity:0.78,
+          roughness:0.12, metalness:0.05 }));
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.075,8,8),
+        new THREE.MeshBasicMaterial({color:0x05070a}));
+      oeilG.position.set(-0.16,0.1,0.36);
+      const oeilD = oeilG.clone(); oeilD.position.x = 0.16;
+      const lueur = new THREE.PointLight(0x39b6e6, 5.5, 4.5, 1.8);
+      lueur.position.y = 0.3;
+      g.add(corps, oeilG, oeilD, lueur);
+      g.userData.corps = corps;
+    } else {
+      g = new THREE.Group();
+      const corps = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 10, 8),
+        new THREE.MeshStandardMaterial({ color:0x171310, roughness:0.95 }));
+      corps.scale.set(1, 0.68, 1.5);
+      const queue = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.022, 0.008, 0.6, 5),
+        new THREE.MeshStandardMaterial({ color:0x241c17, roughness:1 }));
+      queue.rotation.x = Math.PI/2.3; queue.position.set(0,0.03,-0.42);
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.035,6,6),
+        new THREE.MeshBasicMaterial({color:0xff2a1a}));
+      oeilG.position.set(-0.1,0.09,0.4);
+      const oeilD = oeilG.clone(); oeilD.position.x = 0.1;
+      g.add(corps, queue, oeilG, oeilD);
+      g.userData.corps = corps;
+    }
+    const hauteurs = { slime:0.42, rat:0.22, squelette:0, spectre:0.35, paysan:0 };
+    g.position.set(e.x*T, hauteurs[e.type] ?? 0.3, e.y*T);
+    monde.add(g);
+    e.obj = g; meshEnnemis.push(g);
+  }
+}
+
+/* ═══════════════ 4 bis. CE QU'ON A DANS LA MAIN ═══════════════
+   Une épée visible, tenue à droite, qui suit la respiration et la marche.
+   Sans elle on ne sait pas où on est ni ce qu'on fait — c'est le repère
+   du corps dans un jeu à la première personne. */
+
+const arme = new THREE.Group();
+{
+  const acier = new THREE.MeshStandardMaterial({
+    color:0xc9d6e4, roughness:0.22, metalness:0.95,
+    emissive:0x1b3a5c, emissiveIntensity:0.35 });
+  const sombre = new THREE.MeshStandardMaterial({
+    color:0x1b1d24, roughness:0.7, metalness:0.5 });
+  const or = new THREE.MeshStandardMaterial({
+    color:0xd8b45a, roughness:0.3, metalness:0.9,
+    emissive:0x3a2a06, emissiveIntensity:0.4 });
+
+  const lame = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.78, 0.016), acier);
+  lame.position.y = 0.52;
+  const pointe = new THREE.Mesh(new THREE.ConeGeometry(0.031, 0.16, 4), acier);
+  pointe.position.y = 0.99; pointe.rotation.y = Math.PI/4;
+  const gouttiere = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.68, 0.02),
+    new THREE.MeshStandardMaterial({ color:0x8fa8c4, roughness:0.35, metalness:0.9 }));
+  gouttiere.position.y = 0.52;
+  const garde = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.045, 0.05), or);
+  garde.position.y = 0.13;
+  const poignee = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, 0.20, 8), sombre);
+  poignee.position.y = 0.02;
+  const pommeau = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), or);
+  pommeau.position.y = -0.09;
+
+  arme.add(lame, pointe, gouttiere, garde, poignee, pommeau);
+  arme.userData = { lame, gouttiere, pointe };
+  // tenue à droite, en garde basse : elle doit se voir, pas barrer l'écran
+  arme.scale.setScalar(0.46);
+  arme.position.set(0.26, -0.30, -0.62);
+  arme.rotation.set(-0.22, -0.52, 0.30);
+  styliser(arme, 0.006);            // trait très fin : elle est près de l'œil
+  tete.add(arme);
+}
+
+/* la même épée, mais tenue par le personnage quand on le voit de dos */
+const armeDos = arme.clone(true);   // le clone emporte déjà son trait
+armeDos.scale.setScalar(0.44);
+armeDos.visible = false;
+scene.add(armeDos);
+
+/* ═══════════════ 4 ter. LE CORPS DU JOUEUR ═══════════════
+   Visible seulement à la troisième personne. Bâti en volumes simples, mais
+   habillé : capuche, tunique, cape, ceinture, gants, bottes. Les proportions
+   sont un peu stylisées — tête légèrement grande — pour la lecture, comme
+   dans les jeux d'animation. */
+
+const avatar = new THREE.Group();
+avatar.visible = false;
+scene.add(avatar);
+
+/* Le vrai personnage (Kenney, articulé, 32 animations) remplace l'ancien
+   pantin de boîtes. Installé après le chargement des modèles. Un seul
+   personnage animé, en 3e personne uniquement : coût négligeable. */
+let mixerPerso = null, actionsPerso = {}, actionCourante = null;
+const FRAPPE = { bras:1.5, avbras:0.7, buste:0.35, fente:0.16 };  // ampleur du geste (réglable via D.reglerFrappe)
+function canonAnim(n){                 // ramène tout nom vers idle/walk/sprint/jump
+  const s = (n||'').toLowerCase();
+  if(s.includes('tpose') || s.includes('_pose') || s === 'pose') return null; // poses figées ignorées
+  if(s.includes('sprint') || s.includes('run'))  return 'sprint';
+  if(s.includes('walk'))                          return 'walk';
+  if(s.includes('jump'))                          return 'jump';
+  if(s.includes('idle') || s.includes('stand'))   return 'idle';
+  return s;
+}
+// teinte le personnage : une tenue par joueur (Patrick = noir/ninja), + tête ton peau
+const TENUES = {
+  Patrick: { corps:0x33357e, tete:0x6b4a34, accent:0xd8b45a },  // MAGE : robe indigo, peau, or
+  Hamda:   { corps:0x2a2036, tete:0x7a5a44, accent:0x6a3a5a },  // violet sombre
+};
+function teinterPerso(perso, nom){
+  const T = TENUES[nom] || TENUES.Patrick;
+  perso.traverse(o=>{
+    if(!o.isMesh || !o.material) return;
+    o.material = o.material.clone();
+    const n = (o.name||'').toLowerCase();
+    let col = T.corps;
+    if(/visor|head|face|tete/.test(n)) col = T.tete;      // la tête -> ton peau (visage)
+    else if(/eye|oeil/.test(n))        col = 0xffffff;
+    if(o.material.color)    o.material.color.setHex(col);
+    if(o.material.emissive) o.material.emissive.setHex(0x000000);
+    if('metalness' in o.material) o.material.metalness = 0.1;
+    if('roughness' in o.material) o.material.roughness = 0.85;
+  });
+}
+function installerAvatar(){
+  // (re)construit l'avatar du joueur courant ; nettoie le précédent (changement de joueur)
+  if(avatar.userData && avatar.userData.perso){ avatar.remove(avatar.userData.perso); }
+  mixerPerso = null; actionsPerso = {}; actionCourante = null;
+  // priorité : ton fichier perso-custom > le modèle du joueur (persoHamda/persoPatrick) > le défaut
+  const cleJoueur = 'perso' + (typeof joueurNom !== 'undefined' ? joueurNom : 'Patrick');
+  const perso = MODELES.persoCustom || MODELES[cleJoueur] || MODELES.perso;
+  const anims = (perso && perso.userData && perso.userData.anims && perso.userData.anims.length)
+                ? perso.userData.anims
+                : (MODELES.persoCustom ? ANIM_PERSO_CUSTOM : ANIM_PERSO);
+  if(!perso) return;
+  const bb = new THREE.Box3().setFromObject(perso);
+  const h = bb.getSize(new THREE.Vector3()).y || 1;
+  perso.scale.setScalar(1.7 / h);
+  perso.position.set(0, 0, 0);
+  let estMixamo = false;
+  perso.traverse(o=>{ if(/mixamorig/i.test(o.name)) estMixamo = true; });
+  perso.rotation.y = estMixamo ? Math.PI : 0;   // Mixamo regarde +Z (demi-tour) ; Quaternius regarde déjà -Z
+  avatar.userData.persoFace = perso;
+  perso.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
+  avatar.add(perso);
+  avatar.userData = { perso };
+  if(anims.length){
+    mixerPerso = new THREE.AnimationMixer(perso);
+    // mapping EXACT (Quaternius) prioritaire, puis repli canonAnim (Soldier & co.)
+    const EXACT = { Idle_Loop:'idle', Walk_Loop:'walk', Sprint_Loop:'sprint', Jog_Fwd_Loop:'walk',
+                    Jump_Loop:'jump', Jump_Start:'jump', Sword_Attack:'attaque', Death01:'mort',
+                    Idle_A:'idle', Walking_A:'walk', Walking_B:'walk', Running_A:'sprint', Running_B:'sprint',
+                    Jump_Idle:'jump', Throw:'attaque', Use_Item:'attaque', Hit_A:'hit', Death_A:'mort' };
+    for(const clip of anims){ const k = EXACT[clip.name]; if(k && !actionsPerso[k]) actionsPerso[k] = mixerPerso.clipAction(clip); }
+    for(const clip of anims){ const k = canonAnim(clip.name); if(k && !actionsPerso[k]) actionsPerso[k] = mixerPerso.clipAction(clip); }
+    // enchaînement varié façon Naruto (taijutsu) : jab -> cross -> coupe -> coupe
+    const parNom = {}; for(const clip of anims) parNom[clip.name] = clip;
+    const COMBO = ['Punch_Jab','Punch_Cross','Sword_Attack','Sword_Attack'];
+    actionsPerso.attaques = COMBO.map(n => parNom[n] ? mixerPerso.clipAction(parNom[n]) : actionsPerso.attaque);
+    jouerAnim('idle');
+  }
+
+  // --- l'épée dans la main droite (os Mixamo « RightHand ») ---
+  let mainDroite = null;
+  perso.traverse(o=>{ if(!mainDroite && (/RightHand$/i.test(o.name) || /^hand_r$/i.test(o.name) || /hand_R$/.test(o.name))) mainDroite = o; });
+  if(mainDroite){
+    perso.updateWorldMatrix(true, true);
+    const s = new THREE.Vector3(); mainDroite.getWorldScale(s);
+    const epee = arme.clone(true);
+    epee.visible = true;
+    // taille réelle constante quel que soit le squelette : on annule l'échelle de l'os
+    const echelleEpee = 0.5 / (s.x || 1);
+    epee.scale.setScalar(echelleEpee);
+    epee.position.set(0, 0.03/(s.x||1), 0.03/(s.x||1));
+    epee.rotation.set(-0.4, 0, Math.PI*0.5);   // grip : lame vers l'avant (ajustable via D.reglerEpee)
+    epee.userData.baseScale = echelleEpee;
+    epee.userData.base = { x:epee.rotation.x, y:epee.rotation.y, z:epee.rotation.z };
+    mainDroite.add(epee);
+    avatar.userData.epeeMain = epee;
+  }
+  // les os pour un vrai geste de frappe (épaule, avant-bras, buste)
+  perso.traverse(o=>{
+    if(/RightArm$/i.test(o.name))          avatar.userData.brasD   = o;
+    else if(/RightForeArm$/i.test(o.name)) avatar.userData.avBrasD = o;
+    else if(/Spine2$/i.test(o.name))       avatar.userData.buste   = o;
+  });
+}
+function jouerAnim(nom){
+  const a = actionsPerso[nom] || actionsPerso.idle || Object.values(actionsPerso)[0];
+  if(!a || a === actionCourante) return;
+  if(actionCourante) actionCourante.fadeOut(0.15);
+  a.reset().fadeIn(0.15).play();
+  actionCourante = a;
+}
+function jouerAttaque(){
+  const a = (actionsPerso.attaques && actionsPerso.attaques[joueur.combo % actionsPerso.attaques.length]) || actionsPerso.attaque;
+  if(!a) return false;
+  // caler la vitesse du swing sur le rythme du combo : il finit son arc, fluide
+  const fenetre = ([0.40,0.30,0.44,0.62][joueur.combo] || 0.40) * 1.1;
+  const clip = a.getClip ? a.getClip() : a._clip;
+  const duree = (clip && clip.duration) ? clip.duration : 0.8;
+  a.timeScale = Math.min(2.4, Math.max(0.9, duree / fenetre));
+  a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true;
+  if(actionCourante && actionCourante !== a) actionCourante.fadeOut(0.08);
+  a.fadeIn(0.06).play();
+  actionCourante = a;
+  joueur.animAtk = 0.45;             // fenêtre où l'attaque prime sur la marche
+  return true;
+}
+
+/* la vue : 1 = à la première personne, 3 = derrière l'épaule */
+let vue = 1, reculCam = 0;
+
+function basculerVue(){
+  vue = (vue === 1) ? 3 : 1;
+  avatar.visible  = (vue === 3);
+  arme.visible    = (vue === 1);
+  armeDos.visible = false;
+  dire(vue === 3 ? 'Vue extérieure.' : 'Vue à la première personne.', 1.8);
+}
+
+/* ═══════════════ 4 quater. BÂTIR LE HAMEAU ═══════════════ */
+
+function poserMontagnes(){
+  // Anneau de montagnes lointaines, fondu en UN mesh (~1 draw call).
+  // Couleur proche de la brume : elles se fondent à l'horizon = silhouette Skyrim.
+  const cx = W*T/2, cz = H*T/2;
+  const geos = [];
+  const N = 16;
+  for(let i=0;i<N;i++){
+    const a = (i/N)*Math.PI*2 + (i%3)*0.11;
+    const d = 108 + (i%4)*12;                 // au-delà du village, sous le dôme (r=160)
+    const haut = 26 + (i*7 % 34);             // crêtes inégales
+    const large = 22 + (i*5 % 20);
+    const g = new THREE.ConeGeometry(large, haut, 5 + (i%3), 1).toNonIndexed();
+    g.rotateY((i*1.7) % 6.28);                // casser la régularité des faces
+    g.translate(cx + Math.cos(a)*d, haut/2 - 4, cz + Math.sin(a)*d);
+    geos.push(g);
+  }
+  const geo = mergeGeometries(geos, false);
+  const mat = new THREE.MeshLambertMaterial({ color:0x8d99a6, fog:true }); // gris-bleu, avalé par la brume
+  const m = new THREE.Mesh(geo, mat);
+  m.matrixAutoUpdate = false; m.updateMatrix();
+  monde.add(m);
+}
+function batirDehors(){
+  while(monde.children.length){
+    const o = monde.children.pop();
+    o.traverse?.(n=>{ n.geometry?.dispose?.(); });
+    monde.remove(o);
+  }
+  flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
+  decors=[]; objets=[]; murIM=null; villageois=[];
+  if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
+  ondes = []; tranches = []; projectiles = [];
+
+  /* --- le ciel : la photo si on l'a, sinon le dôme peint --- */
+  if(cielReel){
+    scene.background = new THREE.Color(0x0a1230);
+  } else {
+  const ciel = new THREE.Mesh(
+    new THREE.SphereGeometry(160, 24, 16),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: {
+        haut:  { value: new THREE.Color(0x3f8fe0) },
+        bas:   { value: new THREE.Color(0xdcefff) },
+      },
+      vertexShader: `
+        varying float h;
+        void main(){
+          vec4 p = modelMatrix * vec4(position, 1.0);
+          h = normalize(p.xyz).y;
+          gl_Position = projectionMatrix * viewMatrix * p;
+        }`,
+      fragmentShader: `
+        uniform vec3 haut; uniform vec3 bas;
+        varying float h;
+        void main(){
+          // trois paliers, comme le reste : un ciel dessiné, pas photographié
+          float k = clamp(h * 1.4 + 0.25, 0.0, 1.0);
+          k = floor(k * 4.0) / 4.0;
+          gl_FragColor = vec4(mix(bas, haut, k), 1.0);
+        }`,
+    }));
+  ciel.position.set(W*T/2, 0, H*T/2);
+  monde.add(ciel);
+  }
+
+  poserMontagnes();
+
+  const soleil = new THREE.Mesh(
+    new THREE.CircleGeometry(7, 24),
+    new THREE.MeshBasicMaterial({ color:0xfff4c8, fog:false }));
+  soleil.position.set(W*T/2 - 70, 55, H*T/2 - 95);
+  soleil.lookAt(W*T/2, 12, H*T/2);
+  if(!cielReel) monde.add(soleil);
+
+  /* --- des nuages peints, seulement si l'on n'a pas la photo --- */
+  if(!cielReel){
+    const geo = new THREE.IcosahedronGeometry(1, 1);
+    const mat = new THREE.MeshToonMaterial({ color:0xffffff, gradientMap:NUANCIER, fog:false });
+    for(let i=0;i<6;i++){
+      const g = new THREE.Group();
+      const n = 3 + (Math.random()*2|0);
+      for(let j=0;j<n;j++){
+        const b = new THREE.Mesh(geo, mat);
+        b.position.set((Math.random()-0.5)*14, (Math.random()-0.5)*3, (Math.random()-0.5)*8);
+        b.scale.setScalar(3 + Math.random()*4.5);
+        g.add(b);
+      }
+      const a = Math.random()*6.28, d = 80 + Math.random()*60;
+      g.position.set(W*T/2 + Math.cos(a)*d, 38 + Math.random()*18, H*T/2 + Math.sin(a)*d);
+      monde.add(g);
+    }
+  }
+
+  /* --- la prairie --- */
+  const herbe = new THREE.Mesh(
+    new THREE.PlaneGeometry(W*T, H*T),
+    new THREE.MeshStandardMaterial({ color:0x54585f, roughness:0.95 }));  // sol gris ville
+  herbe.rotation.x = -Math.PI/2;
+  herbe.position.set(W*T/2, 0, H*T/2);
+  herbe.receiveShadow = true;
+  monde.add(herbe);
+
+  // des touffes, semées en une seule fournée
+  {
+    const geo = new THREE.ConeGeometry(0.07, 0.3, 3);
+    const mat = new THREE.MeshToonMaterial({ color:0x585c64, gradientMap:NUANCIER });  // sol gris ville
+    const N = 0;
+    const touffes = new THREE.InstancedMesh(geo, mat, N);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+    const p = new THREE.Vector3(), sc = new THREE.Vector3();
+    let n = 0;
+    for(let i=0;i<N*3 && n<N;i++){
+      const x = Math.random()*W*T, z = Math.random()*H*T;
+      if(mur(x, z)) continue;
+      e.set(0, Math.random()*6, (Math.random()-0.5)*0.35);
+      q.setFromEuler(e);
+      p.set(x, 0.2, z);
+      sc.set(1, 0.7 + Math.random()*0.8, 1);
+      m4.compose(p, q, sc);
+      touffes.setMatrixAt(n++, m4);
+    }
+    touffes.count = n;
+    touffes.instanceMatrix.needsUpdate = true;
+    monde.add(touffes);
+  }
+
+  /* --- la palissade tout autour --- */
+  {
+    const bois = mat('bois', 0.5, 2, 0x9a7c56);
+    const pieu = new THREE.CylinderGeometry(0.14, 0.16, 1.7, 6);
+    const pieux = [];
+    for(let x=0;x<W;x++){ pieux.push([x, 0]); pieux.push([x, H-1]); }
+    for(let y=1;y<H-1;y++){ pieux.push([0, y]); pieux.push([W-1, y]); }
+    const im = new THREE.InstancedMesh(pieu, bois, pieux.length*2);
+    const m4 = new THREE.Matrix4();
+    let n = 0;
+    for(const [gx, gy] of pieux){
+      for(const d of [-0.55, 0.55]){
+        m4.makeTranslation(gx*T + T/2 + d*(gy===0||gy===H-1?1:0),
+                           0.85 + Math.random()*0.12,
+                           gy*T + T/2 + d*(gx===0||gx===W-1?1:0));
+        im.setMatrixAt(n++, m4);
+      }
+    }
+    im.count = n; im.instanceMatrix.needsUpdate = true;
+    monde.add(im);
+  }
+
+  /* --- les deux maisons, à colombages --- */
+  for(const m of MAISONS){
+    const g = new THREE.Group();
+    const lx = m.w*T*0.82, lz = m.h*T*0.82;
+    const hh = m.etage ? 6.2 : 4.4;                 // certaines ont un étage de plus
+    const couverture = m.chaume ? 'toit-chaume' : 'toit-tuiles';
+
+    const mur_ = new THREE.Mesh(new THREE.BoxGeometry(lx, hh, lz),
+      mat('mur-crepi', 2.4, 1.6, 0xf0e6d0));
+    mur_.position.y = hh/2;
+
+    // le toit, en tuiles, avec un vrai débord
+    const toit = new THREE.Mesh(new THREE.CylinderGeometry(lz*0.34, lz*0.34, lx*1.14, 3, 1, false),
+      mat(couverture, 3, 2, m.chaume ? 0xc8a86a : 0xffffff));
+    toit.rotation.set(0, 0, Math.PI/2);
+    toit.rotation.y = Math.PI/2;
+    toit.position.y = hh + lz*0.14;
+
+    // un second corps de bâtiment, plus bas : la silhouette cesse d'être une boîte
+    // un étage en surplomb : la façade cesse d'être un plan, sans croiser le toit
+    const encorbellement = new THREE.Mesh(
+      new THREE.BoxGeometry(lx*1.12, hh*0.34, lz*1.12),
+      mat('mur-crepi', 2.6, 0.7, 0xe8dcc4));
+    encorbellement.position.y = hh*0.72;
+    g.add(encorbellement);
+
+    /* --- LES COLOMBAGES ---
+       C'est ça qui fait la maison allemande : un cadre de poutres, des croix
+       de Saint-André entre les montants, et des V sous la toiture. */
+    const poutre = mat('bois', 1, 1, 0x8a7050);
+    function barre(lon, ep=0.16){ return new THREE.Mesh(new THREE.BoxGeometry(lon, ep, ep), poutre); }
+
+    for(const [face, larg, prof] of [['z', lx, lz/2+0.02], ['z-', lx, -lz/2-0.02],
+                                     ['x', lz, lx/2+0.02], ['x-', lz, -lx/2-0.02]]){
+      const horizontal = face.startsWith('z');
+      const pose = (b, u, y, rot=0)=>{
+        if(horizontal){ b.position.set(u, y, prof); b.rotation.z = rot; }
+        else          { b.position.set(prof, y, u); b.rotation.set(0, Math.PI/2, rot); }
+        g.add(b);
+      };
+      // sablières haute et basse
+      for(const y of [0.14, hh*0.52, hh-0.14]) pose(barre(larg), 0, y);
+      // poteaux verticaux
+      const N = 4;
+      for(let i=0;i<=N;i++){
+        const u = -larg/2 + i*(larg/N);
+        const p = barre(hh); pose(p, u, hh/2, Math.PI/2);
+      }
+      // croix de Saint-André dans deux travées sur trois
+      for(let i=0;i<N;i++){
+        if(i % 3 === 2) continue;
+        const u = -larg/2 + (i+0.5)*(larg/N);
+        const l = Math.hypot(larg/N, hh*0.52);
+        for(const sens of [1, -1]){
+          const d = barre(l*0.96, 0.13);
+          pose(d, u, hh*0.26, sens*Math.atan2(hh*0.52, larg/N));
+        }
+      }
+    }
+
+    // la porte et deux fenêtres, sur la face qui regarde le centre
+    const versCentre = (m.x < W/2) ? 1 : -1;
+    const porte_ = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.16),
+      mat('bois', 1, 1.6, 0x6b5030));
+    porte_.position.set(0, 0.98, versCentre*(lz/2 + 0.05));
+    const poignee = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8),
+      new THREE.MeshToonMaterial({ color:0xd8b45a, gradientMap:NUANCIER }));
+    poignee.position.set(0.36, 1.0, versCentre*(lz/2 + 0.14));
+    g.add(porte_, poignee);
+
+    const boisF = mat('bois', 0.6, 0.6, 0x6b5030);
+    const rangees = m.etage ? [2.2, 4.6] : [2.2];
+    for(const fy of rangees){
+      for(const fx of [-lx*0.28, lx*0.28]){
+        const cadre = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.14), boisF);
+        cadre.position.set(fx, fy, versCentre*(lz/2 + 0.04));
+        const vitre = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.1),
+          new THREE.MeshBasicMaterial({ color:0xffd07a }));
+        vitre.position.set(fx, fy, versCentre*(lz/2 + 0.11));
+        g.add(cadre, vitre);
+        // les volets, de part et d'autre
+        for(const c of [-1, 1]){
+          const v = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.9, 0.07), boisF);
+          v.position.set(fx + c*0.63, fy, versCentre*(lz/2 + 0.12));
+          v.rotation.y = c*0.35*versCentre;
+          g.add(v);
+        }
+      }
+    }
+
+    // la cheminée, en pierre irrégulière
+    const chem = new THREE.Mesh(new THREE.BoxGeometry(0.66, 1.7, 0.66),
+      mat('mur-pierre', 1.2, 2.4));
+    chem.position.set(lx*0.28, hh + 1.0, -lz*0.2);
+    const couronne = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.16, 0.82),
+      mat('mur-pierre', 1, 0.3, 0xa09480));
+    couronne.position.set(lx*0.28, hh + 1.9, -lz*0.2);
+    g.add(chem, couronne);
+
+    // du lierre qui grimpe sur un pignon
+    const feuille = new THREE.IcosahedronGeometry(0.17, 0);
+    const vert = new THREE.MeshToonMaterial({ color:0x50682f, gradientMap:NUANCIER });
+    for(let i=0;i<12;i++){
+      const f = new THREE.Mesh(feuille, vert);
+      const h2 = Math.random()*hh*0.95;
+      f.position.set(-lx/2 - 0.06,
+                     0.15 + h2,
+                     (Math.random()-0.5)*lz*0.9);
+      f.scale.setScalar(0.6 + Math.random()*0.8);
+      f.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+      g.add(f);
+    }
+
+    g.add(mur_, toit);
+    g.position.set((m.x + m.w/2)*T, 0, (m.y + m.h/2)*T);
+    fondre(g);                      // quarante morceaux → quatre blocs
+    monde.add(g);
+
+    for(let i=0;i<7;i++){
+      const f = new THREE.Sprite(new THREE.SpriteMaterial({
+        map:texHalo, color:0xf0f0f0, transparent:true, opacity:0.32, depthWrite:false }));
+      f.position.set(g.position.x + lx*0.28, hh + 2.2 + i*0.75, g.position.z - lz*0.2);
+      f.scale.setScalar(0.7 + i*0.28);
+      monde.add(f);
+      flammes.push({ sp:f, ph:i*0.9, x:f.position.x, z:f.position.z, fumee:true, base:hh+2.2+i*0.75 });
+    }
+  }
+
+  /* --- les fanions, tendus au-dessus de la place --- */
+  {
+    const a = MAISONS[0], b = MAISONS[1];
+    const ax = (a.x + a.w/2)*T, az = (a.y + a.h/2)*T;
+    const bx = (b.x + b.w/2)*T, bz = (b.y + b.h/2)*T;
+    const couleurs = [0xe05a4a, 0xf0c04a, 0x4aa8e0, 0x6ec45a, 0xd07ad0];
+    const guirlande = new THREE.Group();
+    const N = 22;
+    for(let i=1;i<N;i++){
+      const k = i/N;
+      const x = ax + (bx-ax)*k, z = az + (bz-az)*k;
+      const y = 4.6 - Math.sin(k*Math.PI)*1.5;      // la corde pend
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 3),
+        new THREE.MeshLambertMaterial({ color:couleurs[i%couleurs.length],
+          side:THREE.DoubleSide }));
+      f.position.set(x, y - 0.2, z);
+      f.rotation.x = Math.PI;
+      guirlande.add(f);
+    }
+    monde.add(guirlande);
+  }
+
+  /* --- les rues pavées, et la place au croisement --- */
+  {
+    const rues = new THREE.Group();
+    const matRue = mat('paves', 1, 1);
+    for(const r of RUES){
+      const larg = r.w*T, prof = r.h*T;
+      const g = new THREE.Mesh(new THREE.PlaneGeometry(larg, prof), matRue);
+      // la texture se répète selon la longueur, sinon elle s'étire
+      const m2 = g.material.clone();
+      m2.map = matiere('paves', larg/2.2, prof/2.2);
+      g.material = m2;
+      g.rotation.x = -Math.PI/2;
+      g.position.set(r.x*T + larg/2, 0.02, r.y*T + prof/2);
+      g.receiveShadow = true;
+      rues.add(g);
+    }
+    monde.add(rues);
+
+    // la place : un rond de pavés au croisement des deux rues
+    const place = new THREE.Mesh(new THREE.CircleGeometry(5.2, 28),
+      mat('paves', 5, 5));
+    place.rotation.x = -Math.PI/2;
+    place.position.set(13*T, 0.03, 9*T);
+    place.receiveShadow = true;
+    monde.add(place);
+  }
+
+  /* --- le puits, au milieu de la place : le cœur du village --- */
+  {
+    const p = new THREE.Group();
+    const pierreP = mat('mur-pierre', 2.5, 0.8);
+    const margelle = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.85, 16), pierreP);
+    margelle.position.y = 0.42;
+    const rebord = new THREE.Mesh(new THREE.TorusGeometry(1.07, 0.09, 6, 18), pierreP);
+    rebord.rotation.x = Math.PI/2; rebord.position.y = 0.85;
+    // le trou : un disque noir, on ne voit pas le fond
+    const trou = new THREE.Mesh(new THREE.CircleGeometry(0.92, 16),
+      new THREE.MeshBasicMaterial({ color:0x0a0c10 }));
+    trou.rotation.x = -Math.PI/2; trou.position.y = 0.83;
+    // les deux montants et le toit
+    const boisP = mat('bois', 0.4, 1.6, 0x9a7c56);
+    for(const c of [-1, 1]){
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.1, 0.16), boisP);
+      m.position.set(c*0.9, 1.5, 0);
+      p.add(m);
+    }
+    const faite = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.1, 8), boisP);
+    faite.rotation.z = Math.PI/2; faite.position.y = 2.5;
+    const toitP = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2.5, 3, 1, false),
+      mat('toit-chaume', 2, 1.2));
+    toitP.rotation.set(0, Math.PI/2, Math.PI/2);
+    toitP.position.y = 2.9;
+    // le seau, pendu à sa corde
+    const corde = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 5),
+      new THREE.MeshLambertMaterial({ color:0x6b5a42 }));
+    corde.position.y = 1.95;
+    const seau = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.3, 10), boisP);
+    seau.position.y = 1.28;
+    p.add(margelle, rebord, trou, faite, toitP, corde, seau);
+    p.position.set(13*T, 0, 9*T);
+    fondre(p);
+    monde.add(p);
+  }
+
+  /* --- des buissons et des fleurs, pour que l'herbe ne soit pas un tapis --- */
+  {
+    const buis = new THREE.IcosahedronGeometry(0.55, 1);
+    const vertF = new THREE.MeshToonMaterial({ color:0x47602c, gradientMap:NUANCIER });
+    for(let i=0;i<0;i++){
+      const x = Math.random()*W*T, z = Math.random()*H*T;
+      if(mur(x, z)) continue;
+      const b = new THREE.Mesh(buis, vertF);
+      b.position.set(x, 0.34, z);
+      b.scale.set(1 + Math.random()*0.5, 0.7 + Math.random()*0.4, 1 + Math.random()*0.5);
+      cerner(b, 0.028);
+      monde.add(b);
+    }
+    const petale = new THREE.CircleGeometry(0.11, 5);
+    for(const teinte of []){
+      const mat = new THREE.MeshToonMaterial({ color:teinte, gradientMap:NUANCIER,
+        side:THREE.DoubleSide });
+      const im = new THREE.InstancedMesh(petale, mat, 90);
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+      const p = new THREE.Vector3(), sc = new THREE.Vector3(1,1,1);
+      let n = 0;
+      for(let i=0;i<300 && n<90;i++){
+        const x = Math.random()*W*T, z = Math.random()*H*T;
+        if(mur(x, z)) continue;
+        e.set(-Math.PI/2 + (Math.random()-0.5)*0.5, 0, Math.random()*6);
+        q.setFromEuler(e);
+        p.set(x, 0.14, z);
+        m4.compose(p, q, sc);
+        im.setMatrixAt(n++, m4);
+      }
+      im.count = n; im.instanceMatrix.needsUpdate = true;
+      monde.add(im);
+    }
+  }
+
+  /* --- les arbres et le sous-bois, semés espèce par espèce --- */
+  {
+    const especes = ['arbre1','arbre2','arbre3','arbre4','arbre5'];
+    const parEspece = {};
+    especes.forEach(e=>parEspece[e] = []);
+
+    const planter = (wx, wz, ech, rot)=>{
+      const nom = especes[(Math.random()*especes.length)|0];
+      parEspece[nom].push({ x:wx, z:wz, ech, rot });
+    };
+    for(const a of [])
+      planter(a.x*T + T/2 + (Math.random()-0.5)*1.2, a.y*T + T/2 + (Math.random()-0.5)*1.2,
+              (0.85 + Math.random()*0.5) * a.h, a.r);
+
+    // la clairière : l'entrée du donjon est cernée par la forêt
+    const ex = entree.x*T + T/2, ez = entree.y*T + T/2;
+    for(let i=0;i<0;i++){
+      const ang = Math.random()*6.283, d = 5.5 + Math.random()*7.5;
+      const wx = ex + Math.cos(ang)*d, wz = ez + Math.sin(ang)*d;
+      if(wx < T || wz < T || wx > (W-1)*T || wz > (H-1)*T) continue;
+      if(mur(wx, wz)) continue;
+      const gx = wx/T, gy = wz/T;
+      if(RUES.some(r=> gx>=r.x-0.5 && gx<r.x+r.w+0.5 && gy>=r.y-0.5 && gy<r.y+r.h+0.5)) continue;
+      planter(wx, wz, 0.8 + Math.random()*0.6, Math.random()*6.283);
+    }
+    especes.forEach(e=>parEspece[e]=[]);   // ville moderne : pas d'arbres
+    for(const e of especes){
+      const g = semer(e, parEspece[e]);
+      if(g) monde.add(g);
+    }
+
+    // le sous-bois : jamais sur les pavés — une rue balayée reste une rue
+    const surPave = (wx, wz)=>{
+      const gx = wx/T, gy = wz/T;
+      if(RUES.some(r=> gx>=r.x-0.2 && gx<r.x+r.w+0.2 && gy>=r.y-0.2 && gy<r.y+r.h+0.2)) return true;
+      return Math.hypot(wx - 13*T, wz - 9*T) < 6;      // la place
+    };
+    const petits = ['buisson','herbe','fleurJ','fleurR','fleurV','champi'];
+    for(const nom of petits){
+      const places = [];
+      for(let i=0;i<80;i++){
+        const wx = Math.random()*W*T, wz = Math.random()*H*T;
+        if(mur(wx, wz) || surPave(wx, wz)) continue;
+        places.push({ x:wx, z:wz, ech:0.9 + Math.random()*0.9, rot:Math.random()*6.283 });
+      }
+      const g = semer(nom, places);
+      if(g) monde.add(g);
+    }
+  }
+
+  /* --- les villageois : ils vont quelque part, s'arrêtent, réfléchissent --- */
+  villageois = [];
+  const devants = [];
+  for(const m of MAISONS){
+    const fx = (m.x + (m.sens>0 ? m.w + 0.35 : -0.35)) * T;
+    const fz = (m.y + m.h/2) * T;
+    if(fx < T || fx > (W-1)*T || fz < T || fz > (H-1)*T || mur(fx, fz)) continue;
+    devants.push({ fx, fz, face: m.sens>0 ? Math.PI/2 : -Math.PI/2 });   // face à la rue
+  }
+  for(let i=0;i<devants.length && i<8;i++){
+    const d = devants[i];
+    const g = poser(i%3===2 ? 'archer' : 'villageois', d.fx, 0, d.fz, 1.1, d.face);
+    if(!g) continue;
+    monde.add(g);
+    villageois.push({ obj:g, x:d.fx, z:d.fz, face:d.face, ph:Math.random()*6, tempo:2+Math.random()*4, glance:0, glanceCur:0 });
+  }
+
+  /* --- l'escalier qui descend au donjon --- */
+  porte = new THREE.Group();
+  {
+    const pierre = mat('mur-pierre', 1.5, 0.6);
+    for(let i=0;i<7;i++){
+      const m = new THREE.Mesh(new THREE.BoxGeometry(T*0.9, 0.18, T/7), pierre);
+      m.position.set(0, -0.09 - i*0.2, -T*0.42 + i*(T*0.92/7));
+      porte.add(m);
+    }
+    for(const c of [-1, 1]){
+      const joue = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.6, T*1.05), pierre);
+      joue.position.set(c*T*0.52, -0.8, 0);
+      porte.add(joue);
+    }
+    // l'arche, pour qu'on la voie de loin
+    for(const c of [-1, 1]){
+      const mont = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.6, 0.3), pierre);
+      mont.position.set(c*T*0.52, 1.3, -T*0.5);
+      porte.add(mont);
+    }
+    const linteau = new THREE.Mesh(new THREE.BoxGeometry(T*1.2, 0.34, 0.34), pierre);
+    linteau.position.set(0, 2.6, -T*0.5);
+    porte.add(linteau);
+  }
+  const rideau = new THREE.Mesh(
+    new THREE.PlaneGeometry(T*0.85, 1.4),
+    new THREE.MeshBasicMaterial({ color:0x49d18a, transparent:true, opacity:0.3,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  rideau.rotation.x = -Math.PI/2;
+  rideau.position.set(0, -1.3, T*0.3);
+  const lumPorte = new THREE.PointLight(0x49d18a, 12, 9, 1.8);
+  lumPorte.position.y = -0.7;
+  porte.add(rideau, lumPorte);
+  porte.position.set(entree.x*T + T/2, 0, entree.y*T + T/2);
+  porte.userData = { rideau, cadre:null, lum:lumPorte };
+  monde.add(porte);
+
+  meshCle = new THREE.Group();          // pas de clé dehors, mais le code y touche
+  meshCle.visible = false;
+  monde.add(meshCle);
+
+  braises = new THREE.Points(new THREE.BufferGeometry().setAttribute('position',
+    new THREE.BufferAttribute(new Float32Array(3), 3)),
+    new THREE.PointsMaterial({ size:0.01, transparent:true, opacity:0 }));
+  braises.userData = [];
+  monde.add(braises);
+
+  // quelques graines de pollen dans la lumière
+  const NB = 260, pos = new Float32Array(NB*3), don = [];
+  for(let i=0;i<NB;i++)
+    don.push({ x:Math.random()*W*T, y:Math.random()*5, z:Math.random()*H*T,
+               v:0.05+Math.random()*0.12, ph:Math.random()*6 });
+  poussiere = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos,3)),
+    new THREE.PointsMaterial({ map:texHalo, color:0xfff0c0, size:0.06,
+      sizeAttenuation:true, transparent:true, opacity:0.75, depthWrite:false }));
+  poussiere.userData = don;
+  monde.add(poussiere);
+
+  /* Tout le hameau passe au style dessiné. Pas de contour ici : il y a des
+     centaines d'objets, et doubler chacun ferait fondre le débit d'images.
+     Les modèles ont déjà des formes lisibles ; le trait reste pour le
+     personnage et les maisons, qu'on regarde de près. */
+  /* Dehors, on garde les matières telles quelles : ce sont les textures qui
+     donnent la matière, pas les paliers de lumière. Seuls les habitants et les
+     modèles importés passent au trait, pour rester lisibles. */
+  for(const v of villageois) cerner(v.obj, 0.012);
+}
+
+/* ═══════════════ 5. LE JOUEUR ═══════════════ */
+const joueur = { x:0, z:0, vie:3, vieMax:3, cle:false, lacet:0, tangage:0,
+                 roulis:0, pas:0, inv:0, atkCd:0, secousse:0, souffle:0,
+                 dash:0, dashCd:0, dx:0, dz:0, epee:false,
+                 combo:0, comboT:0, saut:0, vy:0 };
+const RAYON = 0.42;                     // il ne passe pas dans les murs
+
+function mur(wx, wz){
+  const tx = Math.floor(wx/T), ty = Math.floor(wz/T);
+  if(tx<0||ty<0||tx>=W||ty>=H) return true;
+  return grid[ty][tx]===WALL;
+}
+function glisser(x, z, dx, dz){
+  // on essaie chaque axe séparément : on longe le mur au lieu de coller
+  let nx = x + dx, nz = z + dz;
+  if(mur(nx+Math.sign(dx)*RAYON, z)) nx = x;
+  if(mur(x, nz+Math.sign(dz)*RAYON)) nz = z;
+  if(!mur(nx+Math.sign(dx)*RAYON, nz+Math.sign(dz)*RAYON) || nx===x || nz===z) return {x:nx,z:nz};
+  return {x:nx, z:z};
+}
+
+const touches = {};
+addEventListener('keydown', e=>{ touches[e.code]=true; });
+addEventListener('keyup',   e=>{ touches[e.code]=false; });
+
+let verrou = false;
+let tireDepart = {x:0, y:0};
+renderer.domElement.addEventListener('mousedown', e=>{ tireDepart = {x:e.clientX, y:e.clientY}; });
+renderer.domElement.addEventListener('click', e=>{
+  window.Sons?.demarrer();
+  if(verrou){ frapper(); return; }
+  // si la souris a bougé, c'était un pivot, pas un coup d'épée
+  const bouge = Math.hypot(e.clientX - tireDepart.x, e.clientY - tireDepart.y) > 6;
+  if(bouge) return;
+  try{ renderer.domElement.requestPointerLock(); }catch(err){}
+  frapper();
+});
+document.addEventListener('pointerlockchange', ()=>{
+  verrou = document.pointerLockElement === renderer.domElement;
+  document.getElementById('viseur').classList.toggle('on', verrou);
+});
+/* Deux façons de regarder, pour que ça marche partout :
+   1. pointeur capturé — la souris tourne la tête librement (le confort normal) ;
+   2. sinon, on maintient le bouton et on tire, comme sur une carte.
+   Le second sert de secours quand Chrome refuse la capture. */
+let tire = false, dernierX = 0, dernierY = 0;
+
+function tourner(dx, dy){
+  joueur.lacet   -= dx * 0.0022;
+  joueur.tangage -= dy * 0.0022;
+  joueur.tangage = Math.max(-1.35, Math.min(1.35, joueur.tangage));
+}
+
+document.addEventListener('mousemove', e=>{
+  if(verrou){ tourner(e.movementX, e.movementY); return; }
+  if(tire){
+    tourner(e.clientX - dernierX, e.clientY - dernierY);
+    dernierX = e.clientX; dernierY = e.clientY;
+  }
+});
+renderer.domElement.addEventListener('mousedown', e=>{
+  if(verrou) return;
+  tire = true; dernierX = e.clientX; dernierY = e.clientY;
+  renderer.domElement.style.cursor = 'grabbing';
+});
+addEventListener('mouseup', ()=>{
+  tire = false;
+  renderer.domElement.style.cursor = '';
+});
+// on ne veut pas du menu contextuel en plein donjon
+renderer.domElement.addEventListener('contextmenu', e=>e.preventDefault());
+
+/* ═══════════════ 5 bis. LA MANETTE ═══════════════
+   Le navigateur lit les manettes sans rien installer. C'est la même interface
+   (Gamepad) que celle des manettes du casque : ce qu'on écrit ici resservira.
+
+   Stick gauche : marcher      ·  Stick droit : regarder
+   A : frapper                 ·  B : foncer
+   X : parler à l'esprit (maintenu)  ·  Y : la fenêtre de statut
+   Gâchette droite : frapper   ·  Gâchette gauche : courir              */
+
+let manetteVue = false;
+const boutonsAvant = {};
+
+function zoneMorte(v, seuil = 0.18){
+  return Math.abs(v) < seuil ? 0 : (v - Math.sign(v)*seuil) / (1 - seuil);
+}
+
+function lireManette(dt){
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  let p = null;
+  for(const g of pads) if(g && g.connected){ p = g; break; }
+  if(!p){ manetteVue = false; return null; }
+  if(!manetteVue){
+    manetteVue = true;
+    dire('Manette « ' + p.id.slice(0, 28) + ' » reconnue.', 3);
+  }
+
+  const ax = zoneMorte(p.axes[0] ?? 0), ay = zoneMorte(p.axes[1] ?? 0);
+  const rx = zoneMorte(p.axes[2] ?? 0, 0.14), ry = zoneMorte(p.axes[3] ?? 0, 0.14);
+
+  // regarder : vitesse proportionnelle, au carré pour la précision au centre
+  if(rx || ry){
+    joueur.lacet   -= rx*Math.abs(rx) * 3.4 * dt;
+    joueur.tangage -= ry*Math.abs(ry) * 2.6 * dt;
+    joueur.tangage = Math.max(-1.35, Math.min(1.35, joueur.tangage));
+  }
+
+  const appui = (i)=> !!(p.buttons[i] && p.buttons[i].pressed);
+  const neuf  = (i)=>{ const a = appui(i), b = boutonsAvant[i]; boutonsAvant[i] = a; return a && !b; };
+
+  if(neuf(0) || neuf(7)) frapper();                 // A, gâchette droite
+  if(neuf(1)){                                      // B : foncer
+    if(!joueur.dx && !joueur.dz){
+      joueur.dx = -Math.sin(joueur.lacet); joueur.dz = -Math.cos(joueur.lacet);
+    }
+    if(joueur.dashCd <= 0 && joueur.dash <= 0){
+      joueur.dash = 0.17; joueur.dashCd = 0.85;
+      joueur.secousse = Math.max(joueur.secousse, 0.25);
+      bip(420,0.09,'sine',0.05);
+    }
+  }
+  if(neuf(3)) basculerStatut();                     // Y
+  // X maintenu : l'esprit écoute tant qu'on appuie
+  const x = appui(2);
+  if(x && !boutonsAvant.__x) ouvrirOreilles();
+  if(!x && boutonsAvant.__x) fermerOreilles();
+  boutonsAvant.__x = x;
+
+  return { ax, ay, court: appui(6) || appui(4) };    // gâchette/bouton gauche : courir
+}
+
+/* ═══════════════ 6. L'ATH ═══════════════ */
+const elCoeurs = document.getElementById('coeurs');
+const elEtage  = document.querySelector('#etage b');
+const elCle    = document.getElementById('cle');
+const elMsg    = document.getElementById('msg');
+const elAth    = document.getElementById('ath');
+const elCoup   = document.getElementById('coup');
+const elCombo  = document.getElementById('combo');
+
+/* montre où en est l'enchaînement : quatre traits, le dernier en or */
+function majJaugeCombo(){
+  const traits = elCombo.children;
+  for(let i=0;i<traits.length;i++){
+    traits[i].className = i <= joueur.combo
+      ? (joueur.combo === 3 && i === 3 ? 'plein final' : 'plein') : '';
+  }
+  elCombo.classList.add('on');
+}
+let msgT = 0;
+
+const COEUR_SVG = `<svg viewBox="0 0 26 24"><path d="M13 23S1 15.4 1 8.2C1 4.2 4.1 1 8 1c2.1 0 4 1 5 2.6C14 2 15.9 1 18 1c3.9 0 7 3.2 7 7.2C25 15.4 13 23 13 23z"
+  fill="#c8392f" stroke="#f0715f" stroke-width="1.2"/></svg>`;
+
+function dessinerCoeurs(perte=-1){
+  elCoeurs.innerHTML='';
+  for(let i=0;i<joueur.vieMax;i++){
+    const d=document.createElement('div');
+    d.className='coeur'+(i<joueur.vie?'':' vide')+(i===perte?' perte':'');
+    d.innerHTML=COEUR_SVG;
+    elCoeurs.appendChild(d);
+  }
+}
+function dire(t, duree=3.4){ elMsg.textContent=t; elMsg.classList.add('on'); msgT=duree; }
+
+/* ═══════════════ 7. COMBAT ═══════════════ */
+const avant = new THREE.Vector3();
+function frapper(){
+  if(joueur.atkCd>0 || etat!=='jeu') return;
+  window.Sons?.coup();
+  // enchaînement : si on frappe dans la foulée, le coup suivant part plus vite
+  joueur.combo = (joueur.comboT > 0) ? Math.min(15, joueur.combo + 1) : 0;   // enchaînement jusqu'à 16 coups
+  joueur.comboT = 0.8;
+  const troisieme = joueur.combo % 4 === 2;  // l'estoc revient tous les 4 coups
+  const tourbillon = joueur.combo % 4 === 3; // le tourbillon tous les 4 coups
+  joueur.atkCd = [0.40, 0.30, 0.44, 0.62][joueur.combo % 4];
+  majJaugeCombo();
+  joueur.secousse = Math.max(joueur.secousse, 0.16);
+  camera.getWorldDirection(avant);
+  let touche = false;
+  if(boss && boss.mort<=0){
+    const bx = boss.x - joueur.x, bz = boss.z - joueur.z;
+    const bd = Math.hypot(bx, bz);
+    if(bd < 3.2 && (bx*avant.x + bz*avant.z)/(bd||1) > 0.3){
+      frapperBoss(joueur.epee ? 3 : 1);
+      window.Sons?.impact();
+      joueur.secousse = 0.3;
+      return;                       // un coup ne porte que sur une cible
+    }
+  }
+  for(const e of ennemis){
+    if(e.vie<=0) continue;
+    const dx = e.x*T - joueur.x, dz = e.y*T - joueur.z;
+    const d = Math.hypot(dx,dz);
+    if(d > (tourbillon ? 3.1 : 2.4)) continue;
+    if(!tourbillon){
+      const cos = (dx*avant.x + dz*avant.z) / (d||1);
+      if(cos < 0.15) continue;            // viser, mais pas au millimètre
+    }
+    e.vie -= (joueur.epee ? 3 : 1) + (troisieme ? 2 : 0) + (tourbillon ? 4 : 0);
+    if(e.vie <= 0){ e.vie = 0; e.mort = 0.55; }
+    touche = true;
+    joueur.secousse = tourbillon ? 0.75 : (troisieme ? 0.5 : 0.3);
+    if(troisieme || tourbillon){                    // ces deux-là repoussent
+      const n = d || 1, force = tourbillon ? 2.2 : 1.4;
+      e.x += dx/n * force / T; e.y += dz/n * force / T;
+    }
+  }
+  // le guerrier qu'on défie : un vrai adversaire qui encaisse
+  if(guerrier && guerrier.vie>0 && guerrier.etat==='combat'){
+    const gx = guerrier.x - joueur.x, gz = guerrier.z - joueur.z, gd = Math.hypot(gx,gz);
+    if(gd < 3.0 && (gx*avant.x + gz*avant.z)/(gd||1) > 0.15){
+      guerrier.vie -= (joueur.epee?3:2) + (troisieme?2:0) + (tourbillon?3:0);
+      touche = true; window.Sons?.impact();
+      if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !', 3); }
+      else guerrier.jouer('hit');
+    }
+  }
+  // le bois cède aussi : un tonneau cassé lâche parfois une fiole
+  for(const d of decors){
+    if(!d.cassable || d.casse>0) continue;
+    const dx = d.x - joueur.x, dz = d.z - joueur.z;
+    const dd = Math.hypot(dx, dz);
+    if(dd > 2.2) continue;
+    if((dx*avant.x + dz*avant.z)/(dd||1) < 0.15) continue;
+    d.casse = 0.45; touche = true;
+    joueur.secousse = Math.max(joueur.secousse, 0.22);
+    bip(150, 0.14, 'sawtooth', 0.07);
+    if(Math.random() < 0.42)
+      poserObjet(Math.random() < 0.6 ? 'fiole' : 'eclat', d.x, d.z);
+  }
+
+  // le quatrième coup lâche une lame d'air qui court au sol
+  if(tourbillon){
+    lancerTranche();
+    bip(520,0.1,'sine',0.07); bip(260,0.34,'sawtooth',0.09,0.06);
+  }
+  const note = [300, 360, 240, 440][joueur.combo];
+  bip(touche?note:170, touche?0.09:0.05, 'square', touche?0.07:0.03);
+  if(touche){ bip(troisieme?90:140, troisieme?0.3:0.22, 'sawtooth', 0.07, 0.05); window.Sons?.impact(); }
+}
+
+function blesser(vx, vz){
+  if(joueur.inv>0) return;
+  joueur.vie--; joueur.inv = 1.9;
+  window.Sons?.degat();
+  joueur.secousse = 0.55;
+  dessinerCoeurs(joueur.vie);
+  bip(110,0.26,'sawtooth',0.11);
+  montrerCoup(vx, vz);
+  if(joueur.vie<=0) perdre();
+}
+
+/* Un croissant rouge au bord de l'écran, du côté d'où l'on t'a frappé.
+   Sans ça, en vue première personne, on meurt sans savoir pourquoi. */
+function montrerCoup(vx, vz){
+  elCoup.classList.remove('on');
+  const a = (vx !== undefined) ? Math.atan2(-vx, -vz) - joueur.lacet : 0;
+  elCoup.style.transform = 'rotate(' + (a*180/Math.PI) + 'deg)';
+  void elCoup.offsetWidth;
+  elCoup.classList.add('on');
+}
+
+/* ═══════════════ 8. SONS — repris de l'esprit du jeu 2D ═══════════════ */
+let actx=null;
+function assurerAudio(){ if(!actx) try{ actx=new (AudioContext||webkitAudioContext)(); }catch(e){} }
+function bip(f,d,forme,vol,quand=0){
+  assurerAudio(); if(!actx) return;
+  const t=actx.currentTime+quand;
+  const o=actx.createOscillator(), g=actx.createGain(), lp=actx.createBiquadFilter();
+  lp.type='lowpass'; lp.frequency.value=720;     // coupe les aigus criards du chiptune (« ten ten »)
+  o.type=forme; o.frequency.value=f;
+  g.gain.setValueAtTime(vol*0.30,t); g.gain.exponentialRampToValueAtTime(0.0001,t+d);  // discret : Sons porte le son
+  o.connect(lp); lp.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+d+0.02);
+}
+
+/* ═══════════════ 9. ÉTAGES, MORT, DÉPART ═══════════════ */
+let etat = 'titre';   // titre | jeu | mort
+
+function nouvelEtage(){
+  if(estDehors()){
+    const d = genererDehors();
+    batirDehors();
+    joueur.x = d.x*T + T/2;
+    joueur.z = d.y*T + T/2;
+    joueur.cle = true;                       // dehors, l'escalier est toujours ouvert
+    joueur.lacet = 0;                        // on regarde vers l'escalier (au nord)
+    joueur.tangage = 0;
+    elCle.classList.remove('ok');
+    elEtage.textContent = '—';
+    dessinerCoeurs();
+    scene.fog = new THREE.FogExp2(0x0e1730, 0.015);   // brume de nuit bleutée
+    scene.background = new THREE.Color(0x0a1230);     // ciel de nuit
+    jour.intensity = 2.7;                             // pleine lune : ça éclaire bien
+    jour.color.setHex(0xaec6f0);                     // clair de lune
+    renderer.toneMappingExposure = 1.05;
+    return;
+  }
+  scene.fog = new THREE.FogExp2(0x16233c, 0.022);
+  scene.background = new THREE.Color(0x080d18);
+  jour.intensity = 2.2;
+  renderer.toneMappingExposure = 1.3;
+  generer();
+  batir();
+  const s0 = rooms[0];
+  joueur.x = cX(s0)*T + T/2;
+  joueur.z = cY(s0)*T + T/2;
+  // on regarde vers le large : l'axe le plus long de la salle de depart
+  joueur.lacet = s0.w >= s0.h ? -Math.PI/2 : 0;
+  joueur.cle = false;
+  joueur.lacet = 0; joueur.tangage = 0;
+  elCle.classList.remove('ok');
+  elEtage.textContent = niveau;
+  dessinerCoeurs();
+}
+function descendre(){
+  niveau++;
+  window.Sons?.porte();
+  sauvegarderPartie();
+  joueur.vie = Math.min(joueur.vieMax, joueur.vie+1);
+  bip(523,0.11,'square',0.07); bip(659,0.11,'square',0.07,0.11); bip(784,0.2,'square',0.07,0.22);
+  nouvelEtage();
+  dire('Étage ' + niveau, 2.4);
+  voixDuMonde('Étage ' + niveau + '. ' +
+    (niveau === 1 ? 'Tu entres dans les caves.' : 'Le donjon s\'enfonce.'));
+}
+function perdre(){
+  etat = 'mort';
+  window.Sons?.mort();
+  effacerPartie();
+  niveau = 0;                                // on ressort au hameau à la reprise
+  statutOuvert = false; statut.mesh.visible = false; annonce.mesh.visible = false;
+  document.exitPointerLock?.();
+  document.getElementById('mort-txt').textContent =
+    'Le donjon te garde. Étage ' + niveau + '.';
+  document.getElementById('mort').classList.remove('parti');
+  elAth.classList.remove('on');
+  document.getElementById('radar').classList.remove('on');
+  elPouvoirs.classList.remove('on');
+  elEsprit.classList.remove('on');
+  elEcoute.classList.remove('on');
+  bip(200,0.3,'sawtooth',0.1); bip(120,0.5,'sawtooth',0.1,0.2);
+}
+let joueurNom = 'Patrick';
+function cleSauvegarde(){ return 'kotoage:' + (joueurNom || 'Patrick'); }
+function sauvegarderPartie(){
+  try{ localStorage.setItem(cleSauvegarde(), JSON.stringify({
+    v:1, niveau, vie:joueur.vie, vieMax:joueur.vieMax, epee:!!joueur.epee,
+    eclats, pouvoirs })); }catch(e){}
+}
+function chargerPartie(){
+  try{ const j = JSON.parse(localStorage.getItem(cleSauvegarde())||'null');
+       if(j && j.v===1 && j.niveau>0) return j; }catch(e){}
+  return null;
+}
+function effacerPartie(){ try{ localStorage.removeItem(cleSauvegarde()); }catch(e){} }
+
+function commencer(){
+  const sv = chargerPartie();
+  if(sv){                                   // on reprend là où on s'était arrêté
+    niveau = sv.niveau; joueur.vie = sv.vie; joueur.vieMax = sv.vieMax;
+    joueur.epee = sv.epee; joueur.cle = false; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[];
+  } else {
+    niveau = 0; joueur.vie = joueur.vieMax = 3;
+  }
+  etat = 'jeu';
+  installerAvatar();                        // (re)construit l'avatar du joueur choisi
+  document.getElementById('titre').classList.add('parti');
+  document.getElementById('mort').classList.add('parti');
+  elAth.classList.add('on');
+  document.getElementById('radar').classList.add('on');
+  elPouvoirs.classList.add('on');
+  dessinerPouvoirs();
+  nouvelEtage();
+  assurerAudio();
+  try{ renderer.domElement.requestPointerLock(); }catch(e){}
+  dire('Clique pour regarder autour · flèches ← → pour tourner · Maj pour courir.', 6);
+}
+/* On ne laisse pas descendre avant que les modèles soient là : sinon le
+   hameau se bâtit sans ses arbres. */
+const btnJouer = document.getElementById('jouer');
+const texteJouer = btnJouer.textContent;
+btnJouer.disabled = true;
+btnJouer.textContent = 'Chargement…';
+chargerModeles().then(()=>{
+  if(MODELES.perso && ANIM_MAGE.length) MODELES.perso.userData.anims = ANIM_MAGE;
+  installerAvatar();
+  const n = Object.keys(MODELES).length;
+  btnJouer.disabled = false;
+  btnJouer.textContent = texteJouer;
+  console.log('modèles chargés :', n, '/', Object.keys(A_CHARGER).length);
+});
+
+function majChoixJoueur(){
+  document.querySelectorAll('#choix-joueur button').forEach(b=>{
+    const on = b.dataset.j === joueurNom;
+    b.style.outline = on ? '2px solid #8fb8e8' : 'none';
+    b.style.opacity = on ? '1' : '0.5';
+  });
+  const sv = chargerPartie();
+  btnJouer.textContent = sv ? ('Reprendre — étage ' + sv.niveau) : 'Descendre';
+}
+try{ joueurNom = localStorage.getItem('kotoage:dernier') || 'Patrick'; }catch(e){}
+document.querySelectorAll('#choix-joueur button').forEach(b=>{
+  b.onclick = ()=>{ joueurNom = b.dataset.j;
+    try{ localStorage.setItem('kotoage:dernier', joueurNom); }catch(e){}
+    majChoixJoueur(); };
+});
+majChoixJoueur();
+
+btnJouer.onclick   = commencer;
+document.getElementById('rejouer').onclick = commencer;
+
+
+/* ═══════════════ 9 bis. L'ESPRIT DU DONJON ═══════════════
+   Porté du jeu 2D : mêmes phrases reconnues, mêmes effets, mêmes réponses.
+   Nouveau : il entend la voix, et il répond à voix haute.               */
+
+const elEsprit  = document.getElementById('esprit');
+const elEntendu = document.getElementById('entendu');
+const elRepond  = document.getElementById('repond');
+const elEcoute  = document.getElementById('ecoute');
+const elSaisie  = document.getElementById('saisie');
+const elSaisieT = document.getElementById('saisie-txt');
+const elPouvoirs= document.getElementById('pouvoirs');
+
+let espritT = 0;              // combien de temps le panneau reste affiché
+
+function normaliser(t){
+  return (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+/* la case juste devant le joueur, d'après là où il regarde */
+function dirCardinale(){
+  // 0 = nord (-z), 1 = est (+x), 2 = sud (+z), 3 = ouest (-x)
+  return ((Math.round(-joueur.lacet/(Math.PI/2)) % 4) + 4) % 4;
+}
+const OFFSETS = [[0,-1],[1,0],[0,1],[-1,0]];
+const NOMS_DIR = ["le nord","l'est","le sud","l'ouest"];
+function caseDevant(){
+  const o = OFFSETS[dirCardinale()];
+  return { x: Math.floor(joueur.x/T) + o[0], y: Math.floor(joueur.z/T) + o[1] };
+}
+function dansGrille(c){ return c.x>=1 && c.y>=1 && c.x<W-1 && c.y<H-1; }
+function directionDemandee(t){
+  if(/\bgauche\b|\bouest\b/.test(t)) return 3;
+  if(/\bdroite\b|\best\b/.test(t))   return 1;
+  if(/\bhaut\b|\bnord\b/.test(t))    return 0;
+  if(/\bbas\b|\bsud\b/.test(t))      return 2;
+  return -1;
+}
+
+/* ---- la voix de l'esprit ---- */
+let voixFr = null;
+function choisirVoix(){
+  const v = speechSynthesis.getVoices();
+  voixFr = v.find(x=>/^fr/i.test(x.lang) && /grave|homme|male|thomas/i.test(x.name))
+        || v.find(x=>/^fr/i.test(x.lang)) || null;
+}
+if(window.speechSynthesis){
+  choisirVoix();
+  speechSynthesis.onvoiceschanged = choisirVoix;
+}
+function esprit(m, muet=false){
+  elRepond.textContent = m;
+  elEsprit.classList.add('on');
+  espritT = 5.5;
+  if(!muet && window.speechSynthesis){
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(m);
+    if(voixFr) u.voice = voixFr;
+    u.lang = 'fr-FR'; u.pitch = 0.55; u.rate = 0.97; u.volume = 0.85;
+    speechSynthesis.speak(u);
+  }
+}
+
+/* ---- les objets que l'esprit fait apparaître ---- */
+function allumerFeu(tx, ty){
+  const wx = tx*T+T/2, wz = ty*T+T/2;
+  const socle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.26, 0.34, 0.3, 8),
+    new THREE.MeshStandardMaterial({ color:0x171310, roughness:0.9, metalness:0.4 }));
+  socle.position.set(wx, 0.15, wz);
+  monde.add(socle);
+  const fl = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:texFlamme, color:0xffb04a, blending:THREE.AdditiveBlending,
+    depthWrite:false, transparent:true, opacity:0.95 }));
+  fl.position.set(wx, 0.62, wz);
+  fl.scale.set(0.8, 1.1, 1);
+  monde.add(fl);
+  const ph = Math.random()*6;
+  flammes.push({ sp:fl, ph, x:wx, z:wz });
+  torches.push({ x:tx, y:ty, wx, wz, ph });    // elle entre dans le tour des 6 lumières
+}
+
+function poserCoffre(tx, ty){
+  const g = new THREE.Group();
+  const caisse = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.45,0.5),
+    new THREE.MeshStandardMaterial({ color:0x4a331f, roughness:0.85 }));
+  caisse.position.y = 0.22;
+  const couvercle = new THREE.Mesh(new THREE.BoxGeometry(0.74,0.16,0.54),
+    new THREE.MeshStandardMaterial({ color:0x5c4026, roughness:0.8 }));
+  couvercle.position.y = 0.52;
+  const ferrure = new THREE.Mesh(new THREE.BoxGeometry(0.78,0.07,0.07),
+    new THREE.MeshStandardMaterial({ color:0xc9a227, roughness:0.35, metalness:0.9,
+      emissive:0x5a4410, emissiveIntensity:0.5 }));
+  ferrure.position.y = 0.45;
+  g.add(caisse, couvercle, ferrure);
+  g.position.set(tx*T+T/2, 0, ty*T+T/2);
+  monde.add(g);
+  coffre = { obj:g, couvercle, x:tx, y:ty, ouvert:false };
+}
+
+function poserPiege(tx, ty){
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color:0xb8b4aa, roughness:0.35, metalness:0.8,
+    emissive:0x221a08, emissiveIntensity:0.4 });
+  for(let i=0;i<5;i++){
+    const p = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.5, 5), mat);
+    const a = i*1.256;
+    p.position.set(Math.cos(a)*0.35, 0.25, Math.sin(a)*0.35);
+    g.add(p);
+  }
+  g.position.set(tx*T+T/2, 0, ty*T+T/2);
+  g.scale.y = 0.05;                    // il jaillit
+  monde.add(g);
+  pieges.push({ obj:g, x:tx, y:ty, sortie:0 });
+}
+
+function poserJumeau(){
+  // à deux cases de toi, sur du sol libre
+  for(const [ox,oz] of [[2,0],[-2,0],[0,2],[0,-2],[2,2],[-2,-2]]){
+    const x = joueur.x + ox*T*0.5, z = joueur.z + oz*T*0.5;
+    if(mur(x,z)) continue;
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color:0x8fd0ff, emissive:0x2a6f9e,
+      emissiveIntensity:0.9, transparent:true, opacity:0.42, roughness:0.2 });
+    const corps = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.7, 4, 10), mat);
+    corps.position.y = 0.85;
+    const tete = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), mat);
+    tete.position.y = 1.42;
+    const lueur = new THREE.PointLight(0x6cc4ff, 4.5, 5, 1.8);
+    lueur.position.y = 1.1;
+    g.add(corps, tete, lueur);
+    g.position.set(x, 0, z);
+    monde.add(g);
+    jumeaux.push({ obj:g, dx:x-joueur.x, dz:z-joueur.z });
+    return true;
+  }
+  return false;
+}
+
+/* ---- les pouvoirs débloqués ---- */
+const DECLENCHEUR = {
+  "BRISE": "brise les murs",
+  "DUPLICATION": "je me duplique",
+  "PIÈGE": "crée un piège",
+};
+let pouvoirs = [], pouvoirsPerso = {};
+function sauverPouvoirs(){
+  try{
+    localStorage.setItem('donjon_competences', JSON.stringify(pouvoirs));
+    localStorage.setItem('donjon_competences_perso', JSON.stringify(pouvoirsPerso));
+  }catch(e){}
+}
+function chargerPouvoirs(){
+  try{
+    const a = JSON.parse(localStorage.getItem('donjon_competences')||'[]');
+    for(const c of a) if(c && !pouvoirs.includes(c)) pouvoirs.push(c);
+    const o = JSON.parse(localStorage.getItem('donjon_competences_perso')||'{}');
+    for(const k of Object.keys(o)){
+      pouvoirsPerso[k] = o[k];
+      if(!pouvoirs.includes(k)) pouvoirs.push(k);
+    }
+  }catch(e){}
+  // rien n'est offert au départ : tout se débloque en produisant un résultat
+}
+let debloquer = function(nom){
+  if(pouvoirs.includes(nom)) return false;
+  pouvoirs.push(nom); sauverPouvoirs(); dessinerPouvoirs(nom);
+  return true;
+};
+function dessinerPouvoirs(neuf){
+  elPouvoirs.innerHTML = '';
+  for(const p of pouvoirs){
+    const b = document.createElement('button');
+    b.className = 'pouvoir' + (p===neuf ? ' neuf' : '');
+    b.textContent = p;
+    b.onclick = ()=>{ traiterChat(DECLENCHEUR[p] || pouvoirsPerso[p] || p.toLowerCase()); };
+    elPouvoirs.appendChild(b);
+  }
+}
+chargerPouvoirs();
+
+/* ═══ le cœur : ce que l'esprit comprend ═══
+   Fidèle au jeu 2D — mêmes mots-clés, mêmes réponses, dans le même ordre. */
+function traiterChat(texte){
+  const t = normaliser(texte);
+  if(!t) return;
+  elEntendu.textContent = '« ' + texte.trim() + ' »';
+  elEntendu.classList.remove('provisoire');
+  elEsprit.classList.add('on');
+  if(etat !== 'jeu'){ esprit("Le donjon dort encore. Descends d'abord."); return; }
+
+  const devant = caseDevant();
+  const surSol = dansGrille(devant) && grid[devant.y][devant.x] === FLOOR;
+
+  // un skill que TU as créé (menu pause) : s'il est élémentaire, il agit ; sinon on le note
+  const monSkill = (typeof lireSkills==='function' ? lireSkills() : []).find(sk => sk.inc && t.includes(sk.inc));
+  if(monSkill){
+    if(['feu','eau','vent'].includes(monSkill.elem)){ lancerProjectile(monSkill.elem); esprit('« '+monSkill.nom+' » ! '+(monSkill.effet||'')); }
+    else esprit('« '+monSkill.nom+' » — pas encore rendu réel, mais je l\'ai noté.');
+    return;
+  }
+
+  if(t.includes('feu') || t.includes('flamme')){
+    lancerProjectile('feu'); esprit("System Call! Une boule de feu jaillit de ta main.");
+
+  } else if(t.includes('eau') || t.includes('glace') || t.includes('vague')){
+    lancerProjectile('eau'); esprit("System Call! Un trait d'eau file devant toi.");
+
+  } else if(t.includes('vent') || t.includes('lame de vent') || t.includes('bourrasque')){
+    lancerProjectile('vent'); esprit("System Call! Une lame de vent fend l'air.");
+
+  } else if(t.includes('potion') || t.includes('soigne') || t.includes('vie')){
+    if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Une potion apparaît dans ta main. Un cœur de plus."); }
+    else esprit("Tes cœurs sont déjà pleins.");
+
+  } else if(t.includes('epee') || t.includes('arme')){
+    joueur.epee = true; sauvegarderPartie(); esprit("Tu brandis une épée enchantée. Un coup suffit désormais.");
+
+  } else if(t.includes('coffre')){
+    if(surSol && !coffre){ poserCoffre(devant.x, devant.y); esprit("Un coffre apparaît devant toi. Va l'ouvrir."); }
+    else esprit("Pas de place ici pour un coffre.");
+
+  } else if(t.includes('bouclier')){
+    joueur.vieMax = 5; joueur.vie = Math.min(5, joueur.vie+2); dessinerCoeurs(); sauvegarderPartie();
+    esprit("Un bouclier magique te protège. Deux cœurs de plus.");
+
+  } else if(t.includes('cle')){
+    joueur.cle = true; elCle.classList.add('ok');
+    if(meshCle) meshCle.visible = false;
+    esprit("La clé apparaît dans ta main. La porte t'attend.");
+
+  } else if(t.includes('torche') || t.includes('lumiere') || t.includes('feu')){
+    if(surSol){ allumerFeu(devant.x, devant.y); esprit("Une flamme s'élève devant toi."); }
+    else esprit("Pas de place pour une flamme ici.");
+
+  } else if(t.includes('piege')){
+    if(surSol && !pieges.some(p=>p.x===devant.x && p.y===devant.y)){
+      poserPiege(devant.x, devant.y);
+      esprit(pouvoirs.includes('PIÈGE')
+        ? "Des pointes jaillissent devant toi."
+        : "Des pointes jaillissent. Reste à voir si elles servent à quelque chose.");
+    } else esprit("Pas de place pour un piège ici.");
+
+  } else if(t.includes('annul') || t.includes('retire') || t.includes('stop') || t.includes('des dupl')){
+    jumeaux.forEach(j=>monde.remove(j.obj)); jumeaux = [];
+    esprit("Tes jumeaux se dissipent.");
+
+  } else if(t.includes('dupli') || t.includes('clone') || t.includes('jumeau')){
+    if(jumeaux.length >= 3) esprit("Pas plus de trois toi-mêmes. L'espace-temps est fragile.");
+    else if(poserJumeau()){
+      esprit(pouvoirs.includes('DUPLICATION')
+        ? "Un jumeau se matérialise à tes côtés."
+        : "Un jumeau se matérialise. Garde-le en vie, on verra ce que tu vaux.");
+      // l'épreuve : le tenir huit secondes sans mourir
+      jumeauxDepuis = 0;
+    }
+    else esprit("Pas de place pour un jumeau ici.");
+
+  } else if(t.includes('chemin') || t.includes('passage') || t.includes('route') || t.includes('tunnel')){
+    const d = dirCardinale(), o = OFFSETS[d];
+    let n = 0;
+    for(let i=1;i<=4;i++){
+      const tx = Math.floor(joueur.x/T)+o[0]*i, ty = Math.floor(joueur.z/T)+o[1]*i;
+      if(tx<1||ty<1||tx>=W-1||ty>=H-1) break;
+      if(grid[ty][tx]===WALL){ grid[ty][tx]=FLOOR; n++; }
+    }
+    if(n>0){ construireMurs(); esprit("J'ai percé un passage vers " + NOMS_DIR[d] + "."); }
+    else esprit("Il n'y a rien à percer par là.");
+
+  } else if(t.includes('brise') || t.includes('casse') || t.includes('detruit')){
+    let d = directionDemandee(t); if(d<0) d = dirCardinale();
+    const o = OFFSETS[d];
+    let tx = Math.floor(joueur.x/T), ty = Math.floor(joueur.z/T), n = 0;
+    // en 2D le joueur était emporté au bout de la percée ; en VR cela retourne
+    // l'estomac, alors on perce sans le déplacer.
+    for(;;){
+      tx += o[0]; ty += o[1];
+      if(tx<1||ty<1||tx>=W-1||ty>=H-1) break;
+      const c = grid[ty][tx];
+      if(c===WALL){ grid[ty][tx]=FLOOR; n++; }
+      else if(c===DOOR) break;
+    }
+    if(n>0){
+      construireMurs(); joueur.secousse = 0.7;
+      esprit(n + " mur" + (n>1?"s":"") + " tombé" + (n>1?"s":"") + " vers " + NOMS_DIR[d] + ".");
+      // l'épreuve : il faut avoir vraiment ouvert quelque chose, pas gratté un bloc
+      if(n >= 2) debloquer('BRISE');
+    } else esprit("Aucun mur à briser par là.");
+
+  } else if(t.includes('mur') && (t.includes('debloc') || t.includes('ouvre'))){
+    if(dansGrille(devant) && grid[devant.y][devant.x]===WALL){
+      grid[devant.y][devant.x]=FLOOR; construireMurs(); joueur.secousse = 0.5;
+      esprit("Le mur s'effondre. Passage libre.");
+    } else esprit("Il n'y a pas de mur devant toi.");
+
+  } else if(t.includes('mur')){
+    if(surSol && !(coffre && coffre.x===devant.x && coffre.y===devant.y)){
+      grid[devant.y][devant.x]=WALL; construireMurs();
+      esprit("Un mur se dresse devant toi.");
+    } else esprit("Pas de place pour un mur ici.");
+
+  } else if(t.includes('devore') || t.includes('absorbe') || t.includes('mange')){
+    if(!pouvoirs.includes('DÉVOREUR')){
+      // il entend le mot, il ne le comprend pas encore
+      esprit("Ces mots ne veulent rien dire pour toi. Pas encore.");
+      return;
+    }
+    let proie = null, pd = 1e9;
+    for(const e of ennemis){
+      if(e.vie<=0) continue;
+      const d2 = Math.hypot(e.x*T-joueur.x, e.y*T-joueur.z);
+      if(d2 < 4.5 && d2 < pd){ pd = d2; proie = e; }
+    }
+    if(!proie){ esprit("Rien à dévorer à ta portée."); return; }
+    proie.vie = 0; proie.mort = 0.55;
+    if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); }
+    esprit("Tu l'absorbes. Ce qu'il était te revient.");
+    bip(180,0.22,'sawtooth',0.09); bip(520,0.16,'sine',0.06,0.12);
+
+  } else {
+    // un pouvoir inventé par le joueur : il porte son nom, il fait ce qu'il a dit
+    const inv = Object.keys(pouvoirsPerso).find(n=>t.includes(normaliser(n)));
+    if(inv){ traiterChat(pouvoirsPerso[inv]); return; }
+    esprit("Je n'ai pas compris. Essaie : une potion, une épée, un coffre, un chemin, un piège, brise les murs vers la gauche, je me duplique.");
+  }
+}
+
+/* ═══ les oreilles : la voix ═══ */
+const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reco = null, ecoute = false, dit = '';
+
+if(Reco){
+  reco = new Reco();
+  reco.lang = 'fr-FR';
+  reco.continuous = false;
+  reco.interimResults = true;
+  reco.maxAlternatives = 1;
+
+  reco.onresult = ev=>{
+    let fini = '', encours = '';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const r = ev.results[i];
+      if(r.isFinal) fini += r[0].transcript; else encours += r[0].transcript;
+    }
+    if(fini) dit = fini;
+    elEntendu.textContent = '« ' + (fini || encours) + ' »';
+    elEntendu.classList.toggle('provisoire', !fini);
+    elEsprit.classList.add('on');
+    espritT = 4;
+  };
+  reco.onerror = ev=>{
+    ecoute = false; elEcoute.classList.remove('on');
+    if(ev.error === 'not-allowed')
+      esprit("Je n'entends rien : le micro est refusé. Autorise-le, ou tape C pour m'écrire.", true);
+    else if(ev.error === 'no-speech')
+      esprit("Je n'ai rien entendu.", true);
+  };
+  reco.onend = ()=>{
+    ecoute = false; elEcoute.classList.remove('on');
+    if(dit){ const d = dit; dit = ''; traiterChat(d); }
+  };
+}
+
+function ouvrirOreilles(){
+  if(!reco || ecoute || etat!=='jeu') return;
+  dit = '';
+  elEntendu.textContent = ''; elRepond.textContent = '';
+  elEsprit.classList.add('on'); elEcoute.classList.add('on');
+  espritT = 6;
+  try{ reco.start(); ecoute = true; }
+  catch(e){ ecoute = false; elEcoute.classList.remove('on'); }
+}
+function fermerOreilles(){
+  if(!reco || !ecoute) return;
+  try{ reco.stop(); }catch(e){}
+}
+
+/* ═══ le repli : écrire à l'esprit ═══ */
+let saisieOuverte = false;
+function ouvrirSaisie(){
+  saisieOuverte = true;
+  elSaisie.classList.add('on'); elEsprit.classList.add('on');
+  elSaisieT.value = ''; elSaisieT.focus();
+  document.exitPointerLock?.();
+}
+function fermerSaisie(){
+  saisieOuverte = false;
+  elSaisie.classList.remove('on'); elSaisieT.blur();
+}
+elSaisieT.addEventListener('keydown', ev=>{
+  ev.stopPropagation();
+  if(ev.key === 'Enter'){ const v = elSaisieT.value; fermerSaisie(); traiterChat(v); }
+  else if(ev.key === 'Escape') fermerSaisie();
+});
+
+addEventListener('keydown', ev=>{
+  if(saisieOuverte) return;
+  if(ev.code === 'KeyV' && !ev.repeat) ouvrirOreilles();
+  if(ev.code === 'KeyC'){ ev.preventDefault(); ouvrirSaisie(); }
+});
+addEventListener('keyup', ev=>{
+  if(ev.code === 'KeyV') fermerOreilles();
+});
+
+/* Espace : SAUTER (si on est au sol). */
+function foncer(){
+  if(etat !== 'jeu' || joueur.dashCd > 0 || joueur.dash > 0) return;
+  if(!joueur.dx && !joueur.dz){ joueur.dx = -Math.sin(joueur.lacet); joueur.dz = -Math.cos(joueur.lacet); }
+  joueur.dash = 0.17; joueur.dashCd = 0.85;
+  joueur.secousse = Math.max(joueur.secousse, 0.25);
+  bip(420, 0.09, 'sine', 0.05); bip(180, 0.14, 'sawtooth', 0.04, 0.04);
+}
+addEventListener('keydown', ev=>{
+  if(saisieOuverte || ev.code !== 'Space') return;
+  ev.preventDefault();
+  if(etat !== 'jeu' || joueur.saut > 0.01) return;   // pas de double saut
+  joueur.vy = 5.2;                                    // impulsion vers le haut
+  bip(520, 0.08, 'sine', 0.05);
+});
+/* Clic droit : foncer (l'esquive, déplacée de l'Espace vers la souris). */
+renderer.domElement.addEventListener('contextmenu', ev=>{ ev.preventDefault(); foncer(); });
+
+
+
+/* ═══════════════ 9 ter. LES ÉCRANS DE L'ISEKAI ═══════════════
+   La fenêtre de statut et la Voix du Monde. Ce ne sont PAS des éléments
+   plaqués sur l'écran : ce sont des panneaux qui flottent dans le donjon,
+   à un mètre devant les yeux. C'est la seule forme qui tiendra en casque. */
+
+/* Fabrique un panneau : un dessin fait au pinceau sur une toile, collé sur
+   un rectangle qui flotte. La toile se redessine quand le contenu change. */
+function fabriquerPanneau(largeurPx, hauteurPx, largeurM){
+  const c = document.createElement('canvas');
+  c.width = largeurPx; c.height = hauteurPx;
+  const g = c.getContext('2d');
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(largeurM, largeurM * hauteurPx/largeurPx),
+    new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:1, depthTest:false,
+      depthWrite:false, side:THREE.DoubleSide }));
+  mesh.renderOrder = 999;         // toujours par-dessus la pierre
+  mesh.visible = false;
+  scene.add(mesh);
+  return { c, g, tex, mesh };
+}
+
+/* le cadre bleu translucide, commun aux deux écrans */
+function fondIsekai(g, w, h, teinte){
+  g.clearRect(0,0,w,h);
+  const d = g.createLinearGradient(0,0,0,h);
+  d.addColorStop(0,   `rgba(${teinte},0.30)`);
+  d.addColorStop(0.5, `rgba(${teinte},0.19)`);
+  d.addColorStop(1,   `rgba(${teinte},0.30)`);
+  g.fillStyle = d;
+  g.fillRect(0,0,w,h);
+  // liseré lumineux
+  g.strokeStyle = `rgba(${teinte},0.95)`; g.lineWidth = 3;
+  g.strokeRect(1.5,1.5,w-3,h-3);
+  g.strokeStyle = `rgba(255,255,255,0.5)`; g.lineWidth = 1;
+  g.strokeRect(9,9,w-18,h-18);
+  // coins coupés, comme les interfaces d'anime
+  g.fillStyle = `rgba(${teinte},1)`;
+  for(const [x,y,sx,sy] of [[0,0,1,1],[w,0,-1,1],[0,h,1,-1],[w,h,-1,-1]]){
+    g.beginPath();
+    g.moveTo(x, y+28*sy); g.lineTo(x, y); g.lineTo(x+28*sx, y);
+    g.lineTo(x+22*sx, y+6*sy); g.lineTo(x+6*sx, y+6*sy); g.lineTo(x+6*sx, y+22*sy);
+    g.closePath(); g.fill();
+  }
+}
+
+const BLEU = '120,190,255';
+const statut = fabriquerPanneau(900, 620, 0.78);
+let statutOuvert = false;
+
+function dessinerStatut(){
+  const { g, c, tex } = statut;
+  const w = c.width, h = c.height;
+  fondIsekai(g, w, h, BLEU);
+
+  g.textBaseline = 'top';
+  g.fillStyle = '#dcefff';
+  g.font = '30px "Iowan Old Style", Georgia, serif';
+  g.fillText('STATUT', 44, 40);
+
+  g.strokeStyle = 'rgba(120,190,255,0.55)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(44, 84); g.lineTo(w-44, 84); g.stroke();
+
+  const ligne = (y, gauche, droite, couleur='#a8cdf0')=>{
+    g.font = '25px "Iowan Old Style", Georgia, serif';
+    g.fillStyle = couleur;      g.fillText(gauche, 44, y);
+    g.fillStyle = '#f2f8ff';
+    const l = g.measureText(droite).width;
+    g.fillText(droite, w-44-l, y);
+  };
+
+  ligne(112, 'Nom',      'Sans-Nom');
+  ligne(156, 'Étage',    String(niveau));
+  ligne(200, 'Cœurs',    joueur.vie + ' / ' + joueur.vieMax);
+  ligne(244, 'Clé',      joueur.cle ? 'obtenue' : '—');
+  ligne(288, 'Arme',     joueur.epee ? 'épée enchantée' : 'poings');
+  ligne(332, 'Jumeaux',  String(jumeaux.length));
+  ligne(354, 'Éclats',   String(eclats), '#8fd4ff');
+  if(boss && boss.mort<=0)
+    ligne(376, 'Gardien', boss.vie + ' / ' + boss.vieMax, '#ff9a7a');
+
+  g.strokeStyle = 'rgba(120,190,255,0.35)';
+  g.beginPath(); g.moveTo(44, 412); g.lineTo(w-44, 412); g.stroke();
+
+  g.font = '22px "Iowan Old Style", Georgia, serif';
+  g.fillStyle = '#8fb8dd';
+  g.fillText('COMPÉTENCES', 44, 430);
+
+  g.font = '24px "Iowan Old Style", Georgia, serif';
+  let x = 44, y = 472;
+  for(const p of pouvoirs){
+    const l = g.measureText(p).width + 32;
+    if(x + l > w-44){ x = 44; y += 46; }
+    if(y > h-70) break;
+    g.fillStyle = 'rgba(120,190,255,0.16)';
+    g.fillRect(x, y-6, l, 38);
+    g.strokeStyle = 'rgba(150,210,255,0.6)'; g.lineWidth = 1;
+    g.strokeRect(x, y-6, l, 38);
+    g.fillStyle = '#e6f4ff';
+    g.fillText(p, x+16, y);
+    x += l + 12;
+  }
+  tex.needsUpdate = true;
+}
+
+function basculerStatut(){
+  statutOuvert = !statutOuvert;
+  statut.mesh.visible = statutOuvert;
+  if(statutOuvert){
+    dessinerStatut();
+    // on la pose devant les yeux, là où le regard tombe
+    placerDevant(statut.mesh, 0.95, -0.06);
+    bip(880, 0.06, 'sine', 0.05); bip(1320, 0.09, 'sine', 0.04, 0.05);
+  }
+}
+
+/* pose un panneau devant la tête, à `d` mètres, décalé de `bas` vers le bas */
+const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
+function placerDevant(m, d, bas){
+  camera.getWorldPosition(_v);
+  camera.getWorldQuaternion(_q);
+  const av = new THREE.Vector3(0,0,-1).applyQuaternion(_q);
+  const ba = new THREE.Vector3(0,1,0).applyQuaternion(_q);
+  m.position.copy(_v).addScaledVector(av, d).addScaledVector(ba, bas);
+  m.quaternion.copy(_q);
+}
+
+/* ---- LA VOIX DU MONDE ----
+   Elle n'appartient à personne. Elle constate, elle n'encourage pas. */
+const OR = '255,214,130';
+const annonce = fabriquerPanneau(1100, 200, 1.15);
+let annonceT = 0;
+
+function voixDuMonde(texte, parler=true){
+  const { g, c, tex, mesh } = annonce;
+  const w = c.width, h = c.height;
+  fondIsekai(g, w, h, OR);
+  g.textBaseline = 'middle';
+  g.textAlign = 'center';
+  g.font = '34px "Iowan Old Style", Georgia, serif';
+  g.fillStyle = '#fff6e0';
+  // on coupe en deux lignes si c'est long
+  const mots = texte.split(' ');
+  let l1 = '', l2 = '';
+  for(const m of mots){
+    if(g.measureText(l1 + ' ' + m).width < w-140 && !l2) l1 += (l1?' ':'') + m;
+    else l2 += (l2?' ':'') + m;
+  }
+  if(l2){ g.fillText('《 ' + l1, w/2, h/2 - 24); g.fillText(l2 + ' 》', w/2, h/2 + 24); }
+  else   { g.fillText('《 ' + l1 + ' 》', w/2, h/2); }
+  g.textAlign = 'left';
+  tex.needsUpdate = true;
+
+  mesh.renderOrder = 1000;              // toujours devant la fenêtre de statut
+  mesh.visible = true;
+  placerDevant(mesh, 1.5, 0.80);
+  annonceT = 5.0;
+
+  bip(1046, 0.09, 'sine', 0.06); bip(1568, 0.14, 'sine', 0.05, 0.09);
+
+  if(parler && window.speechSynthesis){
+    const u = new SpeechSynthesisUtterance(texte);
+    if(voixFr) u.voice = voixFr;
+    u.lang = 'fr-FR';
+    u.pitch = 1.15; u.rate = 1.02; u.volume = 0.8;   // neutre, sans chaleur
+    speechSynthesis.speak(u);
+  }
+}
+
+// la Voix du Monde annonce ce que le donjon accorde
+const _debloquer = debloquer;
+debloquer = function(nom){
+  const neuf = _debloquer(nom);
+  if(neuf){
+    voixDuMonde('Notification. La compétence « ' + nom + ' » a été acquise.');
+    esprit('Tu ne l\'as pas reçue. Tu l\'as arrachée.', true);
+    if(statutOuvert) dessinerStatut();
+  }
+  return neuf;
+};
+
+addEventListener('keydown', ev=>{
+  if(saisieOuverte) return;
+  if(ev.code === 'Tab' || ev.code === 'KeyE'){ ev.preventDefault(); basculerStatut(); }
+  if(ev.code === 'KeyF'){ ev.preventDefault(); basculerVue(); }
+  if(ev.code === 'KeyP'){ ev.preventDefault(); baisserQualite(); }
+  if(ev.code === 'KeyG'){ ev.preventDefault();
+    if(guerrier && guerrier.vie>0 && guerrier.etat==='dort'){
+      const d = Math.hypot(joueur.x-guerrier.x, joueur.z-guerrier.z);
+      if(d < 6){ guerrier.etat='combat'; guerrier.cd=0.8; dire('Le guerrier accepte ton défi !', 2.4); window.Sons?.porte(); }
+      else dire('Approche-toi du guerrier pour le défier.', 2);
+    }
+  }
+  if(ev.code === 'KeyC' && ev.shiftKey){        // Maj+C : ciel photo / ciel peint
+    ev.preventDefault();
+    if(scene.background === cielReel){
+      scene.background = new THREE.Color(0x9fd0f5);
+      dire('Ciel peint.', 2);
+    } else if(cielReel){
+      scene.background = cielReel;
+      dire('Ciel photographié.', 2);
+    }
+  }
+});
+
+
+/* ═══════════════ 9 quater. LES GARDIENS DE PALIER ═══════════════
+   Tous les PALIER étages, la clé ne traîne plus par terre : quelqu'un la garde.
+   Trois façons de te faire mal — il charge, il frappe le sol, il crache ses
+   rejetons — et il change de tempérament à mi-vie.                        */
+
+const PALIER = 5;
+let boss = null, ondes = [], cleVerrouillee = false, bossSalle = null, eclats = 0;
+let projectiles = [];   // boules de feu, jets d'eau, lames de vent
+let guerrier = null;   // le guerrier qu'on défie à l'étage 1
+let jumeauxDepuis = -1;
+
+function estPalier(n){ return n > 0 && n % PALIER === 0; }
+
+function creerBoss(tx, ty){
+  const g = new THREE.Group();
+
+  // le corps : une masse gélatineuse, plus sombre qu'un slime ordinaire
+  const corps = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.45, 4),
+    new THREE.MeshStandardMaterial({ color:0x1d6f96, emissive:0x0a3a52,
+      emissiveIntensity:0.7, transparent:true, opacity:0.82,
+      roughness:0.1, metalness:0.05 }));
+  corps.position.y = 1.35;
+
+  // le noyau : c'est lui qui bat, et qui vire au rouge quand la bête s'énerve
+  const noyau = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.42, 2),
+    new THREE.MeshBasicMaterial({ color:0x7fe3ff, transparent:true, opacity:0.9 }));
+  noyau.position.y = 1.2;
+
+  const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12),
+    new THREE.MeshBasicMaterial({ color:0x05070a }));
+  oeilG.position.set(-0.5, 1.65, 1.2);
+  const oeilD = oeilG.clone(); oeilD.position.x = 0.5;
+
+  const lueur = new THREE.PointLight(0x4fc8ff, 14, 12, 1.7);
+  lueur.position.y = 1.4;
+
+  g.add(corps, noyau, oeilG, oeilD, lueur);
+  g.position.set(tx*T+T/2, 0, ty*T+T/2);
+  monde.add(g);
+
+  // sa jauge de vie, un panneau qui le suit et te fait toujours face
+  const jauge = fabriquerPanneau(760, 130, 1.9);
+  jauge.mesh.visible = true;
+
+  boss = {
+    obj:g, corps, noyau, oeilG, oeilD, lueur, jauge,
+    x: tx*T+T/2, z: ty*T+T/2,
+    vie: 10 + niveau, vieMax: 10 + niveau,
+    etat:'dort', cd:1.4, charge:0, enrage:false, mort:0, touche:0,
+    nom: 'GARDIEN DU ' + niveau + 'ᵉ PALIER',
+  };
+  dessinerJauge();
+}
+
+function dessinerJauge(){
+  if(!boss) return;
+  const { g, c, tex } = boss.jauge;
+  const w = c.width, h = c.height;
+  const teinte = boss.enrage ? '255,110,90' : '120,190,255';
+  fondIsekai(g, w, h, teinte);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '30px "Iowan Old Style", Georgia, serif';
+  g.fillStyle = '#eaf4ff';
+  g.fillText(boss.nom, w/2, 40);
+  // la barre
+  const bx = 46, bw = w - 92, by = 74, bh = 26;
+  g.fillStyle = 'rgba(0,0,0,0.45)';
+  g.fillRect(bx, by, bw, bh);
+  const part = Math.max(0, boss.vie / boss.vieMax);
+  const d = g.createLinearGradient(bx, 0, bx+bw, 0);
+  if(boss.enrage){ d.addColorStop(0,'#ff5a3c'); d.addColorStop(1,'#ffb08a'); }
+  else           { d.addColorStop(0,'#3fa8dc'); d.addColorStop(1,'#9fe4ff'); }
+  g.fillStyle = d;
+  g.fillRect(bx, by, bw*part, bh);
+  g.strokeStyle = `rgba(${teinte},0.9)`; g.lineWidth = 2;
+  g.strokeRect(bx, by, bw, bh);
+  g.textAlign = 'left';
+  tex.needsUpdate = true;
+}
+
+/* une onde qui court au sol : elle te touche quand son bord te dépasse */
+function lancerOnde(x, z){
+  const m = new THREE.Mesh(
+    new THREE.RingGeometry(0.4, 0.75, 40),
+    new THREE.MeshBasicMaterial({ color:0x8fdcff, transparent:true, opacity:0.85,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  m.rotation.x = -Math.PI/2;
+  m.position.set(x, 0.09, z);
+  monde.add(m);
+  ondes.push({ obj:m, r:0.6, x, z, touche:false });
+  joueur.secousse = Math.max(joueur.secousse, 0.5);
+  bip(90, 0.35, 'sawtooth', 0.11);
+}
+
+/* Un vrai projectile élémentaire lancé vers l'avant : feu, eau, ou lame de vent. */
+function lancerProjectile(type){
+  const CONF = {
+    feu:  { col:0xff6a1e, lum:0xff3000, r:0.30, v:11, degat:3, lame:false },
+    eau:  { col:0x4aa8ff, lum:0x1060e0, r:0.32, v:10, degat:2, lame:false },
+    vent: { col:0xcafff0, lum:0x40e0a0, r:0.5,  v:15, degat:2, lame:true  },
+  };
+  const c = CONF[type] || CONF.feu;
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  const n = Math.hypot(dir.x, dir.z) || 1, dx = dir.x/n, dz = dir.z/n;
+  let mesh;
+  if(c.lame){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 6, 18, Math.PI*1.15),
+      new THREE.MeshBasicMaterial({ color:c.col, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false }));
+    mesh.rotation.y = Math.atan2(dx, dz); mesh.rotation.z = Math.PI/2;
+  } else {
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(c.r, 12, 10),
+      new THREE.MeshBasicMaterial({ color:c.col, transparent:true, opacity:0.96, blending:THREE.AdditiveBlending, depthWrite:false }));
+  }
+  const lum = new THREE.PointLight(c.lum, 9, 6, 2); mesh.add(lum);
+  mesh.position.set(joueur.x + dx*0.9, 1.15, joueur.z + dz*0.9);
+  monde.add(mesh);
+  projectiles.push({ obj:mesh, dx, dz, v:c.v, degat:c.degat, vie:2.2, type });
+  window.Sons?.coup(); joueur.secousse = Math.max(joueur.secousse, 0.22);
+}
+function majProjectiles(dt){
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p = projectiles[i];
+    p.vie -= dt;
+    p.obj.position.x += p.dx * p.v * dt;
+    p.obj.position.z += p.dz * p.v * dt;
+    p.obj.rotation.y += dt*6;
+    const px = p.obj.position.x, pz = p.obj.position.z;
+    let fini = p.vie <= 0 || mur(px, pz);
+    // ennemis
+    for(const e of (ennemis||[])){
+      if(e.vie<=0) continue;
+      if(Math.hypot(e.x*T-px, e.y*T-pz) < 1.1){ e.vie -= p.degat; if(e.vie<=0){ e.vie=0; e.mort=0.55; } window.Sons?.impact(); fini = true; break; }
+    }
+    // le boss
+    if(!fini && boss && boss.mort<=0 && Math.hypot(boss.x-px, boss.z-pz) < 2.2){ frapperBoss(p.degat); fini = true; }
+    // le guerrier
+    if(!fini && guerrier && guerrier.vie>0 && Math.hypot(guerrier.x-px, guerrier.z-pz) < 1.6){
+      guerrier.vie -= p.degat; guerrier.jouer('hit'); window.Sons?.impact();
+      if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !',3); }
+      fini = true;
+    }
+    if(fini){ monde.remove(p.obj); projectiles.splice(i,1); }
+  }
+}
+
+/* les rejetons : de vrais petits slimes, ils rejoignent les habitants */
+function cracherRejetons(n){
+  for(let i=0;i<n;i++){
+    const a = Math.random()*6.28, d = 1.8 + Math.random();
+    const x = boss.x + Math.cos(a)*d, z = boss.z + Math.sin(a)*d;
+    if(mur(x, z)) continue;
+    const g = new THREE.Group();
+    const corps = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.34, 3),
+      new THREE.MeshStandardMaterial({ color:0x2fa8d8, emissive:0x0d5f88,
+        emissiveIntensity:0.55, transparent:true, opacity:0.78, roughness:0.12 }));
+    const oG = new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8),
+      new THREE.MeshBasicMaterial({color:0x05070a}));
+    oG.position.set(-0.13,0.08,0.29);
+    const oD = oG.clone(); oD.position.x = 0.13;
+    g.add(corps, oG, oD);
+    g.position.set(x, 0.34, z);
+    styliser(g, 0.016);
+    monde.add(g);
+    const e = { x:x/T, y:z/T, type:'slime', vie:1, cd:0, ph:Math.random()*6,
+                mort:0, obj:g };
+    e.obj.userData.corps = corps;
+    ennemis.push(e);
+  }
+  bip(300, 0.14, 'square', 0.05);
+}
+
+/* on lui tape dessus */
+function frapperBoss(degats){
+  boss.vie -= degats;
+  boss.touche = 0.22;
+  dessinerJauge();
+  bip(260, 0.1, 'square', 0.08); bip(130, 0.24, 'sawtooth', 0.07, 0.05);
+  if(!boss.enrage && boss.vie <= boss.vieMax/2){
+    boss.enrage = true;
+    boss.corps.material.color.setHex(0x8c2418);
+    boss.corps.material.emissive.setHex(0x5a1008);
+    boss.noyau.material.color.setHex(0xff7a5a);
+    boss.lueur.color.setHex(0xff6a48);
+    dessinerJauge();
+    voixDuMonde('Le gardien change. Il ne joue plus.');
+  }
+  if(boss.vie <= 0) tuerBoss();
+}
+
+function tuerBoss(){
+  boss.mort = 1.6;
+  boss.lueur.intensity = 0;
+  joueur.secousse = 0.9;
+  boss.jauge.mesh.visible = false;
+  bip(200,0.3,'sawtooth',0.1); bip(120,0.55,'sawtooth',0.1,0.2);
+  // la clé qu'il gardait tombe là où il meurt
+  cleVerrouillee = false;
+  if(meshCle){
+    meshCle.position.set(boss.x, 1.15, boss.z);
+    meshCle.visible = true;
+  }
+  const pouvoir = ['DÉVOREUR','CARAPACE','APPEL','SOUFFLE','REGARD'][ (niveau/PALIER - 1) % 5 ];
+  // DÉVOREUR n'est pas un effet : c'est un mot que l'esprit comprendra désormais
+  if(!debloquer(pouvoir))
+    voixDuMonde('Le gardien est tombé. La clé est à toi.');
+  // debloquer() annonce déjà lui-même quand le pouvoir est neuf
+  if(!pouvoirsPerso[pouvoir]) {
+    // ce qu'il fait, en clair : le pouvoir gagné est une phrase que tu prononces
+    pouvoirsPerso[pouvoir] = ({
+      'DÉVOREUR':'crée une potion', 'CARAPACE':'un bouclier', 'APPEL':'je me duplique',
+      'SOUFFLE':'brise les murs', 'REGARD':'une torche',
+    })[pouvoir];
+    sauverPouvoirs();
+  }
+}
+
+/* le cerveau du gardien, appelé à chaque image */
+function majBoss(dt, t){
+  if(!boss) return;
+
+  if(boss.mort > 0){
+    boss.mort -= dt;
+    const k = Math.max(0, boss.mort/1.6);
+    boss.obj.scale.set(1 + (1-k)*0.5, k*k, 1 + (1-k)*0.5);   // il s'affaisse et s'étale
+    boss.corps.material.opacity = 0.82*k;
+    boss.noyau.material.opacity = 0.9*k;
+    if(boss.mort <= 0){ monde.remove(boss.obj); scene.remove(boss.jauge.mesh); boss = null; }
+    return;
+  }
+
+  const dx = joueur.x - boss.x, dz = joueur.z - boss.z;
+  const dist = Math.hypot(dx, dz);
+
+  // il dort tant qu'on ne l'approche pas
+  if(boss.etat === 'dort'){
+    if(dist < 9){
+      boss.etat = 'attend'; boss.cd = 1.2;
+      voixDuMonde('Le gardien du palier s\'éveille.');
+    }
+  } else {
+    boss.cd -= dt;
+    const vite = boss.enrage ? 1.7 : 1.0;
+
+    if(boss.etat === 'attend'){
+      // il tourne autour, il se rapproche lentement
+      const n = dist || 1;
+      const v = 1.15 * vite * dt;
+      const nx = boss.x + dx/n*v, nz = boss.z + dz/n*v;
+      if(!mur(nx, boss.z)) boss.x = nx;
+      if(!mur(boss.x, nz)) boss.z = nz;
+      if(boss.cd <= 0){
+        // il choisit : charge, coup au sol, ou rejetons
+        const r = Math.random();
+        if(dist > 4.5 || r < 0.4){
+          boss.etat = 'charge'; boss.charge = 0.9;
+          boss.cx = dx/(dist||1); boss.cz = dz/(dist||1);
+          bip(180, 0.3, 'sawtooth', 0.07);
+        } else if(r < 0.75){
+          boss.etat = 'saut'; boss.charge = 0.55;
+        } else {
+          cracherRejetons(boss.enrage ? 3 : 2);
+          boss.cd = (boss.enrage ? 1.6 : 2.6);
+        }
+      }
+    }
+    else if(boss.etat === 'charge'){
+      boss.charge -= dt;
+      const v = 8.5 * vite * dt;
+      const nx = boss.x + boss.cx*v, nz = boss.z + boss.cz*v;
+      let cogne = false;
+      if(!mur(nx, boss.z)) boss.x = nx; else cogne = true;
+      if(!mur(boss.x, nz)) boss.z = nz; else cogne = true;
+      if(cogne){                       // il s'écrase sur la pierre : ça t'arrange
+        lancerOnde(boss.x, boss.z);
+        boss.etat = 'attend'; boss.cd = 1.5; boss.charge = 0;
+      }
+      if(boss.charge <= 0){ boss.etat = 'attend'; boss.cd = (boss.enrage?0.9:1.8); }
+      if(dist < 1.9) blesser(joueur.x - boss.x, joueur.z - boss.z);
+    }
+    else if(boss.etat === 'saut'){
+      boss.charge -= dt;
+      if(boss.charge <= 0){
+        lancerOnde(boss.x, boss.z);
+        boss.etat = 'attend'; boss.cd = (boss.enrage?1.1:2.0);
+      }
+    }
+  }
+
+  // la masse respire, et sursaute quand on la touche
+  const resp = 1 + Math.sin(t*(boss.enrage?5.2:2.6))*0.09;
+  const sur  = boss.touche > 0 ? 1 + boss.touche*0.9 : 1;
+  if(boss.touche > 0) boss.touche -= dt;
+  const ecrase = boss.etat === 'saut' ? 1 - (0.55 - boss.charge) : 1;
+  boss.obj.scale.set(sur/Math.sqrt(resp), resp*ecrase*sur, sur/Math.sqrt(resp));
+  boss.obj.position.set(boss.x, boss.etat==='charge' ? 0.1 : 0, boss.z);
+  boss.obj.rotation.y = Math.atan2(dx, dz);
+  boss.noyau.scale.setScalar(1 + Math.sin(t*(boss.enrage?9:4.5))*0.16);
+  boss.lueur.intensity = (boss.enrage ? 22 : 14) + Math.sin(t*7)*3;
+
+  // la jauge flotte au-dessus de lui et te regarde
+  const j = boss.jauge.mesh;
+  j.position.set(boss.x, 4.3, boss.z);
+  camera.getWorldPosition(_v);
+  j.lookAt(_v);
+}
+
+/* La lame d'air : un croissant qui part devant toi et fauche ce qu'il traverse. */
+function lancerTranche(){
+  const g = new THREE.Mesh(
+    new THREE.TorusGeometry(0.9, 0.07, 6, 20, Math.PI*0.8),
+    new THREE.MeshBasicMaterial({ color:0xcfe8ff, transparent:true, opacity:0.9,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  g.position.set(joueur.x, 1.1, joueur.z);
+  g.rotation.set(Math.PI/2, 0, joueur.lacet);
+  monde.add(g);
+  tranches.push({ obj:g, d:0,
+    dx:-Math.sin(joueur.lacet), dz:-Math.cos(joueur.lacet),
+    x:joueur.x, z:joueur.z, touches:new Set() });
+}
+let tranches = [];
+
+function majTranches(dt){
+  for(let i=tranches.length-1;i>=0;i--){
+    const tr = tranches[i];
+    tr.d += dt*13;
+    const x = tr.x + tr.dx*tr.d, z = tr.z + tr.dz*tr.d;
+    tr.obj.position.set(x, 1.1, z);
+    tr.obj.material.opacity = Math.max(0, 0.9 - tr.d/8);
+    tr.obj.scale.setScalar(1 + tr.d*0.06);
+    for(const e of ennemis){
+      if(e.vie<=0 || tr.touches.has(e)) continue;
+      if(Math.hypot(e.x*T-x, e.y*T-z) < 1.2){
+        tr.touches.add(e);
+        e.vie -= 3;
+        if(e.vie<=0){ e.vie=0; e.mort=0.55; }
+        bip(200,0.14,'sawtooth',0.06);
+      }
+    }
+    if(boss && boss.mort<=0 && !tr.touches.has(boss) && Math.hypot(boss.x-x, boss.z-z) < 2.2){
+      tr.touches.add(boss); frapperBoss(2);
+    }
+    if(tr.d > 9 || mur(x, z)){ monde.remove(tr.obj); tranches.splice(i,1); }
+  }
+}
+
+/* les ondes courent au sol jusqu'à s'éteindre */
+function majOndes(dt){
+  for(let i=ondes.length-1;i>=0;i--){
+    const o = ondes[i];
+    o.r += dt*7.5;
+    o.obj.scale.setScalar(o.r);
+    o.obj.material.opacity = Math.max(0, 0.85 - o.r/9);
+    const d = Math.hypot(joueur.x-o.x, joueur.z-o.z);
+    if(!o.touche && Math.abs(d - o.r*0.6) < 0.6){ o.touche = true; blesser(joueur.x-o.x, joueur.z-o.z); }
+    if(o.r > 14){ monde.remove(o.obj); ondes.splice(i,1); }
+  }
+  majProjectiles(dt);
+}
+
+/* Trois crans de qualité. On commence au plus beau ; la touche P descend
+   d'un cran. Chaque cran retire ce qui coûte le plus pour ce qu'il rend. */
+let cranQualite = 0;
+const CRANS = ['tout', 'sans ombres', 'sobre'];
+function baisserQualite(){
+  cranQualite = (cranQualite + 1) % 3;
+  if(cranQualite === 0){
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(1);
+    scene.traverse(o=>{ if(o.isPoints) o.visible = true; });
+  } else if(cranQualite === 1){
+    renderer.shadowMap.enabled = false;      // les ombres coûtent une seconde passe
+    renderer.setPixelRatio(1);
+    scene.traverse(o=>{ if(o.isPoints) o.visible = true; });
+  } else {
+    renderer.shadowMap.enabled = false;
+    renderer.setPixelRatio(0.75);            // on peint moins de pixels
+    scene.traverse(o=>{ if(o.isPoints) o.visible = false; });   // ni poussière ni pollen
+  }
+  scene.traverse(o=>{ if(o.material) o.material.needsUpdate = true; });
+  dire('Qualité : ' + CRANS[cranQualite], 2);
+}
+
+/* ═══════════════ 9 quinquies. LE RADAR (façon Metal Gear) ═══════════════
+   Une carte vue de dessus, en haut à gauche : les murs, le joueur et son cône
+   de regard, les ennemis en rouge, la clé en or, l'escalier en vert. */
+const radarCv = document.getElementById('radar');
+const radarCtx = radarCv.getContext('2d');
+let radarT = 0;
+
+function dessinerRadar(){
+  const S = radarCv.width, cw = S / W, ch = S / H;
+  const g = radarCtx;
+  g.clearRect(0, 0, S, S);
+
+  if(estDehors()){
+    // dehors : fond herbe, les maisons en sombre, l'escalier en vert
+    g.fillStyle = 'rgba(40,80,40,.5)'; g.fillRect(0,0,S,S);
+  }
+  // les cases
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const c = grid[y][x];
+    if(c === WALL){ g.fillStyle = estDehors() ? 'rgba(60,50,40,.85)' : 'rgba(70,90,120,.85)'; g.fillRect(x*cw, y*ch, cw+.5, ch+.5); }
+    else if(c === DOOR){ g.fillStyle = '#49d18a'; g.fillRect(x*cw, y*ch, cw, ch); }
+  }
+  // l'escalier / la porte (repère vert clignotant)
+  if(doorPos){
+    g.fillStyle = (Math.sin(radarT*4)>0) ? '#6effb0' : '#2a9d6a';
+    g.fillRect(doorPos.x*cw-1, doorPos.y*ch-1, cw+2, ch+2);
+  }
+  // la clé (or), si pas encore prise
+  if(keyPos && !joueur.cle){
+    g.fillStyle = '#e8b661';
+    g.beginPath(); g.arc(keyPos.x*cw+cw/2, keyPos.y*ch+ch/2, 2.6, 0, 7); g.fill();
+  }
+  // les ennemis (rouge), les vivants seulement
+  g.fillStyle = '#ff4a3a';
+  for(const e of (ennemis||[])){
+    if(e.vie<=0) continue;
+    g.beginPath(); g.arc(e.x*cw, e.y*ch, 2, 0, 7); g.fill();
+  }
+  if(boss && boss.mort<=0){
+    g.fillStyle = boss.enrage ? '#ff2a1a' : '#ff7a3a';
+    g.beginPath(); g.arc((boss.x/T)*cw, (boss.z/T)*ch, 3.6, 0, 7); g.fill();
+  }
+  // le joueur : un cône de regard + un point bleu
+  const px = (joueur.x/T)*cw, py = (joueur.z/T)*ch;
+  const a = joueur.lacet;                       // lacet=0 → vers -z (haut du radar)
+  g.fillStyle = 'rgba(90,168,255,.28)';
+  g.beginPath(); g.moveTo(px, py);
+  g.arc(px, py, 22, -a - Math.PI/2 - 0.5, -a - Math.PI/2 + 0.5);
+  g.closePath(); g.fill();
+  g.fillStyle = '#8fd0ff';
+  g.beginPath(); g.arc(px, py, 3, 0, 7); g.fill();
+  g.strokeStyle = '#cfe6ff'; g.lineWidth = 1;
+  g.beginPath(); g.arc(px, py, 3, 0, 7); g.stroke();
+}
+
+/* ═══════════════ 10. LA BOUCLE ═══════════════ */
+const horloge = new THREE.Clock();
+const pos = new THREE.Vector3();
+let img=0, tFps=performance.now();
+const elPerf = document.getElementById('perf');
+
+function poserGuerrier(){
+  const g = MODELES.guerrier; if(!g) return;
+  const r = rooms[Math.min(2, rooms.length-1)] || rooms[0];
+  const gx = cX(r)*T + T/2, gz = cY(r)*T + T/2;
+  g.scale.setScalar(1);
+  const bb = new THREE.Box3().setFromObject(g);
+  const h = bb.getSize(new THREE.Vector3()).y || 1;
+  g.scale.setScalar(1.78 / h);
+  g.position.set(gx, 0, gz);
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false;
+    if(o.material && o.material.emissive){ o.material = o.material.clone(); o.material.emissive.setHex(0x400a0a); } }});
+  monde.add(g);
+  const mix = new THREE.AnimationMixer(g);
+  const act = {};
+  const EX = { Idle_Loop:'idle', Walk_Loop:'walk', Sword_Attack:'attaque', Hit_Chest:'hit', Hit_Head:'hit', Death01:'mort' };
+  for(const c of (g.userData.anims||[])){ const k = EX[c.name]; if(k && !act[k]) act[k] = mix.clipAction(c); }
+  guerrier = {
+    obj:g, mix, act, cour:null, vie:8, vieMax:8, x:gx, z:gz, etat:'dort', cd:0, mortT:0,
+    jouer(n){ const a = this.act[n] || this.act.idle; if(!a) return;
+      if(a === this.cour && n!=='attaque' && n!=='hit') return;
+      if(n==='attaque'||n==='hit'||n==='mort'){ a.reset().setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; }
+      else a.setLoop(THREE.LoopRepeat, Infinity);
+      if(this.cour && this.cour!==a) this.cour.fadeOut(0.12);
+      a.reset().fadeIn(0.1).play(); this.cour = a; }
+  };
+  guerrier.jouer('idle');
+  dire('Un guerrier t\'attend plus loin. Approche et appuie sur G pour le défier.', 5);
+}
+function majGuerrier(dt){
+  const G = guerrier; if(!G) return;
+  G.mix.update(dt);
+  if(G.vie <= 0){ if(G.mortT>0){ G.mortT -= dt; if(G.mortT<=0){ monde.remove(G.obj); guerrier = null; } } return; }
+  const dx = joueur.x - G.x, dz = joueur.z - G.z, d = Math.hypot(dx, dz) || 1;
+  G.obj.rotation.y = Math.atan2(dx, dz) + Math.PI;      // il regarde le joueur
+  if(G.etat === 'dort'){ G.jouer('idle'); return; }
+  G.cd -= dt;
+  if(d > 2.2){ const v = 2.4*dt; G.x += dx/d*v; G.z += dz/d*v; G.obj.position.set(G.x, 0, G.z); G.jouer('walk'); }
+  else { G.jouer('attaque');
+    if(G.cd <= 0){ G.cd = 1.5; if(d < 2.7) blesser(G.x - joueur.x, G.z - joueur.z); } }
+}
+let autoFps = { acc:0, n:0 };
+function boucle(){
+  const dt = Math.min(0.05, horloge.getDelta());
+  const t  = horloge.elapsedTime;
+
+  // AUTO-QUALITÉ : si ça rame sur une machine faible, on descend un cran tout seul
+  autoFps.acc += dt; autoFps.n++;
+  if(autoFps.acc >= 1.6){
+    const fps = autoFps.n / autoFps.acc;
+    if(fps < 28 && etat === 'jeu' && typeof cranQualite !== 'undefined' && cranQualite < 2){
+      baisserQualite(); dire('Ça rame : qualité réduite pour rester fluide.', 2.4);
+    }
+    autoFps.acc = 0; autoFps.n = 0;
+  }
+
+  if(etat==='jeu'){
+    /* -- marche -- */
+    const pad = lireManette(dt);
+    let av = (touches.KeyW||touches.KeyZ ?1:0) - (touches.KeyS ?1:0);
+    let la = (touches.KeyD ?1:0) - (touches.KeyA||touches.KeyQ ?1:0);
+    if(pad && (pad.ax || pad.ay)){ av = -pad.ay; la = pad.ax; }
+    const court = touches.ShiftLeft||touches.ShiftRight || (pad && pad.court);
+    joueur.dashCd = Math.max(0, joueur.dashCd - dt);
+    // flèches gauche/droite : tourner sans souris (utile si le pointeur n'est pas capturé)
+    // tourner au clavier : flèches gauche/droite, ou J et L
+    if(touches.ArrowLeft  || touches.KeyJ) joueur.lacet += dt*2.0;
+    if(touches.ArrowRight || touches.KeyL) joueur.lacet -= dt*2.0;
+    if(touches.ArrowUp)   joueur.tangage = Math.min( 1.35, joueur.tangage + dt*1.4);
+    if(touches.ArrowDown) joueur.tangage = Math.max(-1.35, joueur.tangage - dt*1.4);
+    const v = (court?4.6:2.7) * dt;
+    if(av||la){
+      const n = Math.hypot(av,la);
+      const sx = (-Math.sin(joueur.lacet)*av + Math.cos(joueur.lacet)*la)/n*v;
+      const sz = (-Math.cos(joueur.lacet)*av - Math.sin(joueur.lacet)*la)/n*v;
+      joueur.dx = sx/v; joueur.dz = sz/v;          // on retient la direction pour foncer
+      const p = glisser(joueur.x, joueur.z, sx, sz);
+      joueur.x = p.x; joueur.z = p.z;
+      joueur.pas += dt*(court?13:8.5);
+      const pasAv = Math.floor(joueur.pas/Math.PI);
+      if(pasAv !== joueur.pasPrec && joueur.saut<=0){ joueur.pasPrec = pasAv; window.Sons?.pas(); }
+      joueur.souffle += dt*(court?1.4:0.5);
+    } else {
+      joueur.souffle = Math.max(0, joueur.souffle - dt*0.7);
+    }
+
+    /* -- foncer -- */
+    if(joueur.dash > 0){
+      joueur.dash -= dt;
+      const vd = 17 * dt;
+      const p = glisser(joueur.x, joueur.z, joueur.dx*vd, joueur.dz*vd);
+      joueur.x = p.x; joueur.z = p.z;
+      joueur.inv = Math.max(joueur.inv, 0.12);     // on passe à travers les coups
+    }
+
+    /* -- l'enchaînement retombe si on n'enchaîne pas -- */
+    if(joueur.comboT > 0){
+      joueur.comboT -= dt;
+      if(joueur.comboT <= 0){ joueur.combo = 0; elCombo.classList.remove('on'); }
+    }
+
+    /* -- le saut : gravité, retombée, pas de double saut -- */
+    if(joueur.vy !== 0 || joueur.saut > 0){
+      joueur.saut += joueur.vy * dt;
+      joueur.vy   -= 15 * dt;                         // gravité
+      if(joueur.saut <= 0){ joueur.saut = 0; joueur.vy = 0; }  // au sol
+    }
+
+    /* -- la tête bouge : ballant, roulis, souffle -- */
+    const ballant = Math.sin(joueur.pas)*0.045 * (av||la?1:0);
+    const lateral = Math.cos(joueur.pas*0.5)*0.03 * (av||la?1:0);
+    joueur.roulis += ((la?-la*0.035:0) - joueur.roulis) * dt*6;
+    joueur.secousse *= Math.pow(0.02, dt);
+
+    tete.position.set(
+      joueur.x + (Math.random()-.5)*joueur.secousse*0.5,
+      1.62 + joueur.saut + ballant + Math.sin(t*1.3)*0.008 + (Math.random()-.5)*joueur.secousse*0.5,
+      joueur.z + (Math.random()-.5)*joueur.secousse*0.5);
+
+    /* -- la caméra recule quand on se regarde, et se rapproche si un mur gêne -- */
+    let vise = (vue === 3) ? 3.8 : 0;
+    if(vue === 3){
+      for(let d = 0.6; d <= 3.8; d += 0.3){
+        const cx = joueur.x + Math.sin(joueur.lacet)*d;
+        const cz = joueur.z + Math.cos(joueur.lacet)*d;
+        if(mur(cx, cz)){ vise = Math.max(0.9, d - 0.45); break; }
+      }
+    }
+    reculCam += (vise - reculCam) * Math.min(1, dt*7);
+    const pres = Math.min(1, reculCam);
+    camera.position.set(0.5*pres, 0.30*pres, reculCam);
+    camera.rotation.x = -0.15*pres;        // légère plongée, sinon on lui coupe les pieds
+    // en vue extérieure, la lampe sort du corps : sinon on s'éclaire de l'intérieur
+    lampe.position.set(0, -0.15 + 0.4*pres, 0.25 - 1.7*pres);
+
+    /* -- le corps : il suit, il marche, il respire -- */
+    if(vue === 3){
+      avatar.position.set(joueur.x, joueur.saut, joueur.z);
+      avatar.rotation.y = joueur.lacet + Math.PI;   // il regarde vers l'avant
+      let anim = 'idle';
+      if(joueur.saut > 0.06)     anim = 'jump';
+      else if(av || la)          anim = court ? 'sprint' : 'walk';
+      // nouvelle frappe -> animation d'attaque (si le modèle en a une)
+      if(joueur.atkCd > (joueur.atkPrev||0) + 0.001) jouerAttaque();
+      joueur.atkPrev = joueur.atkCd;
+      if((joueur.animAtk||0) > 0) joueur.animAtk -= dt;   // l'attaque prime sur la marche
+      else jouerAnim(anim);
+      if(mixerPerso) mixerPerso.update(dt);
+
+      // -- LA FRAPPE : un vrai geste de bras sur le squelette, APRÈS le mixer --
+      avatar.rotation.x = 0;
+      const em = avatar.userData.epeeMain;
+      if(!actionsPerso.attaque && joueur.atkCd > 0){
+        const dA = [0.40,0.30,0.44,0.62][joueur.combo] || 0.40;
+        const kA = joueur.atkCd / dA;                    // 1 -> 0 sur le coup
+        const elanCombat = Math.sin(kA*Math.PI);         // 0 -> 1 -> 0
+        const sensA = joueur.combo === 1 ? -1 : 1;       // le 2e part en revers
+        const bras = avatar.userData.brasD, avb = avatar.userData.avBrasD, buste = avatar.userData.buste;
+        if(bras)  bras.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.bras*sensA));
+        if(avb)   avb.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.avbras));
+        if(buste) buste.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),  elanCombat*FRAPPE.buste*sensA));
+        const fx = -Math.sin(joueur.lacet), fz = -Math.cos(joueur.lacet);
+        avatar.position.x += fx * elanCombat * FRAPPE.fente;
+        avatar.position.z += fz * elanCombat * FRAPPE.fente;
+        if(joueur.combo === 3) avatar.rotation.y += (1-kA) * Math.PI * 2;   // le tourbillon reste
+        if(em && em.userData.base) em.rotation.z = em.userData.base.z + elanCombat * 1.2 * sensA;
+      } else if(em && em.userData.base){
+        em.rotation.z = em.userData.base.z;
+      }
+
+      // -- TRAÎNÉE DE LAME : un arc lumineux qui balaie (effet anime / Naruto) --
+      if(!avatar.userData.trainee){
+        const tm = new THREE.Mesh(
+          new THREE.TorusGeometry(0.85, 0.05, 6, 20, Math.PI*1.25),
+          new THREE.MeshBasicMaterial({ color:0xcfeeff, transparent:true, opacity:0, depthWrite:false, fog:false }));
+        tm.rotation.x = Math.PI/2; tm.position.set(0.15, 1.05, 0.55); tm.renderOrder = 6;
+        avatar.add(tm); avatar.userData.trainee = tm;
+      }
+      const tr = avatar.userData.trainee;
+      if(joueur.atkCd > 0){
+        const dA = [0.40,0.30,0.44,0.62][joueur.combo] || 0.40;
+        const kA = joueur.atkCd / dA, el = Math.sin(kA*Math.PI);
+        const sensA = joueur.combo === 1 ? -1 : 1;
+        tr.visible = true;
+        tr.material.opacity = 0.75 * el;
+        tr.material.color.setHex(joueur.epee ? 0x8fd0ff : 0xcfeeff);
+        tr.rotation.z = (0.6 - (1 - kA)) * Math.PI * 1.4 * sensA;   // il balaie de haut en bas
+      } else {
+        tr.material.opacity = 0;
+      }
+    }
+    tete.rotation.set(0,0,0);
+    tete.rotateY(joueur.lacet);
+    tete.rotateX(joueur.tangage);
+    tete.rotateZ(joueur.roulis + lateral*0.4);
+
+    /* -- l'épée vit dans la main -- */
+    {
+      const marche = (av||la) ? 1 : 0;
+      const bal = Math.sin(joueur.pas)*0.05*marche;
+      const lat = Math.cos(joueur.pas*0.5)*0.035*marche;
+      // le coup : un arc rapide de haut en bas, puis retour
+      const duree = [0.40, 0.30, 0.44, 0.62][joueur.combo] || 0.40;
+      const k = joueur.atkCd > 0 ? joueur.atkCd/duree : 0;
+      const coup = Math.sin(k*Math.PI);
+      const sens = joueur.combo === 1 ? -1 : 1;      // le deuxième part en revers
+      const tour = joueur.combo === 3 ? (1-k)*Math.PI*2 : 0;   // le quatrième fait le tour
+      arme.position.set(0.26 + lat*0.4 - coup*0.16,
+                        -0.30 + bal + Math.sin(t*1.3)*0.006 - coup*0.04,
+                        -0.62 - coup*0.12);
+      arme.rotation.set(-0.22 + bal*1.4 - coup*1.35,
+                        -0.52 + lat + coup*0.5*sens - tour,
+                         0.30 + coup*0.85*sens);
+      // la lame s'allume quand elle est enchantée
+      const e = joueur.epee ? 1.35 : 0.35;
+      arme.userData.lame.material.emissiveIntensity = e + coup*1.2;
+      if(joueur.epee){
+        arme.userData.lame.material.emissive.setHex(0x2f6fd8);
+        arme.userData.gouttiere.material.color.setHex(0x9fd0ff);
+      }
+    }
+
+    /* -- le soleil suit le joueur : l'ombre reste nette là où on regarde -- */
+    if(estDehors()){
+      jour.position.set(joueur.x + 17, 15, joueur.z + 11);
+      jour.target.position.set(joueur.x, 0, joueur.z);
+      jour.target.updateMatrixWorld();
+    }
+
+    /* -- la lampe respire -- */
+    lampe.intensity = estDehors() ? 0
+      : 40 + Math.sin(t*7.3)*2.4 + Math.sin(t*13.1)*1.4;
+    if(joueur.inv>0){
+      joueur.inv -= dt;
+      lampe.color.setHex(Math.sin(t*30)>0 ? 0xff4433 : 0xbfd8ff);
+    } else lampe.color.setHex(0xbfd8ff);
+    joueur.atkCd = Math.max(0, joueur.atkCd - dt);
+
+    /* -- les six lumières vont aux torches les plus proches -- */
+    if(estDehors()) lumieres.forEach(l=>{ l.intensity = 0; });
+    const proches = torches
+      .map(tt=>({tt, d:(tt.wx-joueur.x)**2 + (tt.wz-joueur.z)**2}))
+      .sort((a,b)=>a.d-b.d).slice(0, NB_LUM);
+    lumieres.forEach((l,i)=>{
+      if(i<proches.length){
+        const tt = proches[i].tt;
+        l.position.set(tt.wx, 2.2, tt.wz);
+        // vacillement : deux sinus qui ne tombent jamais juste
+          l.color.setHex(etageCourant().teinte);
+        const f = Math.sin(t*11+tt.ph)*0.5 + Math.sin(t*6.3+tt.ph*2.1)*0.5;
+        l.intensity = 58 + f*18;
+      } else l.intensity = 0;
+    });
+
+    /* -- les flammes dansent -- */
+    for(const f of flammes){
+      if(f.fumee){
+        // la fumée des cheminées : elle monte, s'étale, et repart en bas
+        const m = ((t*0.42 + f.ph) % 5.2);
+        f.sp.position.y = f.base + m*0.9;
+        f.sp.position.x = f.x + Math.sin(t*0.5 + f.ph)*m*0.35;
+        f.sp.scale.setScalar(0.7 + m*0.5);
+        f.sp.material.opacity = Math.max(0, 0.34 - m*0.062);
+        continue;
+      }
+      const s = 0.62 + Math.sin(t*12+f.ph)*0.09 + Math.sin(t*7.7+f.ph*3)*0.06;
+      f.sp.scale.set(s*0.8, s*1.35, 1);
+      f.sp.material.opacity = 0.8 + Math.sin(t*15+f.ph)*0.18;
+    }
+
+    /* -- braises -- */
+    const pb = braises.geometry.attributes.position;
+    braises.userData.forEach((b,i)=>{
+      b.a += dt*b.v;
+      if(b.a>3.0) b.a = 0;
+      pb.setXYZ(i,
+        b.x + b.ox + Math.sin(t*1.7+b.ph)*0.12*b.a,
+        2.2 + b.a*0.75,
+        b.z + b.oz + Math.cos(t*1.4+b.ph)*0.12*b.a);
+    });
+    pb.needsUpdate = true;
+    braises.material.opacity = 0.85;
+
+    /* -- poussière -- */
+    const pp = poussiere.geometry.attributes.position;
+    poussiere.userData.forEach((d,i)=>{
+      d.y += d.v*dt;
+      if(d.y > (estDehors() ? 6 : HT)) d.y = 0.05;
+      pp.setXYZ(i, d.x + Math.sin(t*0.4+d.ph)*0.3, d.y, d.z + Math.cos(t*0.35+d.ph)*0.3);
+    });
+    pp.needsUpdate = true;
+
+    /* -- la clé -- */
+    if(!estDehors() && !joueur.cle && cleVerrouillee && meshCle.visible) meshCle.visible = false;
+    if(!estDehors() && !joueur.cle && !cleVerrouillee){
+      meshCle.rotation.y += dt*1.6;
+      meshCle.position.y = 1.15 + Math.sin(t*1.9)*0.11;
+      meshCle.children[4].scale.setScalar(1.8 + Math.sin(t*3.1)*0.25);
+      if(Math.hypot(meshCle.position.x-joueur.x, meshCle.position.z-joueur.z) < 1.1){
+        joueur.cle = true;
+        meshCle.visible = false;
+        elCle.classList.add('ok');
+        dire('La clé est à toi. La porte t’attend.', 3.2);
+        bip(660,0.09,'square',0.07); bip(880,0.14,'square',0.07,0.09);
+      }
+    }
+
+    /* -- la porte -- */
+    const u = porte.userData;
+    const ouverte = joueur.cle;
+    u.rideau.material.color.setHex(ouverte ? 0x49d18a : 0xc8392f);
+    u.lum.color.setHex(ouverte ? 0x49d18a : 0xc8392f);
+    u.rideau.material.opacity = 0.22 + Math.sin(t*2.4)*0.09;
+    u.lum.intensity = 9 + Math.sin(t*2.4)*3.5;
+  
+    if(ouverte && Math.hypot(porte.position.x-joueur.x, porte.position.z-joueur.z) < 1.2) descendre();
+
+    /* -- le gardien et ses ondes -- */
+    majBoss(dt, t);
+    majOndes(dt);
+    majTranches(dt);
+
+    /* -- le paysan : un adversaire, pas un obstacle -- */
+    function majPaysan(e, dist){
+      const o = e.obj.userData;
+      const versToi = Math.atan2(joueur.x - e.x*T, joueur.z - e.y*T);
+      e.obj.rotation.y = versToi;
+
+      if(e.phase === 'garde'){
+        // il attend, appuyé sur sa fourche. Rien ne bouge tant qu'on reste loin.
+        o.outil.rotation.x = -0.35 + Math.sin(t*0.9 + e.ph)*0.03;
+        o.lueur.intensity = 1.6;
+        if(dist < 6.5){
+          e.phase = 'approche'; e.tempo = 0;
+          o.oeils.forEach(x=>x.material.color.setHex(0xff4a1a));
+          bip(120, 0.3, 'sawtooth', 0.05);
+        }
+        return;
+      }
+
+      if(e.phase === 'approche'){
+        o.lueur.intensity = 2.5 + Math.sin(t*5)*0.6;
+        o.outil.rotation.x = -0.35;
+        if(dist > 2.3){
+          const vx = joueur.x - e.x*T, vz = joueur.z - e.y*T, n = Math.hypot(vx,vz)||1;
+          const v = 1.5*dt;
+          const nx = e.x*T + vx/n*v, nz = e.y*T + vz/n*v;
+          if(!mur(nx, e.y*T)) e.x = nx/T;
+          if(!mur(e.x*T, nz)) e.y = nz/T;
+          e.obj.rotation.z = Math.sin(t*6 + e.ph)*0.08;
+        } else {
+          e.phase = 'arme'; e.tempo = 0.62;      // il lève la fourche : à toi de voir
+          bip(330, 0.14, 'square', 0.06);
+        }
+        return;
+      }
+
+      if(e.phase === 'arme'){
+        e.tempo -= dt;
+        const k = 1 - e.tempo/0.62;
+        o.outil.rotation.x = -0.35 - k*1.5;      // il l'arme au-dessus de l'épaule
+        o.outil.position.y = 0.55 + k*0.35;
+        o.lueur.intensity = 3 + k*9;             // et il s'allume : c'est le signal
+        o.lueur.color.setHex(0xff3a10);
+        if(e.tempo <= 0){ e.phase = 'frappe'; e.tempo = 0.16; }
+        return;
+      }
+
+      if(e.phase === 'frappe'){
+        e.tempo -= dt;
+        const k = 1 - e.tempo/0.16;
+        o.outil.rotation.x = -1.85 + k*2.4;      // la fourche s'abat
+        o.outil.position.y = 0.9 - k*0.5;
+        if(e.tempo <= 0){
+          if(dist < 2.6) blesser(joueur.x - e.x*T, joueur.z - e.y*T);
+          e.phase = 'repos'; e.tempo = 0.85;     // et là il est ouvert
+          bip(90, 0.2, 'sawtooth', 0.08);
+        }
+        return;
+      }
+
+      if(e.phase === 'repos'){
+        e.tempo -= dt;
+        // la fourche traîne au sol, la lueur s'éteint : c'est ta fenêtre
+        o.outil.rotation.x = 0.55;
+        o.outil.position.y = 0.4;
+        o.lueur.intensity = 1.2;
+        o.lueur.color.setHex(0xff8a2a);
+        e.obj.rotation.z = Math.sin(t*3)*0.05;
+        if(e.tempo <= 0){ e.phase = 'approche'; }
+        return;
+      }
+    }
+
+    majGuerrier(dt);
+
+    /* -- les habitants -- */
+    for(const e of ennemis){
+      if(e.vie<=0){
+        if(e.mort>0){
+          e.mort -= dt;
+          const k = Math.max(0, e.mort/0.55);
+          e.obj.scale.setScalar(k);
+          e.obj.rotation.y += dt*9;
+          if(e.mort<=0) e.obj.visible = false;
+        }
+        continue;
+      }
+      const dist = Math.hypot(joueur.x - e.x*T, joueur.z - e.y*T);
+      if(e.type === 'paysan'){
+        majPaysan(e, dist);
+        e.obj.position.set(e.x*T, 0, e.y*T);
+        continue;                                 // il a sa propre façon de se battre
+      }
+      e.cd -= dt;
+      if(dist < 9 && e.cd<=0){
+        // il avance vers toi, une case à la fois, sans traverser la pierre
+        const vx = (joueur.x - e.x*T), vz = (joueur.z - e.y*T);
+        const n  = Math.hypot(vx,vz)||1;
+        const vitesses = { rat:1.9, slime:1.05, squelette:1.35, spectre:0.85 };
+        const vit = (vitesses[e.type] ?? 1.2)*dt;
+        const nx = e.x*T + vx/n*vit, nz = e.y*T + vz/n*vit;
+        if(e.type==='spectre'){ e.x = nx/T; e.y = nz/T; }   // il passe à travers
+        else {
+          if(!mur(nx, e.y*T)) e.x = nx/T;
+          if(!mur(e.x*T, nz)) e.y = nz/T;
+        }
+      }
+      let yb;
+      if(e.type==='slime')          yb = 0.42 + Math.abs(Math.sin(t*3.4+e.ph))*0.16;
+      else if(e.type==='squelette') yb = Math.abs(Math.sin(t*6.5+e.ph))*0.07;
+      else if(e.type==='spectre')   yb = 0.35 + Math.sin(t*1.6+e.ph)*0.22;
+      else                          yb = 0.22 + Math.abs(Math.sin(t*11+e.ph))*0.05;
+      e.obj.position.set(e.x*T, yb, e.y*T);
+      e.obj.rotation.y = Math.atan2(joueur.x - e.x*T, joueur.z - e.y*T);
+      if(e.type==='slime'){
+        const s = 1 + Math.sin(t*3.4+e.ph)*0.14;
+        e.obj.userData.corps.scale.set(1/Math.sqrt(s), s, 1/Math.sqrt(s));
+      } else if(e.type==='squelette'){
+        e.obj.rotation.z = Math.sin(t*6.5+e.ph)*0.09;     // il claque en marchant
+      } else if(e.type==='spectre'){
+        e.obj.userData.corps.material.opacity = 0.24 + Math.abs(Math.sin(t*0.9+e.ph))*0.22;
+      }
+      if(dist < 1.0 && joueur.inv <= 0){
+        blesser(joueur.x - e.x*T, joueur.z - e.y*T);
+        const n = dist || 1;                       // il rebondit et repart
+        e.x -= (joueur.x - e.x*T)/n * 1.6 / T;
+        e.y -= (joueur.z - e.y*T)/n * 1.6 / T;
+        e.cd = 0.9;
+      }
+    }
+
+    /* -- le radar, rafraîchi ~12 fois par seconde -- */
+    radarT += dt;
+    if(radarT % 1 < dt || true){ if((img & 3) === 0) dessinerRadar(); }
+
+    /* -- message -- */
+    if(msgT>0){ msgT -= dt; if(msgT<=0) elMsg.classList.remove('on'); }
+    if(espritT>0 && !ecoute){ espritT -= dt; if(espritT<=0) elEsprit.classList.remove('on'); }
+
+    /* -- les villageois : devant leur maison, un léger balancement + un coup d'oeil -- */
+    for(const v of villageois){
+      v.tempo -= dt;
+      if(v.tempo <= 0){ v.glance = (Math.random()-0.5)*1.1; v.tempo = 3 + Math.random()*5; }   // il tourne la tête/hanches
+      v.glanceCur += (v.glance - v.glanceCur) * Math.min(1, dt*2);
+      v.obj.rotation.y = v.face + Math.sin(t*0.6 + v.ph)*0.10 + v.glanceCur;                    // balancement doux
+      v.obj.position.set(v.x, Math.sin(t*1.4 + v.ph)*0.015, v.z);                               // respire
+    }
+
+    /* -- les écrans de l'isekai -- */
+    if(annonceT>0){
+      annonceT -= dt;
+      const m = annonce.mesh;
+      // elle glisse vers sa place, puis s'efface
+      const cible = new THREE.Vector3();
+      camera.getWorldPosition(cible);
+      const q = new THREE.Quaternion(); camera.getWorldQuaternion(q);
+      cible.addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(q), 1.5)
+           .addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(q), 0.80);
+      m.position.lerp(cible, Math.min(1, dt*4));
+      m.quaternion.slerp(q, Math.min(1, dt*4));
+      m.material.opacity = Math.min(1, annonceT*1.6);
+      if(annonceT<=0) m.visible = false;
+    }
+    if(statutOuvert){
+      // la fenêtre reste où on l'a ouverte, mais se laisse rattraper si on marche
+      const cible = new THREE.Vector3();
+      camera.getWorldPosition(cible);
+      const q = new THREE.Quaternion(); camera.getWorldQuaternion(q);
+      cible.addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(q), 0.95)
+           .addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(q), -0.06);
+      statut.mesh.position.lerp(cible, Math.min(1, dt*2.2));
+      statut.mesh.quaternion.slerp(q, Math.min(1, dt*2.2));
+    }
+
+    /* -- les jumeaux te suivent -- */
+    for(const j of jumeaux){
+      const cx = joueur.x + j.dx, cz = joueur.z + j.dz;
+      j.obj.position.x += (cx - j.obj.position.x) * Math.min(1, dt*3.2);
+      j.obj.position.z += (cz - j.obj.position.z) * Math.min(1, dt*3.2);
+      j.obj.rotation.y = joueur.lacet;
+    }
+
+    /* -- les objets flottent, et se ramassent en marchant dessus -- */
+    for(let i=objets.length-1;i>=0;i--){
+      const o = objets[i];
+      o.obj.rotation.y += dt*1.7;
+      o.obj.position.y = 0.75 + Math.sin(t*2.2 + o.ph)*0.09;
+      if(Math.hypot(o.obj.position.x-joueur.x, o.obj.position.z-joueur.z) < 0.95){
+        if(o.type === 'fiole'){
+          if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); dire('Une fiole. Un cœur repris.', 2); }
+          else { dire('Une fiole, mais tes cœurs sont pleins.', 2); }
+        } else {
+          eclats++; sauvegarderPartie(); dire('Un éclat. ' + eclats + ' en tout.', 2);
+        }
+        bip(880, 0.08, 'sine', 0.06); bip(1320, 0.11, 'sine', 0.05, 0.07); window.Sons?.ramasse();
+        monde.remove(o.obj); objets.splice(i,1);
+      }
+    }
+
+    /* -- le décor cassé s'affaisse -- */
+    for(let i=decors.length-1;i>=0;i--){
+      const d = decors[i];
+      if(d.casse <= 0) continue;
+      d.casse -= dt;
+      const k = Math.max(0, d.casse/0.45);
+      d.obj.scale.set(1 + (1-k)*0.6, k, 1 + (1-k)*0.6);
+      d.obj.rotation.y += dt*5;
+      if(d.casse <= 0){ monde.remove(d.obj); decors.splice(i,1); }
+    }
+
+    /* -- l'épreuve du jumeau : le tenir huit secondes -- */
+    if(jumeauxDepuis >= 0){
+      if(!jumeaux.length) jumeauxDepuis = -1;      // il l'a perdu : l'épreuve échoue
+      else {
+        jumeauxDepuis += dt;
+        if(jumeauxDepuis >= 8){ debloquer('DUPLICATION'); jumeauxDepuis = -1; }
+      }
+    }
+
+    /* -- les pièges jaillissent, puis empalent ce qui passe -- */
+    for(const p of pieges){
+      if(p.sortie < 1){ p.sortie = Math.min(1, p.sortie + dt*3.5); p.obj.scale.y = 0.05 + p.sortie*0.95; }
+      for(const e of ennemis){
+        if(e.vie<=0) continue;
+        if(Math.hypot(e.x*T - p.obj.position.x, e.y*T - p.obj.position.z) < 0.8){
+          e.vie = 0; e.mort = 0.55; bip(140,0.2,'sawtooth',0.06);
+          debloquer('PIÈGE');       // l'épreuve : le piège a servi
+        }
+      }
+    }
+
+    /* -- le coffre s'ouvre quand tu le touches -- */
+    if(coffre && !coffre.ouvert &&
+       Math.hypot(coffre.obj.position.x - joueur.x, coffre.obj.position.z - joueur.z) < 1.1){
+      coffre.ouvert = true;
+      coffre.couvercle.rotation.x = -1.15;
+      coffre.couvercle.position.set(0, 0.62, -0.24);
+      if(!joueur.epee){ joueur.epee = true; esprit("Une épée dormait dans le coffre. Elle est à toi."); }
+      else if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Le coffre rendait un cœur."); }
+      else esprit("Le coffre était vide. Le donjon a de l'humour.");
+      bip(660,0.09,'square',0.07); bip(880,0.14,'square',0.07,0.09);
+    }
+  }
+
+  renderer.render(scene, camera);
+
+  img++;
+  const maintenant = performance.now();
+  if(maintenant - tFps > 1000){
+    const r = renderer.info.render;
+    elPerf.textContent = Math.round(img*1000/(maintenant-tFps)) + ' i/s · '
+                       + r.calls + ' appels · ' + (r.triangles/1000).toFixed(0) + 'k tri';
+    img = 0; tFps = maintenant;
+  }
+}
+renderer.setAnimationLoop(boucle);
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ---- le passage en VR : prêt le jour où un casque ouvre cette page ---- */
+if(navigator.xr){
+  navigator.xr.isSessionSupported('immersive-vr').then(ok=>{
+    if(!ok) return;
+    const b = document.createElement('button');
+    b.className = 'bouton'; b.textContent = 'Entrer en VR';
+    b.style.cssText = 'position:fixed;right:22px;top:22px;z-index:25;padding:12px 26px;font-size:13px';
+    b.onclick = async ()=>{
+      const s = await navigator.xr.requestSession('immersive-vr', { optionalFeatures:['local-floor'] });
+      renderer.xr.setReferenceSpaceType('local-floor');
+      await renderer.xr.setSession(s);
+      b.style.display = 'none';
+      s.addEventListener('end', ()=>{ b.style.display = ''; });
+    };
+    document.body.appendChild(b);
+  }).catch(()=>{});
+}
+
+// prise en main depuis la console, pour régler la lumière sans recharger
+// ---- MENU PAUSE + CRÉATEUR DE SKILLS ----
+const elPause = document.getElementById('menu-pause');
+function ouvrirPause(){ if(etat!=='jeu') return; etat='pause'; elPause.classList.remove('parti'); document.exitPointerLock&&document.exitPointerLock(); rafraichirSkills(); }
+function reprendreJeu(){ if(etat!=='pause') return; etat='jeu'; elPause.classList.add('parti'); try{ renderer.domElement.requestPointerLock(); }catch(e){} }
+document.getElementById('btn-reprendre').onclick = reprendreJeu;
+addEventListener('keydown', ev=>{
+  if(ev.code==='Escape'){ if(etat==='jeu'){ ev.preventDefault(); ouvrirPause(); } else if(etat==='pause'){ reprendreJeu(); } }
+});
+document.querySelectorAll('.pause-tab').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.pause-tab').forEach(x=>x.classList.toggle('on', x===b));
+    document.getElementById('tab-reprendre').style.display = b.dataset.tab==='reprendre'?'':'none';
+    document.getElementById('tab-skills').style.display    = b.dataset.tab==='skills'?'':'none';
+  };
+});
+function cleSkills(){ return 'kotoage-skills-' + (typeof joueurNom!=='undefined'?joueurNom:'Patrick'); }
+function lireSkills(){ try{ return JSON.parse(localStorage.getItem(cleSkills())||'[]'); }catch(e){ return []; } }
+function ecrireSkills(a){ try{ localStorage.setItem(cleSkills(), JSON.stringify(a)); }catch(e){} }
+function rafraichirSkills(){
+  const l = lireSkills(), box = document.getElementById('sk-liste');
+  box.innerHTML = l.length ? l.map((s,i)=>`<div style="padding:6px 0;border-bottom:1px solid #1c2636">
+    <b style="color:#eaf0f8">${s.nom}</b> <span style="color:#8fb8e8">[${s.elem}]</span>
+    <span style="color:#6b7d93">· dis « ${s.inc} »</span>
+    <button data-i="${i}" class="sk-suppr" style="float:right;background:#3a1414;color:#ffb4b4;border:0;border-radius:6px;padding:2px 8px;cursor:pointer">✕</button>
+    <div style="color:#9fb2cc;font-size:12px">${s.effet||''}</div></div>`).join('') : '<div style="color:#6b7d93">Aucun skill pour l\'instant.</div>';
+  box.querySelectorAll('.sk-suppr').forEach(b=>b.onclick=()=>{ const a=lireSkills(); a.splice(+b.dataset.i,1); ecrireSkills(a); rafraichirSkills(); });
+}
+const _skC = document.getElementById('sk-creer');
+if(_skC) _skC.onclick = ()=>{
+  const nom=document.getElementById('sk-nom').value.trim();
+  const elem=document.getElementById('sk-elem').value;
+  const inc=normaliser(document.getElementById('sk-inc').value.trim());
+  const effet=document.getElementById('sk-effet').value.trim();
+  if(!nom||!inc) return;
+  const a=lireSkills(); a.push({nom,elem,inc,effet}); ecrireSkills(a);
+  document.getElementById('sk-nom').value=''; document.getElementById('sk-inc').value=''; document.getElementById('sk-effet').value='';
+  rafraichirSkills();
+};
+
+window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur, T, W, H,
+             traiterChat, esprit, caseDevant, dirCardinale, voixDuMonde, basculerStatut,
+             arme, armeDos, avatar, basculerVue,
+             get boss(){ return boss; },
+             /* aller directement à un étage — pour essayer un gardien sans tout refaire */
+             allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
+             get pouvoirs(){ return pouvoirs; },
+             get grid(){ return grid; }, get ennemis(){ return ennemis; },
+             get murIM(){ return murIM; }, get flammes(){ return flammes; },
+             get etat(){ return etat; },
+             /* régler l'épée en main à l'oeil : D.reglerEpee(rx, ry, rz, echelle) */
+             sauver(){ sauvegarderPartie(); return 'partie sauvegardee'; },
+             teinter(corps, tete){ const p = avatar.userData.persoFace; if(!p) return 'pas de perso';
+               p.traverse(o=>{ if(o.isMesh && o.material && o.material.color){
+                 const n=(o.name||'').toLowerCase();
+                 o.material.color.setHex(/visor|head|face|tete/.test(n) ? (tete||0x6b4a34) : (corps||0x20242c)); }});
+               return 'teinté'; },
+             orienterPerso(rad){ const p = avatar.userData.persoFace; if(!p) return 'pas de perso';
+               p.rotation.y = (rad!==undefined) ? rad : (p.rotation.y + Math.PI); return { rotation_y:+p.rotation.y.toFixed(2) }; },
+             reglerFrappe(bras, avbras, buste, fente){
+               if(bras!==undefined) FRAPPE.bras = bras;
+               if(avbras!==undefined) FRAPPE.avbras = avbras;
+               if(buste!==undefined) FRAPPE.buste = buste;
+               if(fente!==undefined) FRAPPE.fente = fente;
+               return { ...FRAPPE };
+             },
+             effacerSauvegarde(){ effacerPartie(); return 'sauvegarde effacee'; },
+             reglerEpee(rx, ry, rz, ech){
+               const em = avatar.userData.epeeMain;
+               if(!em) return 'pas d epee en main (recharge en vue exterieure)';
+               if(rx!==undefined) em.rotation.x = rx;
+               if(ry!==undefined) em.rotation.y = ry;
+               if(rz!==undefined) em.rotation.z = rz;
+               if(ech!==undefined) em.scale.setScalar(em.userData.baseScale * ech);
+               em.userData.base = { x:em.rotation.x, y:em.rotation.y, z:em.rotation.z };
+               return { rx:+em.rotation.x.toFixed(2), ry:+em.rotation.y.toFixed(2),
+                        rz:+em.rotation.z.toFixed(2), echelle:+(em.scale.x/em.userData.baseScale).toFixed(2) };
+             } };
+
+// on prépare un étage en fond pour que l'écran titre ne soit pas noir
+niveau = 1; nouvelEtage(); etat='titre';
+joueur.lacet = 0.6;
+tete.position.set(joueur.x, 1.62, joueur.z);
+</script>
+<div id="perf"></div>
+<canvas id="radar" width="164" height="164"></canvas>
+</body>
+</html>

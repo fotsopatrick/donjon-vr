@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KOTOAGE — étage cyber (essai)</title>
+<style>
+  :root{ --or:#e8b661; --bleu:#5aa8ff; --vert:#49d18a; --sang:#c8392f;
+         --fond:#0a0e16; --pierre:#141b28; --trait:#26324a; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:var(--fond);color:#d7e0ee;
+    font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif}
+  body{display:flex;flex-direction:column;max-width:900px;margin:0 auto;padding:18px;gap:14px;min-height:100vh}
+
+  header{text-align:center;border-bottom:1px solid var(--trait);padding-bottom:12px}
+  header h1{font-size:22px;font-weight:400;letter-spacing:.14em;color:var(--or)}
+  header .sous{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#6b7890;margin-top:5px}
+
+  /* la surface du conteneur : un terminal */
+  .conteneur{background:#070a11;border:1px solid var(--trait);border-radius:6px;
+    font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.7;
+    padding:14px 16px;color:#9fb3d0;overflow-x:auto}
+  .conteneur .p{color:var(--vert)}
+  .conteneur .c{color:#5a6b86}
+  .conteneur b{color:#cfe0ff;font-weight:600}
+  .conteneur .chaud{color:#ffb08a}
+
+  /* la porte : les points de passage */
+  .porte{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .cp{flex:1;min-width:150px;border:1px solid var(--trait);border-radius:4px;padding:8px 10px;
+    font-size:11px;letter-spacing:.03em;color:#5a6b86;transition:.4s;background:var(--pierre)}
+  .cp.ouvert{border-color:var(--vert);color:#bfedd4;box-shadow:0 0 16px rgba(73,209,138,.2)}
+  .cp .num{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;display:block;margin-bottom:3px}
+
+  /* le dialogue */
+  #journal{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 2px;min-height:180px}
+  .bulle{max-width:80%;padding:11px 15px;border-radius:12px;font-size:15px;line-height:1.55}
+  .voix{align-self:flex-start;background:rgba(90,168,255,.10);border:1px solid rgba(90,168,255,.25);
+    color:#cfe4ff;border-bottom-left-radius:3px}
+  .voix .qui{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--bleu);margin-bottom:4px;opacity:.8}
+  .toi{align-self:flex-end;background:rgba(232,182,97,.10);border:1px solid rgba(232,182,97,.22);
+    color:#f2e6cc;border-bottom-right-radius:3px}
+  .gagne{align-self:center;text-align:center;color:var(--vert);font-size:16px;
+    text-shadow:0 0 24px rgba(73,209,138,.4);padding:8px 0}
+
+  /* la saisie */
+  .saisie{display:flex;gap:8px}
+  .saisie input{flex:1;padding:13px 16px;border:1px solid var(--trait);border-radius:6px;
+    background:#0c111b;color:#e8dcc0;font-family:inherit;font-size:15px;outline:none}
+  .saisie input:focus{border-color:var(--or)}
+  .saisie button{padding:0 20px;border:1px solid #5c4a2a;border-radius:6px;
+    background:linear-gradient(180deg,#1d1811,#100d09);color:var(--or);
+    font-family:inherit;font-size:14px;letter-spacing:.1em;cursor:pointer}
+  .saisie button:hover{background:linear-gradient(180deg,#2b2317,#171208)}
+
+  .note{font-size:11px;color:#54617a;text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ÉTAGE 1 — LE CONTENEUR</h1>
+  <div class="sous">bac à sable · faille plantée · on descend en raisonnant</div>
+</header>
+
+<div class="conteneur" id="surface">
+<span class="c"># tu observes le conteneur de cet étage :</span>
+<span class="p">$</span> docker inspect webapp_prod
+
+  Image        : <b>internal/webapp:1.4.2</b>
+  User         : <b class="chaud">root</b>
+  ExposedPorts : 8080/tcp
+  Mounts       :
+    - <b class="chaud">/var/run/docker.sock</b>  →  /var/run/docker.sock   (<b class="chaud">rw</b>)
+    - ./app                 →  /srv/app               (ro)
+  Env          :
+    - NODE_ENV=production
+  CapAdd       : —
+
+<span class="c"># la porte de cet étage est verrouillée. Elle ne s'ouvre pas</span>
+<span class="c"># à une commande — elle s'ouvre quand tu as COMPRIS par où ça cède.</span>
+<span class="c"># Dis à la Voix ce que tu vois, et pourquoi c'est une faille.</span>
+</div>
+
+<div class="porte" id="porte"></div>
+
+<div id="journal"></div>
+
+<div class="saisie">
+  <input id="dire" placeholder="raisonne à voix haute… (ex : « je remarque que… donc… »)" autocomplete="off">
+  <button id="envoyer">Dire</button>
+</div>
+
+<div class="note">
+  Essai déterministe : la Voix guide, le <b>code</b> tient la clé (les points de passage).
+  Aucun exploit réel, aucune vraie cible — un conteneur décrit, planté exprès.
+  Tape <b>indice</b> si tu bloques.
+</div>
+
+<script>
+/* ── LES POINTS DE PASSAGE ──
+   La faille plantée : un conteneur qui tourne en root ET monte le socket
+   Docker de l'hôte en écriture. Qui contrôle ce socket contrôle le démon
+   Docker de la machine hôte → il peut créer un conteneur privilégié montant
+   tout le système de l'hôte → il s'échappe. Faille classique, réelle,
+   RAISONNABLE sans rien taper.
+
+   Chaque point s'ouvre quand le raisonnement du joueur touche l'idée-clé. */
+const sansAccent = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+const POINTS = [
+  {
+    num: '1 · repérer',
+    titre: 'Le socket Docker est monté',
+    // il faut nommer le socket / le montage sensible
+    detecte: t => /docker\.?sock|var.?run.?docker|\bsocket\b|\.sock/.test(t)
+                || (/mont|monte/.test(t) && /docker/.test(t)),
+    voix: "Oui. Ce fichier-là, /var/run/docker.sock, n'est pas un fichier ordinaire. À quoi sert-il, d'après toi ?",
+    indice: "Regarde les montages. L'un d'eux est un fichier en .sock, monté en écriture. Lequel, et qu'est-ce qu'un « socket » ?"
+  },
+  {
+    num: '2 · comprendre',
+    titre: "Ce socket commande le démon de l'hôte",
+    // le socket = ligne directe vers le démon Docker de la machine hôte
+    detecte: t => (/hote|host|machine|dehors|exterieur/.test(t) && /docker|daemon|demon|socket|conteneur/.test(t))
+                || /demon docker|daemon docker|controle.*docker|commander.*docker|api docker/.test(t),
+    voix: "Exactement. Ce socket, c'est la ligne directe vers le démon Docker de la MACHINE HÔTE — pas juste ce conteneur. Et tu tournes en quoi, ici ?",
+    indice: "Un socket Docker, c'est par là qu'on parle au démon Docker. Mais lequel — celui du conteneur, ou celui de la machine qui l'héberge ?"
+  },
+  {
+    num: '3 · armer',
+    titre: 'root te laisse créer un conteneur privilégié',
+    // root + accès démon hôte = créer un conteneur qui monte le fs de l'hôte
+    detecte: t => /root/.test(t) &&
+                  /(nouveau|creer|cree|lance|demarr|autre).*(conteneur|container)|privilegi|monter.*(hote|host|systeme|fichier|\/)|volume.*hote/.test(t),
+    voix: "Voilà la clé. Tu es root, et tu commandes le démon de l'hôte : rien ne t'empêche de lui demander de créer un NOUVEAU conteneur, privilégié, qui monte tout le système de fichiers de l'hôte. Alors, qu'est-ce que ça te donne ?",
+    indice: "Tu es « root ». Avec la main sur le démon de l'hôte, que peux-tu lui demander de créer ? Et qu'y monterais-tu ?"
+  },
+  {
+    num: '4 · conclure',
+    titre: "Évasion : tu sors sur l'hôte",
+    detecte: t => /evasion|evade|echapp|sortir|sors|s.echappe|acces.*(hote|host|machine)|controle.*(hote|host|machine)|prendre.*(hote|host|machine)|escape|hors du conteneur|toute la machine/.test(t),
+    voix: "C'est ça. Tu n'es plus prisonnier de la boîte : tu tiens l'hôte. L'étage est franchi.",
+    indice: "Récapitule : socket de l'hôte + root + créer un conteneur qui monte le disque de l'hôte = tu n'es plus enfermé dans… quoi ?"
+  }
+];
+
+let ouverts = 0, blocages = 0;
+const journal = document.getElementById('journal');
+const porte = document.getElementById('porte');
+const champ = document.getElementById('dire');
+
+function dessinerPorte(){
+  porte.innerHTML = '';
+  POINTS.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'cp' + (i < ouverts ? ' ouvert' : '');
+    d.innerHTML = '<span class="num">' + p.num + '</span>' + (i < ouverts ? p.titre : '— verrouillé —');
+    porte.appendChild(d);
+  });
+}
+function bulle(cls, texte, qui){
+  const d = document.createElement('div');
+  d.className = 'bulle ' + cls;
+  if(qui) d.innerHTML = '<div class="qui">' + qui + '</div>';
+  d.appendChild(document.createTextNode(texte));
+  journal.appendChild(d);
+  journal.scrollTop = journal.scrollHeight;
+}
+function voix(t){ bulle('voix', t, 'la Voix du Monde'); }
+function gagne(t){ const d=document.createElement('div'); d.className='bulle gagne'; d.textContent=t; journal.appendChild(d); journal.scrollTop=journal.scrollHeight; }
+
+function traiter(texte){
+  const t = sansAccent(texte);
+  bulle('toi', texte);
+
+  if(/indice|aide|bloqu|sais pas|sais plus|sec/.test(t) && ouverts < POINTS.length){
+    voix('Indice — ' + POINTS[ouverts].indice);
+    return;
+  }
+
+  // on ouvre, DANS L'ORDRE, chaque point que le raisonnement atteint
+  let progres = false;
+  while(ouverts < POINTS.length && POINTS[ouverts].detecte(t)){
+    voix(POINTS[ouverts].voix);
+    ouverts++;
+    progres = true;
+    dessinerPorte();
+  }
+
+  if(ouverts >= POINTS.length){
+    gagne('◆ LA PORTE S\'OUVRE — TU DESCENDS ◆');
+    setTimeout(()=>{
+      voix("Compétence inscrite au carnet pro : RAISONNEMENT — évasion de conteneur par socket monté. Tu ne l'as pas reçue : tu l'as raisonnée.");
+      champ.disabled = true; champ.placeholder = 'étage franchi.';
+    }, 700);
+    return;
+  }
+
+  if(!progres){
+    blocages++;
+    if(blocages >= 2){
+      blocages = 0;
+      voix('Tu tournes autour. Indice — ' + POINTS[ouverts].indice);
+    } else {
+      voix("Je te suis, mais ce n'est pas encore là que ça cède. Regarde encore la surface du conteneur : qu'est-ce qui ne devrait PAS être là ?");
+    }
+  }
+}
+
+document.getElementById('envoyer').onclick = ()=>{
+  const v = champ.value.trim();
+  if(!v) return;
+  champ.value = '';
+  traiter(v);
+};
+champ.addEventListener('keydown', e=>{ if(e.key === 'Enter') document.getElementById('envoyer').click(); });
+
+dessinerPorte();
+voix("Bienvenue au premier étage. Devant toi, un conteneur. Sa porte ne cède pas à une commande — elle cède quand tu comprends par où il est faillible. Observe sa surface, là-haut, et dis-moi ce qui t'y semble dangereux.");
+champ.focus();
+
+// pour vérifier le moteur depuis la console
+window.E = { POINTS, get ouverts(){ return ouverts; }, traiter };
+</script>
+</body>
+</html>

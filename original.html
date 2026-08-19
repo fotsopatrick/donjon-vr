@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>LE PETIT DONJON</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0a0710; color: #d8d0e8;
+    font-family: system-ui, "Segoe UI", sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: safe center; gap: 10px;
+    padding: 16px;
+  }
+  h1 { margin: 0; font-size: 20px; letter-spacing: 2px; color: #e8c66a; }
+  canvas {
+    border: 2px solid #3a2a55; border-radius: 6px;
+    background: #0d0a14; box-shadow: 0 0 40px rgba(0,0,0,.8);
+    image-rendering: pixelated; max-width: 96vw; touch-action: none;
+  }
+  #aide { font-size: 13px; color: #8a7fa8; text-align: center; }
+  kbd {
+    background:#2a2240; border:1px solid #4a3a6a; border-radius:3px;
+    padding:1px 6px; font-size:11px;
+  }
+  #chat { position: fixed; left: 12px; bottom: 12px; width: 330px; z-index: 10; }
+  #chat.cache { display: none; }
+  #chatlog {
+    background: rgba(13,10,20,.93); border: 1px solid #4a3a6a; border-radius: 6px;
+    padding: 8px; max-height: 130px; overflow-y: auto; font-size: 12px;
+    color: #d8d0e8; line-height: 1.5;
+  }
+  #chatlog div { margin: 2px 0; }
+  #chatlog .joueur { color: #4f8cf7; }
+  #chatlog .esprit { color: #e8c66a; }
+  #chatinput {
+    margin-top: 6px; width: 100%; padding: 8px; border-radius: 6px;
+    border: 1px solid #4a3a6a; background: #151020; color: #e8d0f0;
+    font-size: 13px; outline: none;
+  }
+  #compbar {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    max-width: 640px;
+  }
+  .chip {
+    background: #1e1640; border: 1px solid #4a3a6a; color: #e8c66a;
+    font-size: 11px; padding: 4px 10px; border-radius: 99px;
+    cursor: pointer; font-family: inherit;
+  }
+  .chip:hover { background: #2a2240; border-color: #8a7fa8; }
+  #creator {
+    display: flex; flex-direction: column; gap: 6px; max-width: 640px;
+    width: 100%; padding: 12px; border: 1px solid #2a2240; border-radius: 8px;
+    background: #0f0a18;
+  }
+  .creator-titre {
+    font-size: 11px; color: #8a7fa8; text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #creator input {
+    padding: 8px; border-radius: 6px; border: 1px solid #3a2a55;
+    background: #151020; color: #e8d0f0; font-size: 13px; outline: none;
+  }
+  #compcree {
+    padding: 8px; border-radius: 6px; border: 1px solid #e8c66a;
+    background: #1e1640; color: #e8c66a; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+  }
+  #compcree:hover { background: #2a2240; }
+  .creator-exemple { font-size: 12px; color: #6a5a90; cursor: pointer; }
+  .creator-exemple:hover { color: #e8c66a; }
+  #controles-tactiles { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  #controles-tactiles.cache { display: none; }
+  #zone-stick {
+    position: fixed; left: 0; top: 0; width: 60%; height: 72%;
+    pointer-events: auto; touch-action: none; z-index: 5;
+  }
+  #stick-base {
+    position: fixed; width: 132px; height: 132px; border-radius: 50%;
+    border: 2px solid rgba(232,198,106,.55); background: rgba(30,22,64,.35);
+    pointer-events: none; touch-action: none; display: none; z-index: 6;
+  }
+  #stick-base.actif { display: block; }
+  #stick-bouton {
+    position: absolute; left: 38px; top: 38px; width: 56px; height: 56px;
+    border-radius: 50%; background: rgba(232,198,106,.75); pointer-events: none;
+  }
+  .tactile-droite {
+    position: fixed; right: 16px; bottom: 22px; display: flex;
+    flex-direction: column; gap: 14px; pointer-events: auto;
+  }
+  #btn-attaque, #btn-chat {
+    width: 72px; height: 72px; border-radius: 50%; border: 2px solid #e8c66a;
+    background: rgba(30,22,64,.6); color: #e8c66a; font-size: 26px;
+    touch-action: none; display: flex; align-items: center; justify-content: center;
+  }
+  #btn-son {
+    position: fixed; top: 10px; right: 12px; z-index: 20;
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid #4a3a6a;
+    background: rgba(30,22,64,.6); color: #e8c66a; font-size: 18px; cursor: pointer;
+  }
+  #btn-son:hover { background: #2a2240; }
+  /* Les règles & l'idée : même famille visuelle que le bouton son */
+  #btn-regles { position: fixed; top: 10px; right: 56px; z-index: 30;
+    background: #1c1733; color: #cbd5e1; border: 1px solid #3a2f5e;
+    border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 14px; }
+  #btn-regles:hover { background: #2a2240; }
+  #dlg-regles { background: #0d0a1a; color: #e2e8f0; border: 1px solid #3a2f5e;
+    border-radius: 14px; max-width: 520px; width: calc(100vw - 40px);
+    padding: 20px 22px; }
+  #dlg-regles::backdrop { background: rgba(2, 1, 8, .75); }
+  #dlg-regles h2 { margin: 0 0 10px; font-size: 1.1rem; }
+  #dlg-regles h3 { margin: 14px 0 6px; font-size: .8rem; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .05em; }
+  #dlg-regles p, #dlg-regles li { font-size: .92rem; line-height: 1.55; }
+  #dlg-regles ul { margin: 0; padding-left: 20px; }
+  #dlg-regles .plus-tard { border-left: 3px solid #a855f7; padding-left: 12px;
+    color: #c4b5fd; }
+  #dlg-regles button { margin-top: 14px; background: #2563eb; color: #fff;
+    border: 0; border-radius: 8px; padding: 9px 16px; font-weight: 700;
+    cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>LE PETIT DONJON</h1>
+<button id="btn-son" type="button" title="Couper ou remettre le son">🔊</button>
+<button id="btn-regles" type="button" title="Les règles et l'idée du jeu">📜</button>
+<dialog id="dlg-regles">
+  <h2>🗝️ Le Petit Donjon — les règles &amp; l'idée</h2>
+  <h3>📖 Mode d’emploi</h3>
+  <ul>
+    <li>Trouve la clé, ouvre la porte, sors vivant.</li>
+    <li>Chaque étage est plus dur, et le donjon change à chaque partie.</li>
+    <li>Les rats sont rapides et fragiles, les slimes lents et costauds.</li>
+    <li>La compétence unique : tu crées en parlant. Appuie sur
+      <b>C</b> (ou 💬) et demande une potion, une épée, un chemin, un clone…</li>
+  </ul>
+  <h3>🎯 La vision</h3>
+  <p>Prouver qu'on peut faire un vrai petit jeu, ensemble, en une semaine —
+    rien à installer, un seul fichier.</p>
+  <p class="plus-tard"><b>Pour plus tard :</b> un RPG où tu envoies tes
+    attaques en choisissant une compétence, comme dans les isekai — tu
+    sélectionnes, l'attaque part.</p>
+  <button id="btn-regles-fermer" type="button">Retour au donjon</button>
+</dialog>
+<canvas id="game" width="960" height="576"></canvas>
+<div id="aide">
+  <kbd>ZQSD</kbd>/<kbd>WASD</kbd>/<kbd>Flèches</kbd> bouger ·
+  <kbd>Espace</kbd>/<kbd>J</kbd> frapper ·
+  <kbd>Maj</kbd> dash ·
+  <kbd>C</kbd> parler au donjon ·
+  <kbd>P</kbd> pause ·
+  <kbd>Entrée</kbd>/clic commencer
+</div>
+<div id="compbar"></div>
+<div id="controles-tactiles" class="cache">
+  <div id="zone-stick"></div>
+  <div id="stick-base"><div id="stick-bouton"></div></div>
+  <div class="tactile-droite">
+    <button id="btn-attaque" type="button">⚔</button>
+    <button id="btn-chat" type="button">💬</button>
+  </div>
+</div>
+<div id="creator">
+  <div class="creator-titre">Créateur de compétence</div>
+  <input id="compnom" placeholder="Nom de la compétence (ex : FEU)" maxlength="20" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+  <input id="compcmd" placeholder="Ce que ça fait (ex : crée une torche devant moi)" maxlength="90" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+  <button id="compcree" type="button">Créer &amp; sauver</button>
+  <div class="creator-exemple" id="exempleComp">Exemple : <b>FEU</b> → « crée une torche devant moi » — clique pour remplir.</div>
+</div>
+<div id="chat" class="cache">
+  <div id="chatlog"></div>
+  <input id="chatinput" type="text" placeholder="Parle au donjon… ex : crée une potion, je me duplique" maxlength="90" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+</div>
+<script>
+/* DONJON 2D — prototype jour 1.
+   Boucle de gameplay : se déplacer → trouver la clé → ouvrir la porte → sortir.
+   Ennemis : rats (rapides, fragiles) et slimes (lents, costauds).
+   Map générée (salles + couloirs) à chaque partie. */
+
+"use strict";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = 28, H = 18;          // grille en tuiles
+const TS = 32;                 // taille d'une tuile en pixels
+const WALL = 0, FLOOR = 1, DOOR = 2, KEY = 3;
+
+let grid = [];
+let player = null;
+let enemies = [];
+let keyPos = null, doorPos = null;
+let state = "title";           // title | play | dead | win
+let kills = 0;
+let gameTime = 0;
+let message = "", messageT = 0;
+let torches = [];
+let chatOpen = false, chatInit = false, clueShown = false;
+let skills = [];
+let competences = ["BRISE", "DUPLICATION"];
+const COMPETENCE_TRIGGER = {
+  "BRISE": "brise les murs",
+  "DUPLICATION": "je me duplique",
+  "PIÈGE": "crée un piège",
+};
+let competencesPerso = {};
+let traps = [];
+let killer = null;
+let maxHp = 3;
+let chest = null;
+let clones = [];
+
+const keys = {};
+const VITESSE = 150;           // px / s
+const chatEl = document.getElementById("chat");
+const chatLog = document.getElementById("chatlog");
+const chatInput = document.getElementById("chatinput");
+const compBar = document.getElementById("compbar");
+const compNom = document.getElementById("compnom");
+const compCmd = document.getElementById("compcmd");
+const compCree = document.getElementById("compcree");
+const ctrlTactiles = document.getElementById("controles-tactiles");
+const zoneStick = document.getElementById("zone-stick");
+const stickBase = document.getElementById("stick-base");
+const stickBouton = document.getElementById("stick-bouton");
+const btnAttaque = document.getElementById("btn-attaque");
+const btnChat = document.getElementById("btn-chat");
+let stick = { active: false, id: -1, dx: 0, dy: 0, cx: 0, cy: 0, r: 55 };
+let lastTap = 0;
+let dashCd = 0;
+let estTactile = false;
+let attaqueMaintenue = false;
+let flash = 0;
+let shake = 0;
+let niveau = 1;
+let particules = [];
+let reporterUpgrades = null;   // upgrades gardés d'un étage à l'autre (même partie)
+let record = 0;
+try { record = parseInt(localStorage.getItem("donjon_record") || "0", 10) || 0; } catch (e) {}
+function sauverRecord(n) {
+  if (n > record) { record = n; try { localStorage.setItem("donjon_record", String(n)); } catch (e) {} }
+}
+
+/* ---------------- sons (WebAudio, zéro fichier) ---------------- */
+
+let audioCtx = null;
+let sonActif = true;
+try { sonActif = localStorage.getItem("donjon_son") !== "off"; } catch (e) {}
+const btnSon = document.getElementById("btn-son");
+// Les règles & l'idée : un <dialog> natif — la partie est en pause visuelle
+// tant qu'il est ouvert, et Échap le ferme tout seul.
+(function () {
+  const btn = document.getElementById("btn-regles");
+  const dlg = document.getElementById("dlg-regles");
+  const fermer = document.getElementById("btn-regles-fermer");
+  if (!btn || !dlg || !fermer || !dlg.showModal) return;
+  btn.addEventListener("click", function () { dlg.showModal(); });
+  fermer.addEventListener("click", function () { dlg.close(); });
+})();
+function assurerAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function bip(freq, dur, forme, vol, quand) {
+  if (!sonActif || !audioCtx) return;
+  try {
+    const t = audioCtx.currentTime + (quand || 0);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = forme || "square";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol || 0.07, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+function sonCoup() { bip(220, 0.07, "square", 0.04); }
+function sonTouche() { bip(150, 0.1, "sawtooth", 0.09); }
+function sonDegat() { bip(110, 0.22, "sawtooth", 0.12); }
+function sonCle() { bip(660, 0.09, "square", 0.07); bip(880, 0.14, "square", 0.07, 0.09); }
+function sonEtage() { bip(523, 0.11, "square", 0.07); bip(659, 0.11, "square", 0.07, 0.11); bip(784, 0.2, "square", 0.07, 0.22); }
+function sonMort() { bip(200, 0.3, "sawtooth", 0.1); bip(120, 0.5, "sawtooth", 0.1, 0.2); }
+function majBtnSon() { if (btnSon) btnSon.textContent = sonActif ? "🔊" : "🔇"; }
+if (btnSon) {
+  majBtnSon();
+  btnSon.addEventListener("click", () => {
+    sonActif = !sonActif;
+    try { localStorage.setItem("donjon_son", sonActif ? "on" : "off"); } catch (e) {}
+    if (sonActif) { assurerAudio(); sonCle(); }
+    majBtnSon();
+    btnSon.blur();
+  });
+}
+
+/* ---------------- particules & secousse ---------------- */
+
+function eclat(x, y, couleur) {
+  for (let i = 0; i < 10; i++) {
+    particules.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 170, vy: (Math.random() - 0.5) * 170,
+      t: 0.35 + Math.random() * 0.25, couleur,
+    });
+  }
+}
+function mettreAJourEffets(dt) {
+  shake = Math.max(0, shake - dt * 1.4);
+  for (const p of particules) { p.x += p.vx * dt; p.y += p.vy * dt; p.t -= dt; }
+  particules = particules.filter((p) => p.t > 0);
+}
+
+window.addEventListener("error", (ev) => {
+  console.error("DONJON_ERROR:", ev.message, ev.filename, ev.lineno);
+  try {
+    const d = document.createElement("div");
+    d.style.cssText = "position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;z-index:999;padding:8px;font:12px monospace;white-space:pre-wrap";
+    d.textContent = "Erreur : " + ev.message;
+    document.body.appendChild(d);
+  } catch (e) {}
+});
+const ATK_CD = 0.38;
+const ATK_PORTEE = 1.4;        // en tuiles
+const INVULN = 1.0;
+
+/* ---------------- génération de la map ---------------- */
+
+function centerX(r) { return Math.floor(r.x + r.w / 2); }
+function centerY(r) { return Math.floor(r.y + r.h / 2); }
+
+function carveRoom(r) {
+  for (let y = r.y; y < r.y + r.h; y++)
+    for (let x = r.x; x < r.x + r.w; x++) grid[y][x] = FLOOR;
+}
+function carveH(x1, x2, y) {
+  for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++)
+    if (grid[y][x] === WALL) grid[y][x] = FLOOR;
+}
+function carveV(y1, y2, x) {
+  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++)
+    if (grid[y][x] === WALL) grid[y][x] = FLOOR;
+}
+
+function posLibre(r) {
+  for (let y = r.y; y < r.y + r.h; y++)
+    for (let x = r.x; x < r.x + r.w; x++)
+      if (grid[y][x] === FLOOR) return { x, y };
+  return { x: centerX(r), y: centerY(r) };
+}
+
+function generer() {
+  grid = [];
+  for (let y = 0; y < H; y++) grid.push(new Array(W).fill(WALL));
+  const rooms = [];
+  const objectif = 6;
+  for (let i = 0; i < 120 && rooms.length < objectif; i++) {
+    const rw = 4 + (Math.random() * 4 | 0);
+    const rh = 3 + (Math.random() * 3 | 0);
+    const r = {
+      x: 1 + (Math.random() * (W - rw - 2) | 0),
+      y: 1 + (Math.random() * (H - rh - 2) | 0),
+      w: rw, h: rh,
+    };
+    let ok = true;
+    for (const o of rooms) {
+      if (r.x < o.x + o.w + 2 && r.x + r.w + 2 > o.x &&
+          r.y < o.y + o.h + 2 && r.y + r.h + 2 > o.y) { ok = false; break; }
+    }
+    if (ok) { rooms.push(r); carveRoom(r); }
+  }
+  if (rooms.length < 3) { generer(); return; }
+  for (let i = 1; i < rooms.length; i++) {
+    const a = rooms[i - 1], b = rooms[i];
+    const ax = centerX(a), ay = centerY(a), bx = centerX(b), by = centerY(b);
+    if (Math.random() < 0.5) { carveH(ax, bx, ay); carveV(ay, by, bx); }
+    else { carveV(ay, by, ax); carveH(ax, bx, by); }
+  }
+
+  const dep = posLibre(rooms[0]);
+  player = {
+    px: dep.x * TS + TS / 2, py: dep.y * TS + TS / 2,
+    dir: 0, hp: 3, hasKey: false, epee: false, bouclier: false,
+    atk: 0, atkCd: 0, inv: 0, walk: 0,
+  };
+  if (reporterUpgrades) {
+    maxHp = reporterUpgrades.maxHp;
+    player.hp = reporterUpgrades.hp;
+    player.epee = reporterUpgrades.epee;
+    player.bouclier = reporterUpgrades.bouclier;
+    reporterUpgrades = null;
+  } else {
+    maxHp = 3;
+  }
+  const k = posLibre(rooms[rooms.length - 1]);
+  keyPos = { x: k.x, y: k.y };
+  grid[k.y][k.x] = KEY;
+  const d = posLibre(rooms[1]);
+  doorPos = { x: d.x, y: d.y };
+  grid[d.y][d.x] = DOOR;
+
+  enemies = [];
+  const nb = Math.min(14, 5 + niveau + (Math.random() * 3 | 0));
+  for (let i = 0; i < nb; i++) {
+    const r = rooms[2 + (Math.random() * (rooms.length - 2) | 0)];
+    const p = posLibre(r);
+    enemies.push({
+      x: p.x, y: p.y, fx: p.x, fy: p.y, p: 1,
+      type: Math.random() < 0.5 ? "rat" : "slime",
+      hp: 0, cd: Math.random(), patrol: 0, dr: 0,
+    });
+  }
+  torches = [];
+  for (let y = 1; y < H - 1; y++)
+    for (let x = 1; x < W - 1; x++)
+      if (grid[y][x] === WALL && Math.random() < 0.05) torches.push({ x, y, ph: Math.random() * 6 });
+  kills = 0;
+  gameTime = 0;
+  message = "";
+  chest = null;
+  clones = [];
+  traps = [];
+  killer = null;
+  flash = 0;
+  shake = 0;
+  particules = [];
+  attaqueMaintenue = false;
+  if (!clueShown) {
+    clueShown = true;
+    message = "Une voix dans les murs murmure… « C » (ou 💬) pour lui parler.";
+    messageT = 4.5;
+  } else {
+    message = "Étage " + niveau;
+    messageT = 2.2;
+  }
+  state = "play";
+}
+
+function nouvellePartie() {
+  niveau = 1;
+  reporterUpgrades = null;
+  generer();
+}
+function etageSuivant() {
+  niveau++;
+  // On garde l'équipement gagné et on soigne d'un cœur entre deux étages.
+  reporterUpgrades = {
+    hp: Math.min(maxHp, player.hp + 1), maxHp,
+    epee: player.epee, bouclier: player.bouclier,
+  };
+  sonEtage();
+  generer();
+}
+
+/* ---------------- aides de jeu ---------------- */
+
+function tuileAt(px, py) {
+  const tx = Math.floor(px / TS), ty = Math.floor(py / TS);
+  if (tx < 0 || ty < 0 || tx >= W || ty >= H) return WALL;
+  return grid[ty][tx];
+}
+function estOccupe(tx, ty) {
+  if (tuileAt(tx * TS + 1, ty * TS + 1) === WALL) return true;
+  for (const e of enemies) if (e.x === tx && e.y === ty) return true;
+  return false;
+}
+function dist2(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; }
+
+/* ---------------- entrées ---------------- */
+
+window.addEventListener("keydown", (ev) => {
+  if (chatOpen) {
+    if (ev.key === "Escape") { fermerChat(); ev.preventDefault(); }
+    return;
+  }
+  assurerAudio();
+  keys[ev.key.toLowerCase()] = true;
+  if (ev.key === "Enter") {
+    if (state === "title" || state === "dead") nouvellePartie();
+    else if (state === "win") etageSuivant();
+    else if (state === "pause") state = "play";
+  }
+  if (ev.key.toLowerCase() === "r") {
+    if (state === "dead") nouvellePartie();
+    else if (state === "win") etageSuivant();
+  }
+  if (ev.key.toLowerCase() === "p" && (state === "play" || state === "pause")) {
+    state = state === "play" ? "pause" : "play";
+  }
+  if (ev.key === " " || ev.key.toLowerCase() === "j") {
+    if (state === "play") attaqueMaintenue = true;
+  }
+  if (ev.key === "Shift" && state === "play") faireDash();
+  if (ev.key.toLowerCase() === "c" && state === "play") { ev.preventDefault(); ouvrirChat(); }
+});
+canvas.addEventListener("pointerdown", () => {
+  assurerAudio();
+  if (state === "title" || state === "dead") nouvellePartie();
+  else if (state === "win") etageSuivant();
+  else if (state === "pause") state = "play";
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && state === "play") state = "pause";
+});
+window.addEventListener("keyup", (ev) => {
+  keys[ev.key.toLowerCase()] = false;
+  if (ev.key === " " || ev.key.toLowerCase() === "j") attaqueMaintenue = false;
+});
+chatInput.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter") { traiterChat(chatInput.value); chatInput.value = ""; ev.preventDefault(); }
+});
+document.addEventListener("click", (ev) => {
+  if (chatOpen && chatEl && !chatEl.contains(ev.target)) fermerChat();
+});
+chatInput.addEventListener("blur", () => { if (chatOpen) fermerChat(); });
+
+/* ---------------- tactile (téléphone) ---------------- */
+
+estTactile = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+if (ctrlTactiles && estTactile) ctrlTactiles.classList.remove("cache");
+if (estTactile) {
+  const aide = document.getElementById("aide");
+  if (aide) aide.innerHTML = "Glisse pour bouger · double-tap = dash · <b>⚔</b> frapper · <b>💬</b> parler au donjon · touche l'écran pour commencer";
+}
+function faireDash() {
+  if (dashCd > 0) return;
+  dashCd = 0.6;
+  const { dx, dy } = direction();
+  let dir = player.dir;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 0.25) dir = dx > 0 ? 1 : 3;
+  else if (Math.abs(dy) > 0.25) dir = dy > 0 ? 2 : 0;
+  const o = [[0, -1], [1, 0], [0, 1], [-1, 0]][dir];
+  for (let i = 0; i < 3; i++) {
+    const nx = player.px + o[0] * TS, ny = player.py + o[1] * TS;
+    const t = tuileAt(nx + (o[0] > 0 ? 9 : -9), ny + (o[1] > 0 ? 9 : -9));
+    if (t === WALL || t === DOOR) break;
+    player.px = nx; player.py = ny;
+  }
+  player.inv = Math.max(player.inv, 0.5);
+  flash = 0.12;
+  sonCoup();
+  message = "Dash !"; messageT = 0.4;
+}
+
+if (zoneStick && stickBase && stickBouton) {
+  zoneStick.addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    assurerAudio();
+    // Hors partie, un toucher dans la zone du stick sert à (re)démarrer,
+    // comme un toucher sur le canvas.
+    if (state !== "play") {
+      if (state === "title" || state === "dead") nouvellePartie();
+      else if (state === "win") etageSuivant();
+      else if (state === "pause") state = "play";
+      return;
+    }
+    const t = ev.changedTouches[0];
+    const now = performance.now();
+    const double = (now - lastTap) < 280;
+    lastTap = now;
+    stickBase.style.left = (t.clientX - 66) + "px";
+    stickBase.style.top = (t.clientY - 66) + "px";
+    stickBase.classList.add("actif");
+    stickBouton.style.left = "38px";
+    stickBouton.style.top = "38px";
+    stick.cx = t.clientX; stick.cy = t.clientY;
+    stick.active = true; stick.id = t.identifier; stick.dx = 0; stick.dy = 0;
+    if (double && state === "play") faireDash();
+  }, { passive: false });
+  zoneStick.addEventListener("touchmove", (ev) => {
+    ev.preventDefault();
+    for (const t of ev.changedTouches) {
+      if (t.identifier === stick.id) {
+        let dx = t.clientX - stick.cx, dy = t.clientY - stick.cy;
+        const d = Math.hypot(dx, dy);
+        if (d > stick.r) { dx = dx / d * stick.r; dy = dy / d * stick.r; }
+        stick.dx = dx / stick.r; stick.dy = dy / stick.r;
+        stickBouton.style.left = (66 + dx - 28) + "px";
+        stickBouton.style.top = (66 + dy - 28) + "px";
+      }
+    }
+  }, { passive: false });
+  const stopper = (ev) => {
+    ev.preventDefault();
+    for (const t of ev.changedTouches) {
+      if (t.identifier === stick.id) {
+        stick.active = false; stick.id = -1; stick.dx = 0; stick.dy = 0;
+        stickBase.classList.remove("actif");
+      }
+    }
+  };
+  zoneStick.addEventListener("touchend", stopper, { passive: false });
+  zoneStick.addEventListener("touchcancel", stopper, { passive: false });
+}
+if (btnAttaque) {
+  btnAttaque.addEventListener("touchstart", (ev) => { ev.preventDefault(); attaqueMaintenue = true; attaquer(); }, { passive: false });
+  btnAttaque.addEventListener("touchend", (ev) => { ev.preventDefault(); attaqueMaintenue = false; }, { passive: false });
+  btnAttaque.addEventListener("touchcancel", (ev) => { ev.preventDefault(); attaqueMaintenue = false; }, { passive: false });
+}
+if (btnChat) btnChat.addEventListener("touchstart", (ev) => { ev.preventDefault(); ouvrirChat(); }, { passive: false });
+
+function direction() {
+  let dx = 0, dy = 0;
+  if (keys["z"] || keys["w"] || keys["arrowup"]) dy -= 1;
+  if (keys["s"] || keys["arrowdown"]) dy += 1;
+  if (keys["q"] || keys["a"] || keys["arrowleft"]) dx -= 1;
+  if (keys["d"] || keys["arrowright"]) dx += 1;
+  if (stick.active) { dx += stick.dx; dy += stick.dy; }
+  return { dx, dy };
+}
+
+/* ---------------- combat ---------------- */
+
+function frapperDepuis(cx, cy, dir, degats) {
+  const ox = [0, 1, 0, -1][dir], oy = [-1, 0, 1, 0][dir];
+  let touché = false;
+  for (const e of enemies) {
+    const ex = e.x * TS + TS / 2, ey = e.y * TS + TS / 2;
+    if (Math.abs(ex - (cx + ox * TS)) < TS * 0.8 && Math.abs(ey - (cy + oy * TS)) < TS * 0.8) {
+      e.hp += degats;
+      touché = true;
+      if (e.hp >= (e.type === "rat" ? 1 : 2)) {
+        enemies = enemies.filter((x) => x !== e);
+        kills++;
+        eclat(ex, ey, e.type === "rat" ? "#c0392b" : "#5aa052");
+      }
+    }
+  }
+  return touché;
+}
+
+function attaquer() {
+  if (player.atkCd > 0 || state !== "play") return;
+  player.atkCd = ATK_CD;
+  player.atk = 0.22;
+  // Auto-visée : viser l'ennemi le plus proche (Soul Knight / Archero).
+  let cible = null, best = 36 * TS * TS;
+  for (const e of enemies) {
+    const ex = e.x * TS + TS / 2, ey = e.y * TS + TS / 2;
+    const d = (ex - player.px) * (ex - player.px) + (ey - player.py) * (ey - player.py);
+    if (d < best) { best = d; cible = { ex, ey }; }
+  }
+  const { dx, dy } = direction();
+  let dir;
+  if (cible) {
+    const ax = cible.ex - player.px, ay = cible.ey - player.py;
+    dir = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 1 : 3) : (ay > 0 ? 2 : 0);
+  } else {
+    if (dx !== 0 || dy !== 0) player.dir = dx === 0 ? (dy < 0 ? 0 : 2) : (dx < 0 ? 3 : 1);
+    dir = player.dir;
+  }
+  player.dir = dir;
+  const degats = player.epee ? 99 : 1;
+  sonCoup();
+  let touché = frapperDepuis(player.px, player.py, dir, degats);
+  for (const c of clones) touché = frapperDepuis(c.px, c.py, c.dir, degats) || touché;
+  if (touché) {
+    message = "Bam !"; messageT = 0.5;
+    flash = 0.16;
+    sonTouche();
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+}
+
+/* ---------------- IA des ennemis ---------------- */
+
+function prochaineCase(e) {
+  const pt = { x: Math.floor(player.px / TS), y: Math.floor(player.py / TS) };
+  const proche = (pt.x - e.x) * (pt.x - e.x) + (pt.y - e.y) * (pt.y - e.y) < 49;
+  if (proche) {
+    const dx = pt.x - e.x, dy = pt.y - e.y;
+    const candidats = [];
+    if (dx !== 0) candidats.push({ x: e.x + Math.sign(dx), y: e.y });
+    if (dy !== 0) candidats.push({ x: e.x, y: e.y + Math.sign(dy) });
+    candidats.sort((a, b) => dist2(a, pt) - dist2(b, pt));
+    for (const c of candidats)
+      if (!estOccupe(c.x, c.y)) return c;
+  }
+  e.patrol -= 1;
+  if (e.patrol <= 0) {
+    e.patrol = 1 + Math.random() * 2;
+    const voisins = [];
+    for (const [vx, vy] of [[0, 1], [0, -1], [1, 0], [-1, 0]])
+      if (!estOccupe(e.x + vx, e.y + vy)) voisins.push({ x: e.x + vx, y: e.y + vy });
+    if (voisins.length) return voisins[Math.random() * voisins.length | 0];
+  }
+  return { x: e.x, y: e.y };
+}
+
+/* ---------------- mise à jour ---------------- */
+
+function mettreAJour(dt) {
+  if (state !== "play") return;
+  if (chatOpen) return;
+  gameTime += dt;
+  flash = Math.max(0, flash - dt);
+  if (attaqueMaintenue) attaquer();
+
+  player.atkCd = Math.max(0, player.atkCd - dt);
+  player.atk = Math.max(0, player.atk - dt);
+  player.inv = Math.max(0, player.inv - dt);
+  dashCd = Math.max(0, dashCd - dt);
+  if (messageT > 0) { messageT -= dt; if (messageT <= 0) message = ""; }
+
+  const { dx, dy } = direction();
+  if (dx !== 0 || dy !== 0) {
+    player.dir = dx === 0 ? (dy < 0 ? 0 : 2) : (dx < 0 ? 3 : 1);
+    player.walk += dt * 8;
+    bouger(dx * VITESSE * dt, 0);
+    bouger(0, dy * VITESSE * dt);
+  }
+  for (const c of clones) {
+    c.dir = player.dir;
+    if (dx !== 0 || dy !== 0) {
+      bougerClone(c, dx * VITESSE * dt, 0);
+      bougerClone(c, 0, dy * VITESSE * dt);
+    }
+  }
+
+  // ramasser la clé
+  const tx = Math.floor(player.px / TS), ty = Math.floor(player.py / TS);
+  if (keyPos && tx === keyPos.x && ty === keyPos.y) {
+    player.hasKey = true;
+    grid[ty][tx] = FLOOR;
+    keyPos = null;
+    message = "Tu as la clé ! Suis la flèche verte.";
+    messageT = 2.5;
+    sonCle();
+    eclat(player.px, player.py, "#f2c94c");
+  }
+  // coffre créé par le chat
+  if (chest && tx === chest.x && ty === chest.y) {
+    if (!player.hasKey) { player.hasKey = true; message = "Le coffre contenait la clé !"; }
+    else { player.hp = Math.min(maxHp, player.hp + 1); message = "Le coffre contenait une potion ! +1 cœur."; }
+    messageT = 2;
+    sonCle();
+    chest = null;
+  }
+  // porte
+  if (doorPos && tx === doorPos.x && ty === doorPos.y) {
+    if (player.hasKey) {
+      state = "win";
+      sauverRecord(niveau);
+      sonEtage();
+    }
+  }
+
+  for (const e of enemies) {
+    const vit = e.type === "rat" ? 1.6 : 0.9;
+    e.p += vit * dt;
+    if (e.p >= 1) {
+      e.fx = e.x; e.fy = e.y;
+      const n = prochaineCase(e);
+      e.x = n.x; e.y = n.y;
+      e.p = 0;
+    }
+    const ex = (e.fx + (e.x - e.fx) * e.p) * TS + TS / 2;
+    const ey = (e.fy + (e.y - e.fy) * e.p) * TS + TS / 2;
+    if (Math.abs(ex - player.px) < TS * 0.7 && Math.abs(ey - player.py) < TS * 0.7) {
+      if (player.inv <= 0) {
+        player.hp--;
+        player.inv = INVULN;
+        shake = 0.45;
+        sonDegat();
+        if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+        if (player.hp <= 0) {
+          state = "dead";
+          killer = e;
+          sauverRecord(niveau);
+          sonMort();
+        }
+      }
+    }
+  }
+  for (const g of traps) {
+    for (const e of enemies) {
+      if (e.x === g.x && e.y === g.y) {
+        enemies = enemies.filter((x) => x !== e);
+        kills++;
+        eclat(g.x * TS + TS / 2, g.y * TS + TS / 2, "#c0392b");
+        sonTouche();
+        traps = traps.filter((x) => x !== g);
+        break;
+      }
+    }
+  }
+}
+
+function bouger(dx, dy) {
+  if (dx !== 0) {
+    const nx = player.px + dx;
+    const t = tuileAt(nx + (dx > 0 ? 9 : -9), player.py);
+    if (t === WALL) return;
+    if (t === DOOR && !player.hasKey) { porteBloquee(); return; }
+    player.px = nx;
+  }
+  if (dy !== 0) {
+    const ny = player.py + dy;
+    const t = tuileAt(player.px, ny + (dy > 0 ? 9 : -9));
+    if (t === WALL) return;
+    if (t === DOOR && !player.hasKey) { porteBloquee(); return; }
+    player.py = ny;
+  }
+}
+
+function porteBloquee() {
+  message = "Il te faut la clé !";
+  messageT = 1.5;
+}
+
+/* ---------------- le chat : créer en parlant ---------------- */
+
+function normaliser(t) {
+  const map = { é: "e", è: "e", ê: "e", ë: "e", à: "a", â: "a", ä: "a", î: "i", ï: "i", ô: "o", ö: "o", ù: "u", û: "u", ü: "u", ç: "c" };
+  return t.toLowerCase().replace(/-/g, " ").split("").map((c) => map[c] || c).join("").trim();
+}
+function caseDevant() {
+  const o = [[0, -1], [1, 0], [0, 1], [-1, 0]][player.dir];
+  return { x: Math.floor(player.px / TS) + o[0], y: Math.floor(player.py / TS) + o[1] };
+}
+function esprit(m) {
+  const d = document.createElement("div");
+  d.className = "esprit";
+  d.textContent = m;
+  chatLog.appendChild(d);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  message = m;
+  messageT = 3;
+}
+function ouvrirChat() {
+  chatOpen = true;
+  chatEl.classList.remove("cache");
+  if (estTactile && ctrlTactiles) ctrlTactiles.classList.add("cache");
+  if (!chatInit) {
+    chatInit = true;
+    esprit("Je suis l'esprit du donjon. Demande-moi : « crée une potion », « une épée », « un coffre », « un bouclier », « une clé », « un chemin », « débloque ce mur », « crée un piège », « brise les murs vers la gauche », ou « je me duplique ».");
+  }
+  chatInput.focus();
+}
+function fermerChat() {
+  chatOpen = false;
+  chatEl.classList.add("cache");
+  chatInput.blur();
+  if (estTactile && ctrlTactiles) ctrlTactiles.classList.remove("cache");
+}
+function placerJumeau() {
+  const essais = [[2, 0], [-2, 0], [0, 2], [0, -2]];
+  for (const [ox, oy] of essais) {
+    const tx = Math.floor(player.px / TS) + ox, ty = Math.floor(player.py / TS) + oy;
+    if (tx < 1 || ty < 1 || tx >= W - 1 || ty >= H - 1) continue;
+    if (grid[ty][tx] === FLOOR && !estOccupe(tx, ty)) {
+      clones.push({ px: tx * TS + TS / 2, py: ty * TS + TS / 2, dir: player.dir });
+      return true;
+    }
+  }
+  return false;
+}
+function traiterChat(texte) {
+  const t = normaliser(texte);
+  if (!t) return;
+  const d = document.createElement("div");
+  d.className = "joueur";
+  d.textContent = "Toi : " + texte.trim();
+  chatLog.appendChild(d);
+  if (state !== "play") { esprit("Le donjon dort encore. Commence la partie (Entrée ou touche l'écran) d'abord."); return; }
+  const devant = caseDevant();
+  if (t.includes("potion") || t.includes("soigne") || t.includes("vie")) {
+    if (player.hp < maxHp) { player.hp++; esprit("Une potion apparaît dans ta main. +1 cœur."); }
+    else esprit("Tes cœurs sont déjà pleins.");
+  } else if (t.includes("epee") || t.includes("arme")) {
+    player.epee = true; esprit("Tu brandis une épée enchantée : un coup suffit désormais.");
+  } else if (t.includes("coffre")) {
+    if (grid[devant.y][devant.x] === FLOOR && !chest) { chest = devant; esprit("Un coffre apparaît devant toi. Va l'ouvrir."); }
+    else esprit("Pas de place ici pour un coffre.");
+  } else if (t.includes("bouclier")) {
+    maxHp = 5; player.bouclier = true; player.hp = Math.min(maxHp, player.hp + 2); esprit("Un bouclier magique te protège. +2 cœurs.");
+  } else if (t.includes("cle")) {
+    player.hasKey = true; esprit("La clé apparaît dans ta main. La porte t'attend.");
+  } else if (t.includes("torche")) {
+    if (grid[devant.y][devant.x] === FLOOR) { torches.push({ x: devant.x, y: devant.y, ph: Math.random() * 6 }); esprit("Une torche s'allume devant toi."); }
+    else esprit("Pas de place pour une torche ici.");
+  } else if (t.includes("piege")) {
+    if (grid[devant.y][devant.x] === FLOOR && !traps.some((g) => g.x === devant.x && g.y === devant.y)) {
+      traps.push(devant);
+      if (!competences.includes("PIÈGE")) {
+        ajouterCompetence("PIÈGE");
+        esprit("Nouvelle compétence créée et sauvegardée : PIÈGE. Elle est dans ta barre de pouvoirs (en bas de la page). Des pointes jaillissent devant toi.");
+      } else {
+        esprit("Compétence PIÈGE : des pointes jaillissent devant toi.");
+      }
+    } else esprit("Pas de place pour un piège ici.");
+  } else if (t.includes("annul") || t.includes("retire") || t.includes("stop") || t.includes("des dupl")) {
+    clones = []; esprit("Tes jumeaux se dissipent.");
+  } else if (t.includes("dupli") || t.includes("clone") || t.includes("jumeau")) {
+    if (clones.length >= 3) esprit("Pas plus de trois toi-mêmes : l'espace-temps est fragile.");
+    else if (placerJumeau()) esprit("Un jumeau se matérialise à tes côtés. Il bouge en même temps que toi.");
+    else esprit("Pas de place pour un jumeau ici.");
+  } else if (t.includes("chemin") || t.includes("passage") || t.includes("route") || t.includes("tunnel")) {
+    const o = [[0, -1], [1, 0], [0, 1], [-1, 0]][player.dir];
+    let n = 0;
+    for (let i = 1; i <= 4; i++) {
+      const tx = Math.floor(player.px / TS) + o[0] * i, ty = Math.floor(player.py / TS) + o[1] * i;
+      if (tx < 1 || ty < 1 || tx >= W - 1 || ty >= H - 1) break;
+      if (grid[ty][tx] === WALL) { grid[ty][tx] = FLOOR; n++; }
+    }
+    if (n > 0) esprit("J'ai percé un passage vers " + ["le nord", "l'est", "le sud", "l'ouest"][player.dir] + ".");
+    else esprit("Il n'y a rien à percer par là.");
+  } else if (t.includes("brise") || t.includes("casse") || t.includes("cassant") || t.includes("detruit")) {
+    let d = directionDemandee(t);
+    if (d < 0) d = player.dir;
+    const n = briserMur(d);
+    if (n > 0) esprit("Compétence BRISE : " + n + " mur" + (n > 1 ? "s" : "") + " tombé" + (n > 1 ? "s" : "") + " vers " + ["le nord", "l'est", "le sud", "l'ouest"][d] + ".");
+    else esprit("Aucun mur à briser par là.");
+  } else if (t.includes("mur") && (t.includes("debloc") || t.includes("ouvre") || t.includes("casse") || t.includes("detruit"))) {
+    if (grid[devant.y][devant.x] === WALL) { grid[devant.y][devant.x] = FLOOR; esprit("Le mur s'effondre. Passage libre."); }
+    else esprit("Il n'y a pas de mur devant toi.");
+  } else if (t.includes("mur")) {
+    if (grid[devant.y][devant.x] === FLOOR && !chest && !estOccupe(devant.x, devant.y)) { grid[devant.y][devant.x] = WALL; esprit("Un mur se dresse devant toi."); }
+    else esprit("Pas de place pour un mur ici.");
+  } else {
+    esprit("Je n'ai pas compris. Essaie : « crée une potion », « une épée », « un coffre », « un chemin », « crée un piège », « brise les murs vers la gauche », « je me duplique ».");
+  }
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function bougerClone(c, dx, dy) {
+  if (dx !== 0) {
+    const nx = c.px + dx;
+    const t = tuileAt(nx + (dx > 0 ? 9 : -9), c.py);
+    if (t === WALL || t === DOOR) return;
+    c.px = nx;
+  }
+  if (dy !== 0) {
+    const ny = c.py + dy;
+    const t = tuileAt(c.px, ny + (dy > 0 ? 9 : -9));
+    if (t === WALL || t === DOOR) return;
+    c.py = ny;
+  }
+}
+
+/* ---------------- la barre de pouvoirs (découverte en défilant) ---------------- */
+
+function sauverCompetences() {
+  try { localStorage.setItem("donjon_competences", JSON.stringify(competences)); } catch (e) {}
+}
+function restaurerCompetences() {
+  try {
+    const s = localStorage.getItem("donjon_competences");
+    if (s) {
+      const arr = JSON.parse(s);
+      for (const c of arr) if (c && !competences.includes(c)) competences.push(c);
+    }
+  } catch (e) {}
+}
+function sauverPerso() {
+  try { localStorage.setItem("donjon_competences_perso", JSON.stringify(competencesPerso)); } catch (e) {}
+}
+function restaurerPerso() {
+  try {
+    const s = localStorage.getItem("donjon_competences_perso");
+    if (s) {
+      const o = JSON.parse(s);
+      for (const k of Object.keys(o)) {
+        if (k && !competencesPerso[k]) competencesPerso[k] = o[k];
+        if (!competences.includes(k)) competences.push(k);
+      }
+    }
+  } catch (e) {}
+}
+function ajouterCompetence(nom) {
+  if (!competences.includes(nom)) { competences.push(nom); sauverCompetences(); dessinerCompBar(); }
+}
+function dessinerCompBar() {
+  if (!compBar) return;
+  compBar.innerHTML = "";
+  for (const c of competences) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = c;
+    b.title = "Utiliser la compétence " + c;
+    b.onclick = () => {
+      if (state !== "play") nouvellePartie();
+      ouvrirChat();
+      traiterChat(COMPETENCE_TRIGGER[c] || competencesPerso[c] || c.toLowerCase());
+    };
+    compBar.appendChild(b);
+  }
+}
+restaurerCompetences();
+restaurerPerso();
+dessinerCompBar();
+if (compCree) {
+  compCree.addEventListener("click", () => {
+    const nom = (compNom.value || "").trim().toUpperCase().replace(/[^A-Z0-9ÉÈÊÀÇÙÔÎÏ]/g, "").slice(0, 16);
+    const cmd = (compCmd.value || "").trim();
+    if (!nom || !cmd) return;
+    competencesPerso[nom] = cmd;
+    sauverPerso();
+    if (!competences.includes(nom)) competences.push(nom);
+    sauverCompetences();
+    dessinerCompBar();
+    if (state === "play") traiterChat(cmd);
+    compNom.value = ""; compCmd.value = "";
+  });
+  compCmd.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") compCree.click();
+  });
+  const exempleComp = document.getElementById("exempleComp");
+  if (exempleComp) {
+    exempleComp.addEventListener("click", () => {
+      compNom.value = "FEU";
+      compCmd.value = "crée une torche devant moi";
+      compNom.focus();
+    });
+  }
+}
+
+function directionDemandee(t) {
+  if (/\bgauche\b|\bouest\b/.test(t)) return 3;
+  if (/\bdroite\b|\best\b/.test(t)) return 1;
+  if (/\bhaut\b|\bnord\b/.test(t)) return 0;
+  if (/\bbas\b|\bsud\b/.test(t)) return 2;
+  return -1;
+}
+function briserMur(dir) {
+  const o = [[0, -1], [1, 0], [0, 1], [-1, 0]][dir];
+  let tx = Math.floor(player.px / TS), ty = Math.floor(player.py / TS);
+  let n = 0;
+  for (;;) {
+    tx += o[0]; ty += o[1];
+    if (tx < 1 || ty < 1 || tx >= W - 1 || ty >= H - 1) break;
+    const t = grid[ty][tx];
+    if (t === WALL) { grid[ty][tx] = FLOOR; n++; }
+    else if (t === DOOR) break;
+    player.px = tx * TS + TS / 2;
+    player.py = ty * TS + TS / 2;
+  }
+  player.dir = dir;
+  return n;
+}
+
+/* ---------------- rendu ---------------- */
+
+function rendu() {
+  ctx.fillStyle = "#0d0a14";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (grid.length === 0) {
+    ecranTitre();
+    return;
+  }
+
+  ctx.save();
+  if (shake > 0) {
+    ctx.translate((Math.random() - 0.5) * shake * 16, (Math.random() - 0.5) * shake * 16);
+  }
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const px = x * TS, py = y * TS;
+      const t = grid[y][x];
+      if (t === WALL) {
+        ctx.fillStyle = "#241b33";
+        ctx.fillRect(px, py, TS, TS);
+        ctx.fillStyle = "#2f2342";
+        ctx.fillRect(px, py, TS, 4);
+        ctx.fillStyle = "#191225";
+        ctx.fillRect(px, py + 4, TS, TS - 4);
+      } else {
+        ctx.fillStyle = ((x + y) % 2) ? "#1c1428" : "#1a1226";
+        ctx.fillRect(px, py, TS, TS);
+      }
+      if (t === KEY) {
+        ctx.fillStyle = "#f2c94c";
+        ctx.beginPath();
+        ctx.arc(px + TS / 2, py + TS / 2, 5, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(px + TS / 2 - 1, py + TS / 2 - 1, 2, 2);
+      }
+      if (t === DOOR) {
+        ctx.fillStyle = player && player.hasKey ? "#7aa86a" : "#8a6a3a";
+        ctx.fillRect(px + 4, py + 4, TS - 8, TS - 8);
+        ctx.fillStyle = "#191225";
+        for (let i = 0; i < 3; i++)
+          ctx.fillRect(px + 8 + i * 8, py + 4, 3, TS - 8);
+        if (player && player.hasKey) {
+          ctx.fillStyle = "#cfe8c0";
+          ctx.font = "bold 14px sans-serif";
+          ctx.fillText("➤", px + 9, py + TS - 8);
+        }
+      }
+    }
+  }
+
+  for (const f of torches) {
+    const fl = 0.5 + 0.5 * Math.sin(gameTime * 6 + f.ph);
+    ctx.fillStyle = "rgba(232,140,60,0.5)";
+    ctx.beginPath();
+    ctx.arc(f.x * TS + TS / 2, f.y * TS + TS / 2, 4 + fl * 3, 0, 7);
+    ctx.fill();
+  }
+
+  if (chest) {
+    ctx.fillStyle = "#7a5a2a";
+    ctx.fillRect(chest.x * TS + 3, chest.y * TS + 3, TS - 6, TS - 6);
+    ctx.fillStyle = "#f2c94c";
+    ctx.fillRect(chest.x * TS + 3, chest.y * TS + 3, TS - 6, 7);
+    ctx.fillStyle = "#c9a24a";
+    ctx.fillRect(chest.x * TS + 3, chest.y * TS + TS - 10, TS - 6, 4);
+  }
+
+  for (const g of traps) {
+    ctx.fillStyle = "#c0392b";
+    ctx.beginPath();
+    ctx.moveTo(g.x * TS + 6, g.y * TS + TS - 6);
+    ctx.lineTo(g.x * TS + 12, g.y * TS + 4);
+    ctx.lineTo(g.x * TS + 18, g.y * TS + TS - 6);
+    ctx.lineTo(g.x * TS + 24, g.y * TS + 4);
+    ctx.lineTo(g.x * TS + 30, g.y * TS + TS - 6);
+    ctx.fill();
+    ctx.fillStyle = "#5a3030";
+    ctx.fillRect(g.x * TS + 2, g.y * TS + TS - 8, TS - 4, 6);
+  }
+
+  for (const e of enemies) {
+    const ex = (e.fx + (e.x - e.fx) * e.p) * TS + TS / 2;
+    const ey = (e.fy + (e.y - e.fy) * e.p) * TS + TS / 2;
+    if (e.type === "rat") {
+      ctx.fillStyle = "#c0392b";
+      ctx.beginPath();
+      ctx.arc(ex, ey, 8, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "#7a2015";
+      ctx.beginPath();
+      ctx.arc(ex, ey, 4, 0, 7);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "#5aa052";
+      ctx.beginPath();
+      ctx.arc(ex, ey, 10, 0, 7);
+      ctx.fill();
+      ctx.fillStyle = "#3c7036";
+      ctx.beginPath();
+      ctx.arc(ex, ey, 5, 0, 7);
+      ctx.fill();
+    }
+  }
+
+  if (player) {
+    const px = player.px, py = player.py;
+    if (player.inv > 0 && (player.inv * 10 | 0) % 2 === 0) {
+      ctx.globalAlpha = 0.4;
+    }
+    ctx.fillStyle = "#4f8cf7";
+    ctx.fillRect(px - 9, py - 9, 18, 18);
+    ctx.fillStyle = "#1d2a44";
+    ctx.fillRect(px - 9, py + 3, 18, 6);
+    ctx.fillStyle = "#fff";
+    const yeuxX = [0, 5, 0, -5];
+    const yeuxY = [-3, 0, 3, 0];
+    ctx.fillRect(px + yeuxX[player.dir] - 4, py + yeuxY[player.dir] - 2, 3, 4);
+    ctx.fillRect(px + yeuxX[player.dir] + 1, py + yeuxY[player.dir] - 2, 3, 4);
+    if (player.atk > 0) {
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 3;
+      const ax = [0, 1, 0, -1][player.dir], ay = [-1, 0, 1, 0][player.dir];
+      ctx.beginPath();
+      ctx.moveTo(px + ax * 10, py + ay * 10);
+      ctx.lineTo(px + ax * 22, py + ay * 22);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  for (const c of clones) {
+    ctx.fillStyle = "#b06af7";
+    ctx.fillRect(c.px - 9, c.py - 9, 18, 18);
+    ctx.fillStyle = "#3a1d55";
+    ctx.fillRect(c.px - 9, c.py + 3, 18, 6);
+    ctx.fillStyle = "#fff";
+    const yeuxX = [0, 5, 0, -5];
+    const yeuxY = [-3, 0, 3, 0];
+    ctx.fillRect(c.px + yeuxX[c.dir] - 4, c.py + yeuxY[c.dir] - 2, 3, 4);
+    ctx.fillRect(c.px + yeuxX[c.dir] + 1, c.py + yeuxY[c.dir] - 2, 3, 4);
+  }
+
+  // brume : une trouée de lumière autour du héros
+  if (player) {
+    const g = ctx.createRadialGradient(player.px, player.py, TS, player.px, player.py, TS * 5.2);
+    g.addColorStop(0, "rgba(5,3,10,0)");
+    g.addColorStop(0.55, "rgba(5,3,10,0.55)");
+    g.addColorStop(1, "rgba(5,3,10,0.94)");
+    ctx.fillStyle = g;
+    ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
+  }
+
+  // particules (au-dessus de la brume : c'est du retour visuel)
+  for (const p of particules) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.t * 3));
+    ctx.fillStyle = p.couleur;
+    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+
+  // boussole : une flèche qui pointe vers la clé, puis vers la porte
+  if (state === "play" && player) {
+    const cible = player.hasKey ? doorPos : (keyPos || doorPos);
+    if (cible) {
+      const cx2 = cible.x * TS + TS / 2, cy2 = cible.y * TS + TS / 2;
+      const dx2 = cx2 - player.px, dy2 = cy2 - player.py;
+      if (dx2 * dx2 + dy2 * dy2 > (TS * 4) * (TS * 4)) {
+        const ang = Math.atan2(dy2, dx2);
+        const r = TS * 2.3 + Math.sin(gameTime * 4) * 3;
+        ctx.save();
+        ctx.translate(player.px + Math.cos(ang) * r, player.py + Math.sin(ang) * r);
+        ctx.rotate(ang);
+        ctx.fillStyle = player.hasKey ? "rgba(122,168,106,0.9)" : "rgba(242,201,76,0.9)";
+        ctx.beginPath();
+        ctx.moveTo(11, 0); ctx.lineTo(-6, -7); ctx.lineTo(-2, 0); ctx.lineTo(-6, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  ctx.restore();
+
+  if (flash > 0) {
+    ctx.fillStyle = "rgba(255,80,60," + Math.min(0.5, flash * 2.5) + ")";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  hud();
+  if (state === "title") ecranTitre();
+  if (state === "pause") {
+    ecran("PAUSE", "Le donjon retient son souffle.", estTactile ? "Touche l'écran — reprendre" : "P ou clic — reprendre");
+  }
+  if (state === "dead") {
+    ecran("TU ES MORT — étage " + niveau,
+      "Tué par un " + (killer ? (killer.type === "rat" ? "rat" : "slime") : "ennemi") + (record > 0 ? " · record : étage " + record : ""),
+      estTactile ? "Touche l'écran — recommencer" : "R ou clic — recommencer");
+    if (killer) {
+      const kx = killer.x * TS + TS / 2, ky = killer.y * TS + TS / 2;
+      ctx.strokeStyle = "rgba(192,57,43," + (0.7 + 0.3 * Math.sin(gameTime * 8)) + ")";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(kx, ky, 15, 0, 7);
+      ctx.stroke();
+    }
+  }
+  if (state === "win") {
+    ecran("ÉTAGE " + niveau + " VAINCU !",
+      "Sorti en " + Math.floor(gameTime) + " s — " + kills + " ennemis. Plus profond, plus dur.",
+      estTactile ? "Touche l'écran — étage suivant" : "R ou clic — étage suivant");
+  }
+}
+
+function ecranTitre() {
+  ecran("LE PETIT DONJON",
+    "Trouve la clé, ouvre la porte, descends toujours plus bas." + (record > 0 ? " Record : étage " + record + "." : ""),
+    estTactile ? "Touche l'écran — commencer" : "Entrée ou clic — commencer");
+}
+
+function hud() {
+  if (!player) return;
+  ctx.fillStyle = "rgba(10,7,16,0.75)";
+  ctx.fillRect(0, 0, canvas.width, 34);
+  ctx.font = "bold 15px sans-serif";
+  for (let i = 0; i < maxHp; i++) {
+    ctx.fillStyle = player.hp > i ? "#e74c3c" : "#3a2a30";
+    ctx.fillText("♥", 12 + i * 22, 24);
+  }
+  let hx = 12 + maxHp * 22 + 8;
+  ctx.fillStyle = player.hasKey ? "#f2c94c" : "#6a5a30";
+  ctx.fillText(player.hasKey ? "🔑" : "⌐", hx, 24);
+  hx += 26;
+  if (player.epee) { ctx.fillStyle = "#c8c8e8"; ctx.fillText("⚔", hx, 24); hx += 22; }
+  if (player.bouclier) { ctx.fillStyle = "#8ab8f7"; ctx.fillText("🛡", hx, 24); hx += 22; }
+  ctx.fillStyle = "#e8c66a";
+  ctx.font = "bold 13px sans-serif";
+  ctx.fillText("Étage " + niveau, hx + 12, 22);
+  ctx.fillStyle = "#c8bcd8";
+  ctx.font = "13px sans-serif";
+  ctx.fillText("Ennemis : " + kills, hx + 84, 22);
+  ctx.fillText("Temps : " + Math.floor(gameTime) + " s", hx + 180, 22);
+  if (competences.length) {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#8a7fa8";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("Compétences : " + competences.join(" · "), canvas.width - 10, 22);
+    ctx.textAlign = "left";
+  }
+  ctx.fillStyle = "#e8c66a";
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  if (message) ctx.fillText(message, canvas.width / 2, 22);
+  ctx.textAlign = "left";
+}
+
+function ecran(titre, sous, action) {
+  ctx.fillStyle = "rgba(5,3,10,0.82)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#e8c66a";
+  ctx.font = "bold 34px sans-serif";
+  ctx.fillText(titre, canvas.width / 2, canvas.height / 2 - 40);
+  ctx.fillStyle = "#c8bcd8";
+  ctx.font = "16px sans-serif";
+  ctx.fillText(sous, canvas.width / 2, canvas.height / 2 + 6);
+  ctx.fillStyle = "#8a7fa8";
+  ctx.font = "14px sans-serif";
+  ctx.fillText(action, canvas.width / 2, canvas.height / 2 + 42);
+  ctx.textAlign = "left";
+}
+
+/* ---------------- boucle ---------------- */
+
+// Crochet de test (ouvrir la page avec #debug) : permet de vérifier les fins de
+// partie sans jouer tout un étage. Invisible pour les joueurs normaux.
+if (location.hash === "#debug") {
+  window.donjon = {
+    etat: () => ({ state, niveau, hp: player && player.hp, maxHp, record }),
+    gagner: () => { if (player && doorPos) { player.hasKey = true; player.px = doorPos.x * TS + TS / 2; player.py = doorPos.y * TS + TS / 2; } },
+    blesser: () => { if (player) { player.hp = 1; player.inv = 0; } },
+  };
+}
+
+let last = performance.now();
+function boucle(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  mettreAJour(dt);
+  mettreAJourEffets(dt);
+  rendu();
+  requestAnimationFrame(boucle);
+}
+requestAnimationFrame(boucle);
+
+</script>
+</body>
+</html>

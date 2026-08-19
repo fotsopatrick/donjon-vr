@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Essai — ambiance réaliste</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;
+    font-family:"Iowan Old Style",Georgia,serif;color:#e8dcc0}
+  canvas{display:block}
+  #info{position:fixed;left:0;right:0;bottom:0;padding:14px 20px;z-index:5;
+    background:linear-gradient(transparent,rgba(0,0,0,.75));font-size:13px;
+    letter-spacing:.05em;text-align:center;text-shadow:0 2px 8px #000}
+  #info b{color:#e8b661}
+  #perf{position:fixed;right:10px;top:8px;z-index:6;font-family:monospace;
+    font-size:12px;color:#9fb0c4}
+  #etat{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);z-index:7;
+    font-size:20px;letter-spacing:.1em;color:#a8b8c8}
+</style>
+</head>
+<body>
+<div id="etat">chargement du ciel et du rocher…</div>
+<div id="perf"></div>
+<div id="info">
+  <b>Z Q S D</b> marcher · souris pour regarder (clic d'abord) ·
+  <b>1</b> ciel réaliste · <b>2</b> ciel plat · <b>3</b> brume dense / légère
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from './three.module.js';
+import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+
+/* Essai d'ambiance : mêmes principes que le jeu, mais avec un ciel photographié
+   (HDRI) et un rocher scanné. Le but est de juger, pas de jouer. */
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(65, innerWidth/innerHeight, 0.1, 400);
+const tete = new THREE.Group(); tete.add(camera); scene.add(tete);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+/* le soleil : bas et chaud, comme un matin de montagne */
+const soleil = new THREE.DirectionalLight(0xffd9a8, 2.4);
+soleil.position.set(-30, 14, -22);
+soleil.castShadow = true;
+soleil.shadow.mapSize.set(2048, 2048);
+soleil.shadow.camera.near = 1; soleil.shadow.camera.far = 120;
+const d = 40;
+soleil.shadow.camera.left = -d; soleil.shadow.camera.right = d;
+soleil.shadow.camera.top = d;   soleil.shadow.camera.bottom = -d;
+soleil.shadow.bias = -0.0008;
+scene.add(soleil, soleil.target);
+
+/* la brume : c'est elle qui donne la profondeur et l'ampleur */
+let brumeDense = true;
+scene.fog = new THREE.FogExp2(0x9fb4c8, 0.016);
+
+/* le sol : une herbe rase, mais qui reçoit la lumière et l'ombre */
+const sol = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400, 60, 60),
+  new THREE.MeshStandardMaterial({ color:0x4a5340, roughness:0.95 }));
+sol.rotation.x = -Math.PI/2;
+sol.receiveShadow = true;
+// un relief doux, pour que ce ne soit pas une table
+{
+  const p = sol.geometry.attributes.position;
+  for(let i=0;i<p.count;i++){
+    const x = p.getX(i), y = p.getY(i);
+    p.setZ(i, Math.sin(x*0.06)*1.6 + Math.cos(y*0.045)*2.1 + Math.sin((x+y)*0.11)*0.6);
+  }
+  sol.geometry.computeVertexNormals();
+}
+scene.add(sol);
+
+const etat = document.getElementById('etat');
+const perf = document.getElementById('perf');
+let ciel = null;
+
+/* 1. le ciel photographié : il éclaire TOUTE la scène */
+new RGBELoader().load('assets/polyhaven/ciel-brumeux.hdr', tex=>{
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  ciel = tex;
+  scene.background = tex;
+  scene.environment = tex;          // c'est ça qui change tout : la lumière vient du ciel
+  etat.textContent = 'chargement du rocher…';
+}, undefined, ()=>{ etat.textContent = 'ciel introuvable'; });
+
+/* 2. le rocher scanné */
+new GLTFLoader().load('assets/polyhaven/boulder_01.gltf', gltf=>{
+  const rocher = gltf.scene;
+  rocher.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+  // on en sème une quinzaine, de tailles et d'orientations variées
+  for(let i=0;i<15;i++){
+    const c = rocher.clone(true);
+    const a = Math.random()*6.283, dist = 6 + Math.random()*40;
+    c.position.set(Math.cos(a)*dist, -0.3, Math.sin(a)*dist);
+    c.rotation.set(Math.random()*0.3, Math.random()*6.283, Math.random()*0.3);
+    c.scale.setScalar(1.2 + Math.random()*3.5);
+    scene.add(c);
+  }
+  etat.style.display = 'none';
+}, undefined, ()=>{ etat.textContent = 'rocher introuvable'; });
+
+/* de quoi marcher */
+const touches = {};
+addEventListener('keydown', e=>{
+  touches[e.code] = true;
+  if(e.code === 'Digit1' && ciel){ scene.background = ciel; scene.environment = ciel; }
+  if(e.code === 'Digit2'){ scene.background = new THREE.Color(0x9fb4c8); scene.environment = null; }
+  if(e.code === 'Digit3'){
+    brumeDense = !brumeDense;
+    scene.fog.density = brumeDense ? 0.016 : 0.004;
+  }
+});
+addEventListener('keyup', e=>{ touches[e.code] = false; });
+
+let lacet = 0, tangage = 0, verrou = false, tire = false, mx = 0, my = 0;
+renderer.domElement.addEventListener('mousedown', e=>{ tire = true; mx = e.clientX; my = e.clientY; });
+addEventListener('mouseup', ()=>{ tire = false; });
+renderer.domElement.addEventListener('click', ()=>{
+  if(!verrou) try{ renderer.domElement.requestPointerLock(); }catch(e){}
+});
+document.addEventListener('pointerlockchange', ()=>{
+  verrou = document.pointerLockElement === renderer.domElement;
+});
+document.addEventListener('mousemove', e=>{
+  let dx = 0, dy = 0;
+  if(verrou){ dx = e.movementX; dy = e.movementY; }
+  else if(tire){ dx = e.clientX - mx; dy = e.clientY - my; mx = e.clientX; my = e.clientY; }
+  if(!dx && !dy) return;
+  lacet -= dx*0.0022; tangage -= dy*0.0022;
+  tangage = Math.max(-1.2, Math.min(1.2, tangage));
+});
+
+const pos = { x:0, z:14 };
+const horloge = new THREE.Clock();
+let img = 0, t0 = performance.now();
+
+renderer.setAnimationLoop(()=>{
+  const dt = Math.min(0.05, horloge.getDelta());
+  const av = (touches.KeyW||touches.KeyZ?1:0) - (touches.KeyS?1:0);
+  const la = (touches.KeyD?1:0) - (touches.KeyA||touches.KeyQ?1:0);
+  const v = (touches.ShiftLeft ? 12 : 5) * dt;
+  if(av||la){
+    const n = Math.hypot(av,la);
+    pos.x += (-Math.sin(lacet)*av + Math.cos(lacet)*la)/n*v;
+    pos.z += (-Math.cos(lacet)*av - Math.sin(lacet)*la)/n*v;
+  }
+  tete.position.set(pos.x, 1.7, pos.z);
+  tete.rotation.set(0,0,0);
+  tete.rotateY(lacet); tete.rotateX(tangage);
+  soleil.target.position.set(pos.x, 0, pos.z);
+  soleil.position.set(pos.x - 30, 14, pos.z - 22);
+
+  renderer.render(scene, camera);
+  img++;
+  const now = performance.now();
+  if(now - t0 > 1000){ perf.textContent = Math.round(img*1000/(now-t0)) + ' i/s'; img = 0; t0 = now; }
+});
+
+/* pour la mesure : on expose les leviers */
+window.M = { scene, renderer, soleil, camera,
+  bascule(quoi, actif){
+    if(quoi==='env')    scene.environment = actif ? ciel : null;
+    if(quoi==='ombres') { renderer.shadowMap.enabled = actif; scene.traverse(o=>{ if(o.material) o.material.needsUpdate = true; }); }
+    if(quoi==='fond')   scene.background = actif ? ciel : new THREE.Color(0x9fb4c8);
+    if(quoi==='def')    renderer.setPixelRatio(actif ? Math.min(devicePixelRatio,1.5) : 0.7);
+  },
+  async fps(ms=1200){
+    let n=0; const t0=performance.now();
+    await new Promise(r=>{ const b=()=>{ n++; (performance.now()-t0<ms)?requestAnimationFrame(b):r(); }; requestAnimationFrame(b); });
+    return Math.round(n*1000/(performance.now()-t0));
+  }
+};
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

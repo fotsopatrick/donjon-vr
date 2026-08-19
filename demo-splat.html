@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Essai — scène capturée en photos (Gaussian Splatting)</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0d12;
+    font-family:"Iowan Old Style",Georgia,serif;color:#e8dcc0}
+  canvas{display:block}
+  #info{position:fixed;left:0;right:0;bottom:0;padding:14px 20px;z-index:5;
+    background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:13px;
+    letter-spacing:.05em;text-align:center;text-shadow:0 2px 8px #000}
+  #info b{color:#e8b661}
+  #perf{position:fixed;right:10px;top:8px;z-index:6;font-family:monospace;
+    font-size:12px;color:#9fb0c4}
+  #etat{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);z-index:7;
+    font-size:19px;letter-spacing:.08em;color:#a8b8c8;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="etat">chargement de la scène capturée…<br><span style="font-size:14px;opacity:.6">4 Mo</span></div>
+<div id="perf"></div>
+<div id="info">
+  <b>Z Q S D</b> se déplacer · <b>A</b> / <b>E</b> monter, descendre ·
+  souris pour regarder (maintenir le bouton) · <b>molette</b> approcher
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from './three.module.js';
+import { SplatMesh, SparkRenderer } from './jsm/spark.module.js';
+
+/* Une scène « capturée » : elle n'est faite ni de triangles ni de textures,
+   mais de millions de petites taches de couleur reconstruites à partir de
+   photographies. C'est la technique qui se rapproche le plus de ce que
+   Patrick décrivait : des photos dans lesquelles on se déplace. */
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0d12);
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.05, 200);
+camera.position.set(0, 0, 2.6);
+
+const renderer = new THREE.WebGLRenderer({ antialias:false });
+renderer.setPixelRatio(1);
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* SparkRenderer : c'est lui qui trie et dessine les taches à chaque image.
+   Sans lui dans la scène, un SplatMesh reste invisible. */
+const spark = new SparkRenderer({ renderer });
+scene.add(spark);
+
+const etat = document.getElementById('etat');
+const perf = document.getElementById('perf');
+
+const splat = new SplatMesh({ url: 'assets/splats/butterfly.spz' });
+splat.quaternion.set(1, 0, 0, 0);      // les captures arrivent tête en bas
+splat.position.set(0, 0, 0);
+scene.add(splat);
+
+splat.initialized
+  .then(()=>{ etat.style.display = 'none'; })
+  .catch(e=>{ etat.textContent = 'échec du chargement : ' + e.message; });
+
+/* déplacement libre, comme dans une visite virtuelle */
+const touches = {};
+addEventListener('keydown', e=>{ touches[e.code] = true; });
+addEventListener('keyup',   e=>{ touches[e.code] = false; });
+
+let lacet = 0, tangage = 0, tire = false, mx = 0, my = 0;
+renderer.domElement.addEventListener('mousedown', e=>{ tire = true; mx = e.clientX; my = e.clientY; });
+addEventListener('mouseup', ()=>{ tire = false; });
+addEventListener('mousemove', e=>{
+  if(!tire) return;
+  lacet -= (e.clientX - mx)*0.005;
+  tangage -= (e.clientY - my)*0.005;
+  tangage = Math.max(-1.4, Math.min(1.4, tangage));
+  mx = e.clientX; my = e.clientY;
+});
+addEventListener('wheel', e=>{
+  const av = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  camera.position.addScaledVector(av, -e.deltaY*0.002);
+}, { passive:true });
+
+const horloge = new THREE.Clock();
+let img = 0, t0 = performance.now();
+
+renderer.setAnimationLoop(()=>{
+  const dt = Math.min(0.05, horloge.getDelta());
+  const v = (touches.ShiftLeft ? 4 : 1.4) * dt;
+  const av = (touches.KeyW||touches.KeyZ?1:0) - (touches.KeyS?1:0);
+  const la = (touches.KeyD?1:0) - (touches.KeyQ?1:0);
+  const ht = (touches.KeyE?1:0) - (touches.KeyA?1:0);
+  camera.rotation.set(0,0,0);
+  camera.rotateY(lacet); camera.rotateX(tangage);
+  if(av||la||ht){
+    const d = new THREE.Vector3(la, 0, -av).applyQuaternion(camera.quaternion);
+    d.y += ht;
+    camera.position.addScaledVector(d.normalize(), v);
+  }
+  renderer.render(scene, camera);
+  img++;
+  const now = performance.now();
+  if(now - t0 > 1000){
+    perf.textContent = Math.round(img*1000/(now-t0)) + ' i/s · '
+      + (splat.numSplats ? (splat.numSplats/1000).toFixed(0) + 'k taches' : '');
+    img = 0; t0 = now;
+  }
+});
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+window.S = { THREE, scene, camera, renderer, splat, spark,
+  /* recadre la vue sur la scène capturée, quelles que soient sa taille
+     et sa position — les captures arrivent souvent décentrées */
+  cadrer(){
+    const b = new THREE.Box3().setFromObject(splat);
+    const c = b.getCenter(new THREE.Vector3());
+    const t = b.getSize(new THREE.Vector3());
+    const d = Math.max(t.x, t.y, t.z) * 1.6 || 3;
+    camera.position.set(c.x, c.y, c.z + d);
+    lacet = 0; tangage = 0;
+    camera.rotation.set(0,0,0);
+    camera.lookAt(c);
+    return { centre: c.toArray().map(n=>+n.toFixed(2)),
+             taille: t.toArray().map(n=>+n.toFixed(2)) };
+  } };
+</script>
+</body>
+</html>
