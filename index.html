@@ -367,6 +367,11 @@ function generer(){
 /* ═══ PLAN — étages dessinés à la main (château concentrique réel) ═══
    Au lieu du tirage aléatoire, on lit une grille de 28×18 caractères.
    #=mur  .=sol  S=départ  K=clé  D=sortie  B=boss  E=garde  C=coffre     */
+// PLAN DE L'ÉTAGE 1 — dessiné à la main.
+//   # mur · . sol · S départ · D sortie · K cercle de téléportation · B boss · E garde · C coffre
+// Réglé le 22/08 (Patrick : « impossible d'atteindre les cercles ») : le cercle K
+// était enfermé au centre, derrière le boss. On le sort À CÔTÉ du départ S, bien
+// en vue — on le voit en arrivant, on descend sans traverser le labyrinthe.
 const PLAN_ETAGE1 = { faune:'slime', lignes:[
   "############################",
   "############################",
@@ -376,14 +381,14 @@ const PLAN_ETAGE1 = { faune:'slime', lignes:[
   "##.......####..####.......##",
   "##.......#........#.......##",
   "##.......#..####..#.......##",
-  "##.......#..#K.#..#.......##",
+  "##.......#..#..#..#.......##",
   "##.......#..#.B#..#.......##",
   "##.......#..#..#..#.......##",
   "##.......#........#.......##",
   "##.......##########.......##",
   "##..E..................C..##",
   "##........................##",
-  "##........................##",
+  "##..........K.............##",
   "#############S.#############",
   "############################",
 ]};

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La carte vivante de KOTOAGE</title>
+<style>
+  :root{
+    --fond:#12100c; --carte:#1b1813; --trait:#3a332a; --or:#e0b062; --or2:#f5d9a4;
+    --texte:#eee6d8; --doux:#a89a83; --vert:#7fbf6a; --rouge:#d96a5a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:22px 26px 14px;border-bottom:1px solid var(--trait);
+         background:linear-gradient(180deg,#1d1913,#12100c)}
+  h1{margin:0;font-size:24px;letter-spacing:.04em;color:var(--or2);font-weight:600}
+  .sous{color:var(--doux);font-size:13px;margin-top:5px}
+  .barre{display:flex;gap:6px;flex-wrap:wrap;padding:14px 26px;border-bottom:1px solid var(--trait)}
+  .lieu{padding:7px 14px;border:1px solid var(--trait);border-radius:20px;background:#191610;
+        color:var(--doux);cursor:pointer;font-size:13.5px}
+  .lieu:hover{border-color:var(--or);color:var(--texte)}
+  .lieu.on{background:var(--or);color:#171208;border-color:var(--or);font-weight:600}
+  .onglets{display:flex;gap:2px;flex-wrap:wrap;padding:14px 26px 0}
+  .ong{padding:8px 15px;border:1px solid var(--trait);border-bottom:none;
+       border-radius:8px 8px 0 0;background:#171410;color:var(--doux);cursor:pointer;font-size:13.5px}
+  .ong.on{background:var(--carte);color:var(--or2);border-color:var(--trait);font-weight:600}
+  .ong .n{opacity:.6;font-size:12px;margin-left:5px}
+  main{padding:0 26px 40px}
+  .panneau{background:var(--carte);border:1px solid var(--trait);border-radius:0 10px 10px 10px;padding:20px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--doux);font-weight:600;font-size:12px;letter-spacing:.06em;
+     text-transform:uppercase;padding:0 12px 9px;border-bottom:1px solid var(--trait)}
+  td{padding:9px 12px;border-bottom:1px solid #241f18}
+  tr:last-child td{border-bottom:none}
+  .puce{display:inline-block;padding:2px 9px;border-radius:11px;font-size:12px;
+        background:#251f16;color:var(--or)}
+  .oui{color:var(--vert)} .non{color:var(--rouge)}
+  .vide{color:var(--doux);font-style:italic;padding:14px 0}
+  .notes{margin-top:22px;border-top:1px solid var(--trait);padding-top:18px}
+  .notes h3{margin:0 0 10px;font-size:14px;color:var(--or2);font-weight:600}
+  textarea{width:100%;min-height:96px;background:#141109;color:var(--texte);
+           border:1px solid var(--trait);border-radius:8px;padding:11px;font:inherit;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--or)}
+  .actions{margin-top:10px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  button{background:var(--or);color:#171208;border:none;border-radius:7px;
+         padding:8px 15px;font:inherit;font-weight:600;cursor:pointer}
+  button.gris{background:#2a241a;color:var(--doux)}
+  .etat{color:var(--doux);font-size:13px}
+  .avert{background:#2a1c14;border:1px solid #6b4526;color:#f0c89a;
+         padding:11px 14px;border-radius:8px;margin:14px 26px;font-size:13.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>La carte vivante de KOTOAGE</h1>
+  <div class="sous" id="entete">chargement…</div>
+</header>
+
+<div class="avert" id="avert" style="display:none"></div>
+
+<div class="barre" id="lieux"></div>
+<div class="onglets" id="onglets"></div>
+<main><div class="panneau" id="panneau"></div></main>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// LA CARTE VIVANTE : elle montre ce que le jeu contient VRAIMENT.
+// Les données viennent de carte/inventaire.json, écrit par le scanner
+// (node carte/scanner.js) qui ouvre le jeu et visite chaque lieu.
+// Tes commentaires sont gardés dans le navigateur ET exportables.
+// ─────────────────────────────────────────────────────────────
+const CLE_NOTES = 'kotoage-carte-notes';
+let inv = null, lieuActif = 0, ongletActif = 'personnages';
+
+const ONGLETS = [
+  { id:'personnages', titre:'Personnages', compte: l => (l.personnages||[]).reduce((s,p)=>s+(p.nombre||1),0) },
+  { id:'decors',      titre:'Décors',      compte: l => Object.values(l.decors||{}).reduce((a,b)=>a+b,0) },
+  { id:'cercles',     titre:'Cercles',     compte: l => (l.cercles||[]).length },
+  { id:'lumieres',    titre:'Lumières',    compte: l => (l.lumieres||[]).length },
+  { id:'terrain',     titre:'Terrain',     compte: l => 1 },
+  { id:'sons',        titre:'Sons',        compte: l => 1 },
+];
+
+function notes(){ try{ return JSON.parse(localStorage.getItem(CLE_NOTES)||'{}'); }catch(e){ return {}; } }
+function noterPour(lieuId, ongId){ return (notes()[lieuId]||{})[ongId] || ''; }
+function ecrireNote(lieuId, ongId, texte){
+  const n = notes(); n[lieuId] = n[lieuId] || {}; n[lieuId][ongId] = texte;
+  localStorage.setItem(CLE_NOTES, JSON.stringify(n));
+}
+
+function ligne(cells){ return '<tr>' + cells.map(c=>'<td>'+c+'</td>').join('') + '</tr>'; }
+function tableau(entetes, lignes){
+  if(!lignes.length) return '<div class="vide">Rien de relevé ici.</div>';
+  return '<table><thead><tr>' + entetes.map(h=>'<th>'+h+'</th>').join('') +
+         '</tr></thead><tbody>' + lignes.join('') + '</tbody></table>';
+}
+
+function rendrePanneau(){
+  const l = inv.lieux[lieuActif];
+  let html = '';
+  if(l.erreur){
+    html = '<div class="vide">Ce lieu n\'a pas pu être relevé : ' + l.erreur + '</div>';
+  } else if(ongletActif === 'personnages'){
+    html = tableau(['Type','Qui','Combien','Animé ?','Trajets fixes'],
+      (l.personnages||[]).map(p => ligne([
+        '<span class="puce">'+p.type+'</span>', p.nom, p.nombre||1,
+        p.anime===undefined ? '—' : (p.anime ? '<span class="oui">oui</span>' : '<span class="non">NON</span>'),
+        p.trajets===undefined ? '—' : p.trajets ])));
+  } else if(ongletActif === 'decors'){
+    const d = l.decors||{};
+    const total = Object.values(d).reduce((a,b)=>a+b,0);
+    html = tableau(['Forme','Combien','Part'],
+      Object.entries(d).sort((a,b)=>b[1]-a[1]).map(([k,v]) => ligne([
+        k.replace('Geometry',''), v, Math.round(v/total*100)+' %' ])));
+  } else if(ongletActif === 'cercles'){
+    html = tableau(['Forme','Position X','Position Z','Taille'],
+      (l.cercles||[]).map(c => ligne([ c.forme.replace('Geometry',''), c.x, c.z, c.taille ])));
+  } else if(ongletActif === 'lumieres'){
+    html = tableau(['Genre','Couleur','Force'],
+      (l.lumieres||[]).map(x => ligne([ x.genre,
+        '<span style="display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;background:'+x.couleur+'"></span> '+x.couleur,
+        x.force ])));
+  } else if(ongletActif === 'terrain'){
+    const g = l.grille||{};
+    html = tableau(['Ce qu\'on mesure','Valeur'], [
+      ligne(['Largeur en cases', g.largeur ?? '—']),
+      ligne(['Longueur en cases', g.hauteur ?? '—']),
+      ligne(['Taille en mètres', g.metres ? (g.metres[0]+' m sur '+g.metres[1]+' m') : '—']) ]);
+  } else if(ongletActif === 'sons'){
+    const s = l.sons||{};
+    html = tableau(['Ce qu\'on mesure','Valeur'], [
+      ligne(['Voix allumée ?', s.voix_active ? '<span class="oui">oui</span>' : '<span class="non">non</span>']),
+      ligne(['Pistes audio dans la page', s.musique ?? 0]) ]);
+  }
+
+  const cle = l.id + ' — ' + ONGLETS.find(o=>o.id===ongletActif).titre;
+  html += '<div class="notes">' +
+    '<h3>Ce qui ne va pas ici — ' + cle + '</h3>' +
+    '<textarea id="note" placeholder="Écris ce qui cloche. Exemple : « les garçons glissent », « le cercle de téléportation est un simple trait »…">' +
+      noterPour(l.id, ongletActif).replace(/</g,'&lt;') + '</textarea>' +
+    '<div class="actions">' +
+      '<button id="garder">Garder ce commentaire</button>' +
+      '<button class="gris" id="exporter">Exporter TOUS mes commentaires</button>' +
+      '<span class="etat" id="etat"></span>' +
+    '</div></div>';
+
+  document.getElementById('panneau').innerHTML = html;
+  document.getElementById('garder').onclick = () => {
+    ecrireNote(l.id, ongletActif, document.getElementById('note').value);
+    document.getElementById('etat').textContent = 'gardé.';
+    setTimeout(()=>{ const e=document.getElementById('etat'); if(e) e.textContent=''; }, 1800);
+  };
+  document.getElementById('exporter').onclick = () => {
+    const n = notes(); let t = '# Ce que Patrick a relevé sur la carte vivante\n\n';
+    for(const [lieu, parType] of Object.entries(n))
+      for(const [type, texte] of Object.entries(parType))
+        if((texte||'').trim()) t += '## ' + lieu + ' — ' + type + '\n' + texte.trim() + '\n\n';
+    if(t.split('\n').length < 4) t += '(aucun commentaire pour le moment)\n';
+    navigator.clipboard.writeText(t).then(
+      ()=>{ document.getElementById('etat').textContent = 'copié — colle-le à Claude.'; },
+      ()=>{ alert(t); });
+  };
+}
+
+function rendreOnglets(){
+  const l = inv.lieux[lieuActif];
+  document.getElementById('onglets').innerHTML = ONGLETS.map(o =>
+    '<div class="ong'+(o.id===ongletActif?' on':'')+'" data-o="'+o.id+'">' +
+    o.titre + '<span class="n">' + (l.erreur ? '?' : o.compte(l)) + '</span></div>').join('');
+  document.querySelectorAll('.ong').forEach(e => e.onclick = () => {
+    ongletActif = e.dataset.o; rendreOnglets(); rendrePanneau(); });
+}
+
+function rendreLieux(){
+  document.getElementById('lieux').innerHTML = inv.lieux.map((l,i) =>
+    '<div class="lieu'+(i===lieuActif?' on':'')+'" data-i="'+i+'">' + l.nom + '</div>').join('');
+  document.querySelectorAll('.lieu').forEach(e => e.onclick = () => {
+    lieuActif = +e.dataset.i; rendreLieux(); rendreOnglets(); rendrePanneau(); });
+}
+
+fetch('inventaire.json?t=' + Date.now())
+  .then(r => r.json())
+  .then(j => {
+    inv = j;
+    const d = new Date(j.releve_le);
+    const quand = d.toLocaleString('fr-FR', { dateStyle:'full', timeStyle:'short' });
+    const jours = Math.floor((Date.now() - d.getTime()) / 86400000);
+    document.getElementById('entete').textContent =
+      'Relevé le ' + quand + ' — ' + inv.lieux.length + ' lieux visités.';
+    if(jours >= 1){
+      const a = document.getElementById('avert');
+      a.style.display = 'block';
+      a.textContent = 'Ce relevé a ' + jours + ' jour' + (jours>1?'s':'') +
+        '. Pour le rafraîchir : lance le jeu, puis « node carte/scanner.js » dans le dossier du jeu.';
+    }
+    rendreLieux(); rendreOnglets(); rendrePanneau();
+  })
+  .catch(e => {
+    document.getElementById('entete').textContent = 'Pas encore de relevé.';
+    document.getElementById('panneau').innerHTML =
+      '<div class="vide">Le fichier carte/inventaire.json est absent ou illisible.<br>' +
+      'Lance le jeu, puis dans un terminal : <code>cd ~/donjon-vr &amp;&amp; node carte/scanner.js</code></div>';
+  });
+</script>
+</body>
+</html>

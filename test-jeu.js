@@ -80,6 +80,18 @@ v('plafond très haut (HT>=8)', (function(){
   return !!m && parseFloat(m[1]) >= 8;
 })());
 v('couloirs elargis (2 cases)', /grid\[y\+1\]\[x\]=FLOOR/.test(script) && /grid\[y\]\[x\+1\]=FLOOR/.test(script));
+// GARDE-FOU CERCLE (Patrick 22/08 : « impossible d'atteindre les cercles ») :
+// dans le plan de l'étage 1, le cercle K doit rester PRÈS du départ S (moins de
+// 4 cases), sinon il se retrouve caché au fond du labyrinthe et on ne l'atteint plus.
+v('cercle de teleportation pres du depart (etage 1)', (function(){
+  const m = script.match(/const PLAN_ETAGE1 = \{[^\[]*lignes:\s*\[([\s\S]*?)\n\]\}/);
+  if(!m) return false;
+  const lignes = [...m[1].matchAll(/"([^"]*)"/g)].map(x=>x[1]);
+  let K=null, S=null;
+  lignes.forEach((l,y)=>{ for(let x=0;x<l.length;x++){ if(l[x]==='K') K={x,y}; if(l[x]==='S') S={x,y}; } });
+  if(!K || !S) return false;
+  return (Math.abs(K.x-S.x) + Math.abs(K.y-S.y)) <= 4;
+})());
 v('avatar par joueur (persoHamda)', /perso-hamda\.glb/.test(script) && /perso.*\+.*joueurNom|'perso' \+ /.test(script));
 v('guerrier a defier dans le donjon (poserGuerrier)', /function poserGuerrier/.test(script) && /function majGuerrier/.test(script));
 v('touche G pour defier', /KeyG/.test(script));

@@ -57,6 +57,7 @@ const getJSON = p => new Promise((r, j) =>
     console.log('lumieres qui font des ombres  :', await lire('(function(){var n=0;window.D.scene.traverse(function(o){if(o.isLight&&o.castShadow)n++;});return n;})()'));
   }
   console.log('épaule gauche :', await lire('(function(){var v=window.D.avatar.userData.vrm;var b=v.humanoid.getRawBoneNode("leftUpperArm");return b?(b.rotation.x+b.rotation.z):"pas d os";})()'));
+  console.log('main droite / main gauche :', await lire('(function(){var v=window.D.avatar.userData.vrm;if(!v||!v.humanoid)return "pas de vrm";var d=v.humanoid.getRawBoneNode("rightHand"),g=v.humanoid.getRawBoneNode("leftHand");return JSON.stringify({droite:d?d.name:null, gauche:g?g.name:null, epeeD:!!window.D.avatar.userData.epeeMain, epeeG:!!window.D.avatar.userData.epeeMainG});})()'));
   console.log("passages dans la pose en l air :", await lire("window.__poseAir||0"));
   console.log("mixer actif :", await lire("!!window.D.avatar.userData.vrm && true"));
   console.log("\nERREURS VUES :");

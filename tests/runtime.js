@@ -211,7 +211,9 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
       run: async () => {
         await load('#arene'); await demarrer();
         for (let i = 0; i < 3 && !(await ev('window.D.avatar.visible')); i++) { await ev('window.D.basculerVue()'); await sleep(250); }
-        await sleep(1500);
+        // PATIENCE : l'avatar arrive après ses gros fichiers. Sans cette attente,
+        // le test dit « pas de 2e épée » alors qu'elle est créée une seconde plus tard.
+        for (let i = 0; i < 15 && !(await ev('!!(window.D.avatar.userData && window.D.avatar.userData.epeeMainG)')); i++) await sleep(1000);
         assert(await ev('!!window.D.avatar.userData.epeeMainG'), 'la 2e épée (main gauche) n\'a pas été créée');
         // X fait le tour : une épée → deux épées → poings
         await key('KeyX', 'keyDown'); await key('KeyX', 'keyUp'); await sleep(400);
