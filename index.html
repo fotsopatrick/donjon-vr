@@ -2260,8 +2260,8 @@ let vue = 1, reculCam = 0;
 function basculerVue(){
   vue = (vue === 1) ? 3 : 1;
   avatar.visible  = (vue === 3);
-  arme.visible    = (vue === 1);
   armeDos.visible = false;
+  majArmesEnMain();          // UN SEUL endroit décide de quelle arme se voit
   dire(vue === 3 ? 'Vue extérieure.' : 'Vue à la première personne.', 1.8);
 }
 
@@ -2758,7 +2758,9 @@ addEventListener('keyup',   e=>{ touches[e.code]=false; });
 
 let verrou = false;
 let tireDepart = {x:0, y:0};
-renderer.domElement.addEventListener('mousedown', e=>{ tireDepart = {x:e.clientX, y:e.clientY}; });
+renderer.domElement.addEventListener('mousedown', e=>{ tireDepart = {x:e.clientX, y:e.clientY}; if(e.button===0) souris1Enfoncee = true; });
+addEventListener('mouseup', e=>{ if(e.button===0) souris1Enfoncee = false; });
+addEventListener('blur', ()=>{ souris1Enfoncee = false; });   // on quitte la fenêtre : on lâche
 renderer.domElement.addEventListener('click', e=>{
   window.Sons?.demarrer();
   if(verrou){ frapper(); return; }
@@ -2907,6 +2909,8 @@ function dire(t, duree=3.4){ elMsg.textContent=t; elMsg.classList.add('on'); msg
 /* ═══════════════ 7. COMBAT ═══════════════ */
 const avant = new THREE.Vector3();
 function frapper(){
+  // Pendant un choc d'épées ou quand on est sonné, on ne frappe pas : on pousse.
+  if(choc.actif || (joueur.stun||0) > 0) return;
   if(joueur.atkCd>0 || etat!=='jeu') return;
   window.Sons?.coup();
   // enchaînement : si on frappe dans la foulée, le coup suivant part plus vite
@@ -4802,6 +4806,190 @@ const pos = new THREE.Vector3();
 let img=0, tFps=performance.now();
 const elPerf = document.getElementById('perf');
 
+/* ═══════════════ LE CHOC D'ÉPÉES (duel de mana) ═══════════════
+   Quand les deux lames se croisent pendant que les deux attaquent, tout se fige :
+   on se pousse l'un l'autre en versant du mana. Celui qui en met le plus gagne,
+   frappe fort ; l'autre est sonné. Demandé par Patrick, spécifié par Gemini.      */
+const choc = {
+  actif:false, t:0, duree:4.0,        // 4 secondes maximum, sinon on compare et on tranche
+  forceJ:0, forceG:0,                 // la poussée de chacun
+  point:new THREE.Vector3(),          // là où les lames se touchent
+  profil:'agressif',                  // façon de jouer de l'adversaire
+  attente:0                           // petit délai avant de pouvoir re-croiser le fer
+};
+const _boiteJ = new THREE.Box3(), _boiteG = new THREE.Box3();
+let souris1Enfoncee = false;          // le clic gauche est-il maintenu ?
+
+// Une boîte autour de chaque lame. Si les deux boîtes se chevauchent, les lames se touchent.
+function lamesSeCroisent(){
+  const eJ = avatar.userData && avatar.userData.epeeMain;
+  const eG = guerrier && guerrier.epee;
+  if(!eJ || !eG || !eJ.visible) return false;
+  _boiteJ.setFromObject(eJ); _boiteG.setFromObject(eG);
+  if(!_boiteJ.intersectsBox(_boiteG)) return false;
+  _boiteJ.intersect(_boiteG);          // ce qui reste, c'est la zone commune
+  _boiteJ.getCenter(choc.point);       // son centre = le point de contact
+  return true;
+}
+
+// Les étincelles : de petits points qui jaillissent du contact et s'éteignent.
+let etincelles = null, etincelleV = null;
+function semerEtincelles(centre, combien){
+  if(!etincelles){
+    const N = 120, g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N*3), 3));
+    etincelleV = new Float32Array(N*3);
+    etincelles = new THREE.Points(g, new THREE.PointsMaterial({
+      color:0xfff0b0, size:0.10, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending }));
+    etincelles.frustumCulled = false; scene.add(etincelles);
+    etincelles.userData.vie = 0;
+  }
+  const p = etincelles.geometry.attributes.position.array;
+  for(let i=0;i<combien && i*3<p.length;i++){
+    p[i*3] = centre.x; p[i*3+1] = centre.y; p[i*3+2] = centre.z;
+    etincelleV[i*3]   = (Math.random()-0.5)*4.5;
+    etincelleV[i*3+1] = Math.random()*3.5 + 0.5;
+    etincelleV[i*3+2] = (Math.random()-0.5)*4.5;
+  }
+  etincelles.geometry.attributes.position.needsUpdate = true;
+  etincelles.userData.vie = 0.45;
+  etincelles.material.opacity = 1;
+}
+function majEtincelles(dt){
+  if(!etincelles || etincelles.userData.vie <= 0) return;
+  etincelles.userData.vie -= dt;
+  const p = etincelles.geometry.attributes.position.array;
+  for(let i=0;i<p.length;i+=3){
+    p[i]   += etincelleV[i]*dt;
+    p[i+1] += etincelleV[i+1]*dt;
+    p[i+2] += etincelleV[i+2]*dt;
+    etincelleV[i+1] -= 9*dt;                     // elles retombent
+  }
+  etincelles.geometry.attributes.position.needsUpdate = true;
+  etincelles.material.opacity = Math.max(0, etincelles.userData.vie/0.45);
+}
+
+// Donner à une lame sa PROPRE matière, sinon la faire briller ferait briller toutes les autres.
+function matiereAMoi(lame){
+  if(!lame || lame.userData.matPropre) return;
+  lame.traverse(o=>{ if(o.isMesh && o.material) o.material = o.material.clone(); });
+  lame.userData.matPropre = true;
+}
+function fairtBriller(lame, force){
+  if(!lame) return;
+  lame.traverse(o=>{ if(o.isMesh && o.material && o.material.emissive){
+    const k = Math.min(1, force/100);
+    o.material.emissive.setRGB(k*0.9, k*0.75, k*0.3);
+  }});
+}
+
+function demarrerChoc(){
+  const G = guerrier; if(!G) return;
+  choc.actif = true; choc.t = choc.duree; choc.forceJ = 0; choc.forceG = 0;
+  choc.profil = Math.random() < 0.5 ? 'agressif' : 'calculateur';
+  matiereAMoi(avatar.userData.epeeMain); matiereAMoi(G.epee);
+  joueur.secousse = Math.max(joueur.secousse, 0.5);
+  window.Sons?.coup?.();
+  semerEtincelles(choc.point, 120);
+  dire('CHOC D\'ÉPÉES ! Maintiens le clic ou E pour verser ton mana. ⚔️', 2.5);
+}
+
+function majChoc(dt){
+  if(choc.attente > 0) choc.attente -= dt;
+  if(!choc.actif) return;
+  const G = guerrier;
+  if(!G || G.vie <= 0 || etat !== 'jeu'){ choc.actif = false; return; }
+
+  // 1) TOUT SE FIGE, et les deux se regardent droit dans les yeux
+  const dx = G.x - joueur.x, dz = G.z - joueur.z;
+  joueur.lacet = Math.atan2(-dx, -dz); joueur.cap = joueur.lacet;
+  G.obj.rotation.y = Math.atan2(-dx, -dz) + (G.vrm ? 0 : Math.PI);
+  const tremble = Math.sin(horloge.elapsedTime*38) * 0.03;    // les lames vibrent sous la pression
+  avatar.position.x = joueur.x + tremble; avatar.position.z = joueur.z;
+  G.obj.position.set(G.x - tremble, 0, G.z);
+
+  // 2) LE JOUEUR VERSE SON MANA — clic gauche maintenu, ou touche E
+  if((souris1Enfoncee || touches.KeyE) && joueur.mana > 0){
+    const paye = Math.min(joueur.mana, 16*dt);
+    joueur.mana -= paye;
+    choc.forceJ += paye * 1.8;
+  }
+  // 3) L'ADVERSAIRE : deux façons de jouer
+  if(G.mana > 0){
+    let verse = 0;
+    if(choc.profil === 'agressif')                      verse = 13*dt;          // il pousse sans réfléchir
+    else if(choc.forceJ > choc.forceG)                  verse = 19*dt;          // il ne répond que s'il perd
+    verse = Math.min(G.mana, verse);
+    G.mana -= verse; choc.forceG += verse * 1.7;
+  }
+  // 4) LA POUSSÉE RETOMBE si on arrête de verser : il faut tenir l'effort
+  choc.forceJ *= Math.max(0, 1 - 1.1*dt);
+  choc.forceG *= Math.max(0, 1 - 1.1*dt);
+
+  // 5) CE QU'ON VOIT : les lames s'allument, les étincelles giclent
+  fairtBriller(avatar.userData.epeeMain, choc.forceJ);
+  fairtBriller(G.epee, choc.forceG);
+  if(Math.random() < dt*14) semerEtincelles(choc.point, 30);
+  joueur.secousse = Math.max(joueur.secousse, 0.06 + Math.min(0.25, (choc.forceJ+choc.forceG)/500));
+
+  // 6) LA FIN : temps écoulé, ou l'un des deux n'a plus rien à verser
+  choc.t -= dt;
+  const joueurAPlus = joueur.mana > 0.5 && (souris1Enfoncee || touches.KeyE);
+  const guerrierAPlus = G.mana > 0.5;
+  if(choc.t <= 0 || (!joueurAPlus && !guerrierAPlus)) finirChoc();
+}
+
+function finirChoc(){
+  const G = guerrier;
+  choc.actif = false; choc.attente = 1.2;
+  fairtBriller(avatar.userData.epeeMain, 0);
+  if(G) fairtBriller(G.epee, 0);
+  semerEtincelles(choc.point, 120);
+  if(!G) return;
+  const jGagne = choc.forceJ >= choc.forceG;
+  const recul = 2.2;
+  if(jGagne){
+    G.vie -= 8;                                   // le coup traverse la garde
+    G.x += Math.sign(G.x - joueur.x) * recul; G.z += Math.sign(G.z - joueur.z) * recul;
+    G.obj.position.set(G.x, 0, G.z);
+    G.sonne = 1.6; G.jouer('hit');
+    if(G.vie <= 0){ G.vie = 0; G.mortT = 1.6; G.jouer('mort'); }
+    joueur.combo = 0;
+    dire('Tu l\'emportes ! ' + Math.round(choc.forceJ) + ' contre ' + Math.round(choc.forceG) + '. ⚔️', 3);
+  } else {
+    joueur.stun = 1.6;                            // sonné : on ne bouge plus un moment
+    joueur.x += Math.sign(joueur.x - G.x) * recul; joueur.z += Math.sign(joueur.z - G.z) * recul;
+    joueur.vie = Math.max(0, joueur.vie - 1);
+    joueur.secousse = 0.9;
+    dessinerJauge?.();
+    dire('Il te repousse ! ' + Math.round(choc.forceG) + ' contre ' + Math.round(choc.forceJ) + '. 💥', 3);
+  }
+  choc.forceJ = 0; choc.forceG = 0;
+}
+
+// Mettre une épée dans la main droite d'un personnage, quel que soit son squelette.
+// Écrit une fois, servira au joueur comme à l'adversaire.
+function mettreEpeeEnMain(racine){
+  let main = null;
+  if(racine.userData && racine.userData.vrm && racine.userData.vrm.humanoid){
+    const H = racine.userData.vrm.humanoid;
+    main = (H.getRawBoneNode && H.getRawBoneNode('rightHand')) || H.getNormalizedBoneNode('rightHand');
+  } else {
+    racine.traverse(o=>{ if(!main && (/RightHand$/i.test(o.name) || /^hand_r$/i.test(o.name))) main = o; });
+  }
+  if(!main) return null;
+  racine.updateWorldMatrix(true, true);
+  const s = new THREE.Vector3(); main.getWorldScale(s);
+  const ep = arme.clone(true);
+  ep.visible = true;
+  ep.scale.setScalar(0.5 / (s.x || 1));
+  ep.position.set(0, 0.03/(s.x||1), 0.03/(s.x||1));
+  ep.rotation.set(-0.4, 0, Math.PI*0.5);
+  ep.userData.base = { x:ep.rotation.x, y:ep.rotation.y, z:ep.rotation.z };
+  main.add(ep);
+  return ep;
+}
+
 function poserGuerrier(){
   const g = MODELES.guerrier; if(!g) return;
   let gx, gz;
@@ -4855,12 +5043,25 @@ function poserGuerrier(){
       if(this.cour && this.cour!==a) this.cour.fadeOut(0.12);
       a.reset().fadeIn(0.1).play(); this.cour = a; }
   };
+  // Une épée dans sa main droite : sans lame, aucun choc d'épées possible.
+  guerrier.epee = mettreEpeeEnMain(g);
+  guerrier.mana = 20; guerrier.manaMax = 20;      // sa réserve pour le choc d'épées
   guerrier.jouer('idle');
   dire('Un guerrier t\'attend plus loin. Approche et appuie sur G pour le défier.', 5);
 }
 function majGuerrier(dt){
   const G = guerrier; if(!G) return;
   G.mix.update(dt);
+  // Pendant le choc d'épées, il ne décide plus rien : il pousse, c'est tout.
+  if(choc.actif){ if(G.vrm && G.vrmClips) G.vrm.update(dt); return; }
+  // Sonné après avoir perdu un choc : il encaisse, il ne se bat pas.
+  if((G.sonne||0) > 0){
+    G.sonne -= dt;
+    G.mana = Math.min(G.manaMax || 20, (G.mana||0) + dt*4);   // il reprend son souffle
+    if(G.vrm && G.vrmClips) G.vrm.update(dt);
+    return;
+  }
+  G.mana = Math.min(G.manaMax || 20, (G.mana||0) + dt*2.2);   // sa réserve remonte doucement
   if(G.vie <= 0){
     if(G.mortT>0){ G.mortT -= dt;
       if(G.mortT<=0){
@@ -5192,6 +5393,9 @@ function boucle(){
     let av = (touches.KeyW||touches.KeyZ ?1:0) - (touches.KeyS ?1:0);
     let la = (touches.KeyD ?1:0) - (touches.KeyA||touches.KeyQ ?1:0);
     if(pad && (pad.ax || pad.ay)){ av = -pad.ay; la = pad.ax; }
+    // Choc d'épées en cours, ou sonné après en avoir perdu un : on ne se déplace plus.
+    joueur.stun = Math.max(0, (joueur.stun || 0) - dt);
+    if(choc.actif || joueur.stun > 0){ av = 0; la = 0; }
     const court = touches.ShiftLeft||touches.ShiftRight || (pad && pad.court);
     joueur.dashCd = Math.max(0, joueur.dashCd - dt);
     // flèches gauche/droite : tourner sans souris (utile si le pointeur n'est pas capturé)
@@ -5642,6 +5846,14 @@ function boucle(){
     }
 
     majGuerrier(dt);
+    // LE CHOC D'ÉPÉES : on regarde si les deux lames se croisent pendant que les
+    // DEUX attaquent. C'est la seule condition — sinon on ne calcule rien.
+    if(!choc.actif && choc.attente <= 0 && guerrier && guerrier.vie > 0 && guerrier.arene
+       && joueur.atkCd > 0 && (guerrier.attaqueT > 0 || guerrier.cd > 0.25) && lamesSeCroisent()){
+      demarrerChoc();
+    }
+    majChoc(dt);
+    majEtincelles(dt);
 
     /* -- les habitants -- */
     for(const e of ennemis){
@@ -5955,6 +6167,7 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              traiterChat, esprit, caseDevant, dirCardinale, voixDuMonde, basculerStatut,
              arme, armeDos, avatar, basculerVue,
              get armeMode(){ return armeMode; },   // 'epee' | 'deux' | 'poings' — pour les tests
+             get choc(){ return choc; }, demarrerChoc, lamesSeCroisent,   // le choc d'épées
              get boss(){ return boss; },
              get guerrier(){ return guerrier; },   // pour tester son animation
              get MODELES(){ return MODELES; }, get ANIM_MAGE(){ return ANIM_MAGE; },

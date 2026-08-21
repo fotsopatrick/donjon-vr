@@ -178,6 +178,33 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
         assert(bas < 99, 'aucun villageois avec un bras trouvable');
         assert(ampli > 0.12, 'le bras d\'un villageois doit balancer amplement en marchant (écart vu ' + ampli.toFixed(3) + ' m, exigé > 0.12) — mêmes mouvements que le joueur');
       } },
+    { nom: 'choc_epees', desc: 'CHOC D\'ÉPÉES : les deux se figent, le mana se verse, et le duel se tranche',
+      run: async () => {
+        await load('#arene'); await demarrer(); await sleep(3000);
+        assert(await ev('!!(window.D.guerrier && window.D.guerrier.epee)'), 'l\'adversaire n\'a pas d\'épée en main');
+        const posAvant = await ev('JSON.stringify([Math.round(window.D.joueur.x*10)/10, Math.round(window.D.guerrier.x*10)/10])');
+        await ev('window.D.demarrerChoc()');
+        await sleep(300);
+        assert(await ev('window.D.choc.actif'), 'le choc ne démarre pas');
+        // On verse du mana en tenant la touche E, et la poussée doit monter.
+        await key('KeyE', 'keyDown'); await sleep(900);
+        const f1 = await ev('window.D.choc.forceJ');
+        const manaPendant = await ev('window.D.joueur.mana');
+        await key('KeyE', 'keyUp');
+        assert(f1 > 5, 'verser du mana doit faire monter la poussée (vue : ' + f1.toFixed(1) + ')');
+        assert(manaPendant < 20, 'verser du mana doit COÛTER du mana (reste : ' + manaPendant.toFixed(1) + ')');
+        // Pendant le choc, on ne bouge plus.
+        await key('KeyW','keyDown'); await sleep(500); await key('KeyW','keyUp');
+        const posPendant = await ev('JSON.stringify([Math.round(window.D.joueur.x*10)/10, Math.round(window.D.guerrier.x*10)/10])');
+        assert(posPendant === posAvant, 'pendant le choc personne ne doit se déplacer (' + posAvant + ' → ' + posPendant + ')');
+        await shot('choc_epees');
+        // Le duel doit se terminer tout seul avant 6 s.
+        for (let i = 0; i < 12 && (await ev('window.D.choc.actif')); i++) await sleep(600);
+        assert(!(await ev('window.D.choc.actif')), 'le choc doit se terminer tout seul');
+        const apres = await ev('JSON.stringify({stun:window.D.joueur.stun||0, sonne:window.D.guerrier.sonne||0})');
+        const r = JSON.parse(apres);
+        assert(r.stun > 0 || r.sonne > 0, 'à la fin, le perdant doit être sonné (vu : ' + apres + ')');
+      } },
     { nom: 'deux_epees', desc: 'ESCRIME À DEUX LAMES : la touche X donne une 2e épée, et les DEUX sont visibles',
       run: async () => {
         await load('#arene'); await demarrer();
