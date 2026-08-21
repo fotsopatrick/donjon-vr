@@ -1,1 +1,7 @@
 three.module.js.map
+
+# Packs d'assets TÉLÉCHARGÉS : ils se retrouvent en ligne, inutile de les stocker.
+# Les personnages de Patrick (assets/vrm) sont gardés : eux sont irremplaçables.
+assets/mvmk/
+tests/captures/
+.veille/

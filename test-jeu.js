@@ -49,10 +49,11 @@ v('présent : le RADAR (canvas)', /id="radar"/.test(html));
 v('avatar : plus de membres-boîtes animés (u.jambeG)', !/u\.jambeG\.rotation/.test(script));
 v('course sur Shift', /ShiftLeft/.test(script));
 v('indice souris présent', /[Cc]lique.*regarder|regarder autour/.test(script));
-v('avatar drop-in (perso-custom)', /perso-custom\.glb/.test(script));
+v('avatar joueur = VRM VRoid (persoCustom)', /persoCustom:\s*'assets\/vrm\/[^']+\.vrm'/.test(script));
 v('animations normalisées (canonAnim)', /function canonAnim/.test(script));
 v('montagnes lointaines (silhouette Skyrim)', /function poserMontagnes/.test(script));
-v('avatar orienté vers la marche (demi-tour selon squelette)', /estMixamo \? Math\.PI : 0/.test(script));
+v('avatar orienté vers la marche (VRM/Mixamo demi-tour)', /\(estVRM \|\| estMixamo\) \? Math\.PI : 0/.test(script));
+v('support VRM (three-vrm branché)', /VRMLoaderPlugin/.test(script) && /loader\.register/.test(script));
 v('sons branchés (sons.js inclus)', /assets\/sons\.js/.test(html));
 v('son de coup câblé', /Sons\?\.coup\(\)/.test(script));
 v('son de pas câblé', /Sons\?\.pas\(\)/.test(script));
@@ -72,7 +73,12 @@ v('sauvegarde de partie (localStorage)', /localStorage/.test(script) && /functio
 v('reprise auto au demarrage', /chargerPartie\(\)/.test(script));
 v('choix de joueur Patrick/Hamda', /choix-joueur/.test(html) && /Hamda/.test(html));
 v('sauvegarde par joueur (cle nommee)', /'kotoage:'/.test(script));
-v('plafond très haut (HT>=8)', /const HT = 9\.0/.test(script));
+// On LIT la hauteur au lieu de recopier le chiffre : sinon le contrôle casse
+// dès qu'on change le plafond, et il ne vérifie plus rien d'utile.
+v('plafond très haut (HT>=8)', (function(){
+  const m = script.match(/let HT\s*=\s*([\d.]+)/);
+  return !!m && parseFloat(m[1]) >= 8;
+})());
 v('couloirs elargis (2 cases)', /grid\[y\+1\]\[x\]=FLOOR/.test(script) && /grid\[y\]\[x\+1\]=FLOOR/.test(script));
 v('avatar par joueur (persoHamda)', /perso-hamda\.glb/.test(script) && /perso.*\+.*joueurNom|'perso' \+ /.test(script));
 v('guerrier a defier dans le donjon (poserGuerrier)', /function poserGuerrier/.test(script) && /function majGuerrier/.test(script));

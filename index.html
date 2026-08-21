@@ -22,7 +22,7 @@
     opacity:0;transition:opacity .6s}
   #ath.on{opacity:1}
   .coin{position:absolute;padding:20px 24px}
-  #coeurs{left:0;bottom:0;display:flex;gap:9px;align-items:flex-end}
+  #coeurs{left:0;bottom:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
   .coeur{width:26px;height:24px;position:relative;filter:drop-shadow(0 2px 6px #000)}
   .coeur svg{width:100%;height:100%;display:block}
   .coeur.vide{opacity:.22;filter:none}
@@ -57,6 +57,8 @@
   .pause-tab.on{opacity:1;outline:2px solid #8fb8e8}
   .entree-tab{opacity:.55}
   .entree-tab.on{opacity:1;outline:2px solid #8fb8e8}
+  .classe-tab{opacity:.55}
+  .classe-tab.on{opacity:1;outline:2px solid #ff8a4a}
   .ecran h1{font-size:min(11vw,74px);letter-spacing:.16em;font-weight:400;
     color:var(--or);text-shadow:0 0 60px rgba(232,182,97,.35);line-height:1}
   .ecran h1 span{display:block;font-size:.3em;letter-spacing:.55em;color:#7b6f58;
@@ -173,26 +175,38 @@
 <div id="ecoute"><span class="pastille"></span><span>le donjon écoute</span></div>
 <div id="saisie"><input id="saisie-txt" placeholder="parle à l'esprit du donjon…" autocomplete="off"></div>
 <div id="pouvoirs"></div>
+<div id="jauge-energie" style="position:fixed;left:50%;bottom:9%;transform:translateX(-50%);width:220px;height:10px;background:#0a0a14;border:1px solid rgba(47,208,255,.35);border-radius:6px;overflow:hidden;opacity:0;transition:opacity .2s;z-index:11"><i style="display:block;height:100%;width:0;background:linear-gradient(90deg,#ff7a2a,#ffd23a)"></i></div>
 <div id="combo"><i></i><i></i><i></i><i></i></div>
 
-<div class="ecran" id="titre">
+<div class="ecran" id="titre" style="background:linear-gradient(rgba(6,10,20,.72),rgba(4,8,16,.88)), url('paysages/isekai-chateau.jpg') center/cover no-repeat">
   <h1><span>le petit</span>DONJON</h1>
-  <p><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> marcher &nbsp;·&nbsp; souris regarder &nbsp;·&nbsp; <kbd>Maj</kbd> courir<br>
-     clic gauche frapper &nbsp;·&nbsp; trouve la clé, ouvre la porte<br>
-     <kbd>Espace</kbd> sauter &nbsp;·&nbsp; clic droit foncer &nbsp;·&nbsp; <kbd>E</kbd> statut &nbsp;·&nbsp; <kbd>F</kbd> se voir &nbsp;·&nbsp; <kbd>←</kbd><kbd>→</kbd> tourner &nbsp;·&nbsp; radar en haut à gauche<br>
-     <b style="color:#8fb8e8">maintiens <kbd>V</kbd> et prononce ton incantation</b> &nbsp;·&nbsp; <kbd>C</kbd> pour l'écrire<br>
-     <span style="color:#7f9ab8">manette Xbox reconnue : sticks, A frapper, B foncer, X parler, Y statut</span></p>
+  <details style="max-width:540px;margin:0 auto 18px;color:#cdd8e8;font-size:13px;text-align:left;background:rgba(8,14,24,.55);border:1px solid rgba(143,184,232,.22);border-radius:10px;padding:4px 16px">
+    <summary style="cursor:pointer;color:#8fb8e8;font-size:14px;text-align:center;padding:6px">⌨&nbsp; Commandes <span style="opacity:.6">(clique pour déplier)</span></summary>
+    <p style="margin:6px 0 8px;line-height:1.7">
+      <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> marcher · souris regarder · <kbd>Maj</kbd> courir<br>
+      clic gauche frapper · <kbd>R</kbd> verrouiller une cible · <kbd>Espace</kbd> sauter · clic droit foncer<br>
+      <kbd>E</kbd> interagir / statut · <kbd>F</kbd> charger (Mage) · <kbd>←</kbd><kbd>→</kbd> tourner<br>
+      <b style="color:#8fb8e8">maintiens <kbd>V</kbd> et prononce ton incantation</b> · <kbd>C</kbd> pour l'écrire<br>
+      <span style="color:#7f9ab8">manette Xbox : sticks, A frapper, B foncer, X parler, Y statut</span></p>
+  </details>
   <div id="choix-joueur" style="margin-bottom:16px;font-size:15px">
     <span style="color:#8fb8e8">Joueur :</span>
     <button class="bouton" data-j="Patrick" style="padding:6px 18px;margin:0 4px;font-size:15px">Patrick</button>
     <button class="bouton" data-j="Hamda" style="padding:6px 18px;margin:0 4px;font-size:15px">Hamda</button>
   </div>
+  <div id="choix-classe" style="margin-bottom:16px;font-size:15px">
+    <span style="color:#8fb8e8">Classe :</span>
+    <button class="bouton classe-tab on" data-classe="chevalier" style="padding:6px 18px;margin:0 4px;font-size:15px">Chevalier</button>
+    <button class="bouton classe-tab" data-classe="mage" style="padding:6px 18px;margin:0 4px;font-size:15px">Mage 🔥</button>
+  </div>
   <div id="choix-entree" style="margin-bottom:14px;font-size:15px">
     <span style="color:#8fb8e8">Entrer par :</span>
     <button class="bouton entree-tab on" data-niv="0" style="padding:6px 18px;margin:0 4px;font-size:15px">Village</button>
     <button class="bouton entree-tab" data-niv="1" style="padding:6px 18px;margin:0 4px;font-size:15px">Donjon</button>
+    <button class="bouton entree-tab" data-niv="-1" style="padding:6px 18px;margin:0 4px;font-size:15px">Entraînement</button>
   </div>
   <button class="bouton" id="jouer">Entrer</button>
+  <button class="bouton" id="recharger" onclick="location.reload()" title="recharger la dernière version du jeu" style="display:block;margin:10px auto 0;opacity:.6;font-size:13px;padding:5px 14px">↻ Recharger le jeu</button>
 </div>
 
 <div class="ecran parti" id="mort">
@@ -240,30 +254,47 @@
 <script type="module">
 import * as THREE from './three.module.js';
 import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+import { VRMLoaderPlugin, VRMUtils, VRMHumanBoneName } from './jsm/vrm/three-vrm.module.js';   // avatars VRoid (VRM)
+import { clone as cloneSkinned } from './jsm/utils/SkeletonUtils.js';   // clone correct des VRM (skeleton)
 import { mergeGeometries } from './jsm/utils/BufferGeometryUtils.js';
 import { RGBELoader } from './jsm/loaders/RGBELoader.js';
 
 /* ═══════════════ 1. LE PLAN — repris tel quel du jeu 2D ═══════════════ */
-const W = 28, H = 18;                 // la grille, en cases
+let W = 28, H = 18;                   // la grille, en cases (le dehors l'allonge, voir genererDehors)
+const H_DONJON = 18;                  // hauteur d'un étage de donjon
+const H_DEHORS = 56;                  // dehors : village + route + forêt + second village
 const WALL = 0, FLOOR = 1, DOOR = 2, KEY = 3;
 const T  = 2.6;                       // largeur d'une case, en mètres
-const HT = 9.0;                       // plafond très haut : taille dragon
+let HT = 20.0;                        // plafond TRÈS haut : on doit pouvoir voler dans le donjon
+                                      // « let » et pas « const » : chaque étage peut avoir SA hauteur (voir ETAGES.theme.haut)
 
 let grid, rooms, keyPos, doorPos, torches, ennemis, niveau = 1;
 
 /* Cinq étages, cinq ambiances. Le premier est court exprès : on doit pouvoir
    descendre en deux minutes, pas errer. */
 const ETAGES = [
-  { salles:4, faune:['slime'],                 teinte:0xffa64a, nom:'les caves' },   // ambre chaud (torche), plus de bleu
-  { salles:5, faune:['paysan','paysan','squelette','slime'],       teinte:0x9d7bff, nom:'l\'ossuaire' },
-  { salles:6, faune:['rat','rat','paysan','squelette'],             teinte:0x36d6a8, nom:'les galeries' },
-  { salles:6, faune:['spectre','spectre','squelette'],             teinte:0xff8ad4, nom:'le voile' },
-  { salles:7, faune:['slime','rat','squelette'],teinte:0xff6a48, nom:'le palier' },
+  // theme : sol / plafond / ciel-hemi / sol-hemi / intensité / brouillard — chaque étage a SA couleur d'ambiance
+  { salles:4, faune:['slime'], teinte:0xffa64a, nom:'les caves',
+    // Demande de Patrick (21/08) : le premier étage doit être PLUS CLAIR et PLUS HAUT.
+    // int = force de la lumière, fogD = épaisseur de la brume (plus petit = on voit loin),
+    // haut = hauteur du plafond en mètres (20 partout ailleurs).
+    theme:{ sol:0x9aa3b2, plaf:0x515d75, sky:0xa08a62, gnd:0x3a3226, int:1.75, fog:0x3a2f1c, fogD:0.008, haut:30 } },   // pierre ambre chaud, bien éclairée
+  { salles:5, faune:['paysan','paysan','squelette','slime'], teinte:0x9d7bff, nom:'l\'ossuaire',
+    theme:{ sol:0x9aa2b4, plaf:0x2a3348, sky:0x6274a0, gnd:0x161c2a, int:0.9, fog:0x101626, fogD:0.026 } },     // os pâle, froid bleuté
+  { salles:6, faune:['rat','slime_rouge','paysan','squelette','slime_rouge'], teinte:0x36d6a8, nom:'la clairière',
+    theme:{ sol:0x5a8a4a, plaf:0x263a2c, sky:0x9fd6f0, gnd:0x2a4a24, int:1.45, fog:0xbfe0d6, fogD:0.010,
+            ouvert:true, decor:'foret' } },    // DONJON SANS MURS : forêt ouverte (ciel, arbres, sol d'herbe)
+  { salles:6, faune:['spectre','spectre','squelette'], teinte:0xff8ad4, nom:'le voile',
+    theme:{ sol:0x9a8ab6, plaf:0x342246, sky:0x8f68b4, gnd:0x1a1226, int:1.02, fog:0x241436, fogD:0.045 } },    // spectral violet, brume dense
+  { salles:7, faune:['slime','rat','slime_rouge','squelette'], teinte:0xff6a48, nom:'le palier',
+    theme:{ sol:0xa8746a, plaf:0x481f18, sky:0xb0563c, gnd:0x24120c, int:1.06, fog:0x2a1008, fogD:0.030 } },    // antre rouge lave
 ];
 const DEHORS = { salles:0, faune:[], teinte:0xffd98a, nom:'le hameau' };
 function estDehors(){ return niveau === 0; }
+function estArene(){ return niveau === -1; }
 function etageCourant(){
   if(estDehors()) return DEHORS;
+  if(estArene()) return DEHORS;   // arène : teinte de plein jour, pas de torche
   return ETAGES[Math.min(niveau, ETAGES.length) - 1];
 }
 
@@ -278,6 +309,7 @@ function posLibre(r){
 }
 
 function generer(){
+  H = H_DONJON;                        // un étage de donjon garde sa taille d'origine
   grid = [];
   for(let y=0;y<H;y++) grid.push(new Array(W).fill(WALL));
   rooms = [];
@@ -326,10 +358,78 @@ function generer(){
     const p = posLibre(r);
     const type = reglage.faune[(Math.random()*reglage.faune.length)|0];
     ennemis.push({ x:p.x+.5, y:p.y+.5, type,
-                   vie:(type==='squelette'?2:type==='paysan'?3:1), cd:Math.random()*2,
+                   vie:((type==='squelette'?4:type==='paysan'?5:type==='rat'?2:type==='spectre'?3:type==='slime_rouge'?7:3) + Math.floor(niveau*0.8)), cd:Math.random()*2,
                    ph:Math.random()*6, mort:0, obj:null,
                    phase:'garde', tempo:0 });
   }
+}
+
+/* ═══ PLAN — étages dessinés à la main (château concentrique réel) ═══
+   Au lieu du tirage aléatoire, on lit une grille de 28×18 caractères.
+   #=mur  .=sol  S=départ  K=clé  D=sortie  B=boss  E=garde  C=coffre     */
+const PLAN_ETAGE1 = { faune:'slime', lignes:[
+  "############################",
+  "############################",
+  "##...........D............##",
+  "##........................##",
+  "##..C..................E..##",
+  "##.......####..####.......##",
+  "##.......#........#.......##",
+  "##.......#..####..#.......##",
+  "##.......#..#K.#..#.......##",
+  "##.......#..#.B#..#.......##",
+  "##.......#..#..#..#.......##",
+  "##.......#........#.......##",
+  "##.......##########.......##",
+  "##..E..................C..##",
+  "##........................##",
+  "##........................##",
+  "#############S.#############",
+  "############################",
+]};
+const HISTOIRE_OUVERTURE =
+  "Tu t'es endormi devant l'écran, et tu te réveilles pieds nus sur la pierre froide. "+
+  "Devant toi, un château sans roi : trois enceintes, une cour déserte, et des cercles "+
+  "de lumière gravés au sol qui s'enfoncent vers les étages du dessous. Ici les mots ont "+
+  "un poids : ce que tu oses dire à voix haute, le monde l'entend et répond. C'est le "+
+  "Kotoage. Descends — le donjon t'attend depuis longtemps.";
+let histoireDite = false;
+function mkEnnemiPlan(x,y,type,boss){
+  return { x:x+0.5, y:y+0.5, type,
+           vie: boss?12:((type==='squelette'?4:type==='paysan'?5:3)),
+           cd:Math.random()*2, ph:Math.random()*6, mort:0, obj:null,
+           phase:'garde', tempo:0, boss:!!boss };
+}
+function genererDepuisPlan(P){
+  H = H_DONJON;                        // l'étage dessiné à la main garde sa taille d'origine
+  const L = P.lignes;
+  grid=[]; rooms=[]; torches=[]; ennemis=[]; keyPos=null; doorPos=null; coffresPlan=[];
+  let spawn=null;
+  for(let y=0;y<H;y++){
+    const row = new Array(W).fill(WALL);
+    for(let x=0;x<W;x++){
+      const c = (L[y] && L[y][x]) ? L[y][x] : '#';
+      if(c==='#'){ row[x]=WALL; continue; }
+      row[x]=FLOOR;
+      if(c==='K') keyPos={x,y};
+      else if(c==='D') doorPos={x,y};
+      else if(c==='S') spawn={x,y};
+      else if(c==='E') ennemis.push(mkEnnemiPlan(x,y,P.faune,false));
+      else if(c==='B') ennemis.push(mkEnnemiPlan(x,y,P.faune,true));
+      else if(c==='C') coffresPlan.push({x,y});
+    }
+    grid.push(row);
+  }
+  if(keyPos) grid[keyPos.y][keyPos.x]=KEY;
+  if(doorPos) grid[doorPos.y][doorPos.x]=DOOR;
+  spawn = spawn || { x:(W/2)|0, y:H-3 };
+  rooms.push({ x:spawn.x, y:spawn.y, w:1, h:1, theme:null });   // rooms[0] = le départ
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){                 // torches sur murs bordant du sol
+    if(grid[y][x]!==WALL || Math.random()>=0.10) continue;
+    const cd = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>grid[y+dy][x+dx]===FLOOR);
+    if(cd.length){ const [dx,dy]=cd[(Math.random()*cd.length)|0]; torches.push({x,y,dx,dy,ph:Math.random()*6}); }
+  }
+  cleVerrouillee = false; bossSalle = null;
 }
 
 /* ═══════════════ 2. MATIÈRES — tout est peint par le code ═══════════════ */
@@ -521,28 +621,27 @@ const KENNEY = {
 };
 
 const A_CHARGER = {
-  arbre1:  KENNEY.nature + 'tree_detailed.glb',
-  arbre2:  KENNEY.nature + 'tree_default.glb',
-  arbre3:  KENNEY.nature + 'tree_fat.glb',
-  arbre4:  KENNEY.nature + 'tree_blocks.glb',
-  arbre5:  KENNEY.nature + 'tree_cone.glb',
-  buisson: KENNEY.nature + 'grass_leafsLarge.glb',
-  herbe:   KENNEY.nature + 'grass_large.glb',
-  fleurJ:  KENNEY.nature + 'flower_yellowA.glb',
-  fleurR:  KENNEY.nature + 'flower_redA.glb',
-  fleurV:  KENNEY.nature + 'flower_purpleA.glb',
-  champi:  KENNEY.nature + 'mushroom_redGroup.glb',
-  tonneau: KENNEY.donjon + 'barrel.glb',
-  coffre:  KENNEY.donjon + 'chest.glb',
-  cle:     KENNEY.donjon + 'key.glb',
+  arbre1:  'modeles/arbre_feuillu.glb',      // arbres bpy low-poly (fini le Kenney)
+  arbre2:  'modeles/arbre_feuillu.glb',
+  arbre3:  'modeles/arbre_conifere.glb',
+  arbre4:  'modeles/arbre_conifere.glb',
+  arbre5:  'modeles/arbre_feuillu.glb',
+  buisson: 'modeles/herbe.glb',
+  herbe:   'modeles/herbe.glb',
+  fleurJ:  'modeles/fleur_jaune.glb',
+  fleurR:  'modeles/fleur_rouge.glb',
+  fleurV:  'modeles/fleur_violet.glb',
+  champi:  'modeles/champignon.glb',
+  tonneau: 'modeles/tonneau.glb',           // mon tonneau bpy (fini le Kenney)
+  coffre:  'assets/props/Chest_Wood.gltf',  // coffre Quaternius (fini le Kenney)
   colonne: KENNEY.donjon + 'column.glb',
-  portail: KENNEY.donjon + 'gate.glb',
-  villageois: KENNEY.donjon + 'character-human.glb',
+  villageois: 'assets/vrm/villageoiseModel.vrm',
   perso:      'assets/ranger/Male_Ranger.gltf',   // Ranger Quaternius habillé (capuche, épaulières)
   animSuper:  'assets/perso-quaternius.glb',   // source anims UAL (même squelette Standard)
-  persoCustom:'assets/perso-custom.glb',   // TON avatar (VRoid/RPM/Mixamo, GLB) — 404 si absent, ignoré
+  persoCustom:'assets/vrm/nouveauPersonnagePrincipaleLeMienAquituajouteUneEpeeDanslamain.vrm',   // TON avatar VRoid (VRM) — épée dans la main
+  persoMage: 'assets/vrm/lepersonnagemageAQ.vrm',   // avatar VRoid quand on joue Mage
   persoHamda: 'assets/perso-hamda.glb',    // l'avatar de Hamda (style Kirito) — 404 si absent
-  guerrier:   'assets/perso-quaternius.glb',   // 2e instance : le guerrier à défier (étage 1)
+  guerrier:   'assets/vrm/chefdonjon.vrm',   // l'adversaire : le VRoid « chef du donjon » de Patrick
   propTonneau: 'assets/props/Barrel.gltf',
   propCoffre:  'assets/props/Chest_Wood.gltf',
   propRatelier:'assets/props/WeaponStand.gltf',
@@ -558,8 +657,11 @@ const A_CHARGER = {
   vWallDoor:'assets/village/Wall_Plaster_Door_Flat.gltf',
   vWallWin: 'assets/village/Wall_Plaster_Window_Thin_Round.gltf',
   vRoof:    'assets/village/Roof_2x4_RoundTile.gltf',
-  archer:  KENNEY.foret  + 'character-archer.glb',
+  archer:  'assets/vrm/model1.vrm',
   cloture: KENNEY.foret  + 'fence.glb',
+  dragonSquelette: 'modeles/dragon_squelette.glb',   // décor immobile de l'étage 5 (modelé en bpy)
+  entreeColisee:   'modeles/entree_colisee.glb',     // bâtiment d'entrée du donjon (modelé en bpy)
+  chevalier:       'modeles/chevalier.glb',          // gardes immobiles (forge / allée du donjon)
 };
 
 const MODELES = {};
@@ -586,19 +688,59 @@ function chargerCiel(){
 async function chargerModeles(){
   chargerCiel();                     // en parallèle, sans bloquer
   const loader = new GLTFLoader();
-  const noms = Object.keys(A_CHARGER);
-  await Promise.all(noms.map(nom => new Promise(res=>{
+  loader.register(parser => new VRMLoaderPlugin(parser));   // active le support des avatars VRoid (VRM)
+  // Les VRoid secondaires (guerrier, villageois) sont LOURDS : on les charge en arrière-plan
+  // pour ne PAS retarder le démarrage (le jeu est jouable dès que le joueur + le décor sont prêts).
+  const DIFFERES = new Set(['villageois','archer','guerrier']);
+  // un seul VRM joueur en priorité (celui de la classe choisie) ; l'autre en arrière-plan
+  if(typeof classe !== 'undefined' && classe === 'mage') DIFFERES.add('persoCustom'); else DIFFERES.add('persoMage');
+  const charge1 = nom => new Promise(res=>{
     loader.load(A_CHARGER[nom],
-      gltf => { MODELES[nom] = gltf.scene;
-                gltf.scene.userData.anims = gltf.animations || [];
-                if(nom === 'perso') ANIM_PERSO = gltf.animations || [];
-                if(nom === 'persoCustom') ANIM_PERSO_CUSTOM = gltf.animations || [];
-                if(nom === 'animGeneralK' || nom === 'animMoveK' || nom === 'animSuper') ANIM_MAGE = ANIM_MAGE.concat(gltf.animations || []);
-                res(); },
+      gltf => {
+        const vrm = gltf.userData.vrm;
+        if(vrm){                                            // --- avatar VRoid (VRM) ---
+          try{ VRMUtils.removeUnnecessaryVertices(gltf.scene); }catch(e){}
+          try{ VRMUtils.combineSkeletons(gltf.scene); }catch(e){}
+          vrm.scene.rotation.y = Math.PI;                   // le VRM regarde +Z → demi-tour pour regarder -Z comme le reste du jeu
+          // Les habitants et l'adversaire sont des COPIES : leur ombre se plaquait sur eux
+          // comme une tache noire. On ne donne d'ombre qu'aux avatars du joueur.
+          const avecOmbre = (nom === 'persoCustom' || nom === 'persoMage');
+          vrm.scene.traverse(o=>{ o.frustumCulled = false;
+            if(o.isMesh){ o.castShadow = avecOmbre; o.receiveShadow = false; } });
+          MODELES[nom] = vrm.scene;
+          MODELES[nom].userData.vrm = vrm;                  // objet VRM : bones humanoïdes pour l'animation procédurale
+          MODELES[nom].userData.estVRM = true;
+          if(nom==='villageois' || nom==='archer'){         // figés au repos : bras baissés une fois (les clones héritent la pose)
+            const H = vrm.humanoid, rb = n => H && H.getRawBoneNode && H.getRawBoneNode(n);
+            const lUA=rb('leftUpperArm'), rUA=rb('rightUpperArm');
+            if(lUA) lUA.rotation.z = 1.15; if(rUA) rUA.rotation.z = -1.15;
+          }
+        } else {                                            // --- glTF classique ---
+          MODELES[nom] = gltf.scene;
+          gltf.scene.userData.anims = gltf.animations || [];
+          if(nom === 'perso') ANIM_PERSO = gltf.animations || [];
+          if(nom === 'persoCustom') ANIM_PERSO_CUSTOM = gltf.animations || [];
+          if(nom === 'animGeneralK' || nom === 'animMoveK' || nom === 'animSuper') ANIM_MAGE = ANIM_MAGE.concat(gltf.animations || []);
+        }
+        res(); },
       undefined,
       () => { console.warn('modèle absent :', A_CHARGER[nom]); res(); });
-  })));
-  modelesPrets = true;
+  });
+  const noms = Object.keys(A_CHARGER);
+  await Promise.all(noms.filter(n => !DIFFERES.has(n)).map(charge1));   // essentiels : on attend
+  modelesPrets = true;                                                  // le jeu peut démarrer
+  Promise.all(noms.filter(n => DIFFERES.has(n)).map(charge1)).then(()=>{
+    // les gros fichiers sont arrivés : on pose ce qui manquait (sinon village vide / pas d'adversaire)
+    try{
+      if(etat==='jeu'){
+        poserLesVillageois();
+        if(!guerrier && (estArene() || niveau===1)) poserGuerrier();
+        // le joueur attendait SON avatar (ex : mage choisi avant l'arrivée du fichier) → on le lui donne
+        const voulu = (classe==='mage' && MODELES.persoMage) ? MODELES.persoMage : (MODELES.persoCustom || null);
+        if(voulu && avatar.userData && avatar.userData.perso !== voulu) installerAvatar();
+      }
+    }catch(e){}
+  });
 }
 
 /* Fond tous les morceaux d'un groupe qui partagent la même matière en un seul
@@ -697,10 +839,64 @@ function reteinter(g, graine){
   });
 }
 
+/* Pose les villageois du hameau. Appelée à la construction du village ET rappelée
+   quand leur fichier 3D (chargé en arrière-plan) finit d'arriver — sinon village vide. */
+function poserLesVillageois(){
+  if(!estDehors() || !MODELES.villageois) return;
+  if(villageois.length) return;                          // déjà posés
+  const dv = [];
+  for(const m of MAISONS_TOUTES){
+    const fx = (m.x + (m.sens>0 ? m.w + 0.35 : -0.35)) * T;
+    const fz = (m.y + m.h/2) * T;
+    if(fx < T || fx > (W-1)*T || fz < T || fz > (H-1)*T || mur(fx, fz)) continue;
+    dv.push({ fx, fz, face: m.sens>0 ? Math.PI/2 : -Math.PI/2 });
+  }
+  for(let i=0;i<dv.length && i<8;i++){
+    const d = dv[i];
+    let px = d.fx + (d.face>0 ? 1.1 : -1.1)*T*0.55, pz = d.fz;   // en pleine rue, jamais dans un mur
+    if(mur(px, pz)){ px = d.fx; }
+    if(mur(px, pz)) continue;
+    const g = poser(i%3===2 ? 'archer' : 'villageois', px, 0, pz, 1.1, d.face);
+    if(!g) continue;
+    monde.add(g);
+    // TRAJET FIXE : chacun fait sa tournée entre 3 points de la rue, toujours les mêmes.
+    // Un habitant qui refait le même chemin fait plus humain qu'un promeneur au hasard.
+    const etapes = [{x:px, z:pz}];
+    const sens = d.face > 0 ? 1 : -1;
+    for(const d2 of [3.0, 6.0]){
+      const ex = px, ez = pz + sens*d2*T*0.5;
+      if(!mur(ex, ez)) etapes.push({x:ex, z:ez});
+    }
+    if(etapes.length < 2){                                   // rue bouchée : on tente l'autre sens
+      const ex = px, ez = pz - sens*3.0*T*0.5;
+      if(!mur(ex, ez)) etapes.push({x:ex, z:ez});
+    }
+    villageois.push({ obj:g, x:px, z:pz, cx:px, cz:pz, face:d.face, ph:Math.random()*6,
+                      etapes, etape:0, attente:1 + Math.random()*4, marche:false, pas:Math.random()*6.28,
+                      glance:0, glanceCur:0, appui:Math.random()*6 });
+  }
+}
 function poser(nom, x, y, z, echelle = 1, rotY = 0){
   const m = MODELES[nom];
   if(!m) return null;
-  const g = m.clone(true);
+  const estVRM = !!(m.userData && m.userData.estVRM);
+  let g;
+  if(estVRM){
+    // la fiche interne (userData) contient l'objet vrm qui BOUCLE sur lui-même → la photocopie plantait.
+    // On la met de côté le temps du clone, puis on la remet.
+    const fiche = m.userData; m.userData = { estVRM:true };
+    try{ g = cloneSkinned(m); } finally { m.userData = fiche; }
+  } else {
+    g = m.clone(true);
+  }
+  if(estVRM){
+    // PAS d'ombre sur les copies (villageois) : elle se plaquait sur eux comme une tache noire.
+    g.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
+    g.position.set(x, y, z);
+    g.rotation.y = rotY + Math.PI;                          // le VRM regarde +Z → demi-tour
+    g.scale.setScalar(echelle * 0.92);                      // le VRM fait déjà ~1,7 m
+    return g;
+  }
   g.traverse(o=>{ if(o.isMesh) o.material = o.material.clone(); });
   reteinter(g, (x*7 + z*13) | 0);
   g.position.set(x, y, z);
@@ -719,6 +915,8 @@ function poser(nom, x, y, z, echelle = 1, rotY = 0){
    calculé par sommet et non par pixel. C'est ce qui garde 60 images/seconde. */
 
 const chargeurTex = new THREE.TextureLoader();
+let texPaysage = chargeurTex.load('paysages/isekai-chateau.jpg');   // toile de fond isekai (château flottant)
+texPaysage.colorSpace = THREE.SRGBColorSpace;
 const MATIERES = {};
 
 function matiere(nom, repeteX = 1, repeteY = 1){
@@ -773,13 +971,75 @@ const MAISONS = [
 ];
 
 /* les rues : des bandes pavées. {x,y,w,h} en cases. */
+/* ── LE SECOND VILLAGE, au bout de la route ──
+   On sort du hameau par le sud, on traverse une forêt, et on arrive dans un
+   village plus grand : rue plus large, maisons à étage, une petite place. */
+const MAISONS_SUD = [
+  // le long de la route, côté ouest
+  { x:8,  y:39, w:3, h:3, sens: 1, etage:true },
+  { x:8,  y:44, w:4, h:3, sens: 1 },
+  { x:7,  y:49, w:3, h:3, sens: 1, chaume:true },
+  // côté est
+  { x:16, y:39, w:4, h:3, sens:-1 },
+  { x:16, y:44, w:3, h:3, sens:-1, etage:true },
+  { x:16, y:49, w:4, h:2, sens:-1, chaume:true },
+  // deux maisons au fond, face à la place
+  { x:11, y:53, w:3, h:2, sens: 1, etage:true },
+  { x:15, y:53, w:2, h:2, sens:-1 },
+];
+
+/* LA SEULE ET UNIQUE liste des maisons du dehors. Tout le monde lit celle-ci :
+   le sol, les murs, la construction en 3D et le placement des habitants.
+   Avant, la liste était lue à cinq endroits — on en oubliait toujours un. */
+const MAISONS_TOUTES = MAISONS.concat(MAISONS_SUD);
+
+/* ── LES MOMENTS DU JOUR ──
+   Un seul endroit décide de la lumière du dehors. Changer d'heure change TOUT
+   d'un coup : les maisons, les habitants, le sol, le ciel, la brume.
+   Pour essayer une autre heure : changer MOMENT_DEHORS ci-dessous.
+     soleil   : où est le soleil dans le ciel (bas = ombres longues, dorées)
+     force    : la puissance du soleil
+     couleur  : sa teinte
+     ciel/sol : la lumière douce qui vient du ciel et rebondit du sol
+     brume    : la couleur du lointain, et son épaisseur (plus haut = plus voilé)
+     eclat    : la luminosité générale de l'image */
+const MOMENTS = {
+  midi:      { soleil:[0.5, 1.0, 0.35], force:3.0, couleur:0xfff3d8,
+               ciel:0xfff2dc, sol:0x9a8a68, forceCiel:1.5, brume:0xcfe4f5, epaisseur:0.006, eclat:1.15 },
+  // l'heure dorée : soleil bas, ombres longues, tout devient chaud — le rendu « anime »
+  // Le soleil est bas, mais le CIEL éclaire fort les ombres : sinon tout ce que
+  // le soleil ne touche pas devient noir (essai du 21/08 : moitié du village dans le noir).
+  dore:      { soleil:[-0.6, 0.62, 0.5], force:2.6, couleur:0xffcf88,
+               ciel:0xffe3c0, sol:0xd0a878, forceCiel:3.2, brume:0xf3d8ae, epaisseur:0.008, eclat:1.22 },
+  matin:     { soleil:[0.8, 0.45, -0.4], force:2.8, couleur:0xffe6c0,
+               ciel:0xdcefff, sol:0x9fb18a, forceCiel:1.6, brume:0xdcecff, epaisseur:0.009, eclat:1.20 },
+  crepuscule:{ soleil:[-0.95, 0.18, 0.25], force:2.2, couleur:0xff9a5c,
+               ciel:0xb98cc8, sol:0x6a5a7a, forceCiel:1.1, brume:0xc79ab4, epaisseur:0.014, eclat:1.28 },
+};
+let MOMENT_DEHORS = 'dore';          // ← l'heure du village. Essayer : midi, dore, matin, crepuscule
+
+function poserMomentDuJour(nom){
+  const m = MOMENTS[nom] || MOMENTS.midi;
+  jour.position.set(m.soleil[0], m.soleil[1], m.soleil[2]);
+  jour.intensity = m.force;
+  jour.color.setHex(m.couleur);
+  hemi.intensity = m.forceCiel;
+  hemi.color.setHex(m.ciel);
+  hemi.groundColor.setHex(m.sol);
+  scene.fog = new THREE.FogExp2(m.brume, m.epaisseur);
+  scene.background = texPaysage;
+  renderer.toneMappingExposure = m.eclat;
+}
+
 const RUES = [
-  { x:12, y:1,  w:2, h:16 },   // la principale, nord-sud
-  { x:1,  y:8,  w:26, h:2 },   // la transversale, est-ouest
+  { x:12, y:1,  w:2, h:54 },   // la principale : elle traverse tout, du hameau au second village
+  { x:1,  y:8,  w:26, h:2 },   // la transversale du hameau, est-ouest
+  { x:6,  y:46, w:16, h:2 },   // la transversale du second village
 ];
 let arbres = [], entree = null, villageois = [];
 
 function genererDehors(){
+  H = H_DEHORS;                        // le dehors est LONG : hameau, route, forêt, second village
   grid = [];
   for(let y=0;y<H;y++){
     const ligne = new Array(W).fill(FLOOR);
@@ -789,7 +1049,7 @@ function genererDehors(){
   for(let x=0;x<W;x++){ grid[0][x] = WALL; grid[H-1][x] = WALL; }
 
   // les maisons sont des blocs pleins : on les contourne, on n'entre pas
-  for(const m of MAISONS)
+  for(const m of MAISONS_TOUTES)
     for(let y=m.y;y<m.y+m.h;y++)
       for(let x=m.x;x<m.x+m.w;x++)
         if(y>0 && y<H-1 && x>0 && x<W-1) grid[y][x] = WALL;
@@ -803,10 +1063,22 @@ function genererDehors(){
     if(surUneRue(x, y)) continue;
     if(Math.abs(x-13) < 4 && Math.abs(y-16) < 3) continue;   // la place de l'escalier
     let colle = false;
-    for(const m of MAISONS)
+    for(const m of MAISONS_TOUTES)
       if(x > m.x-2 && x < m.x+m.w+2 && y > m.y-2 && y < m.y+m.h+2) colle = true;
     if(colle) continue;
     arbres.push({ x, y, h:1 + Math.random()*0.6, r:Math.random()*3 });
+  }
+
+  // LA FORÊT entre les deux villages : dense des deux côtés de la route, jamais dessus.
+  for(let y = 20; y < 37; y++){
+    for(let x = 1; x < W-1; x++){
+      if(x >= 11 && x <= 15) continue;                    // la route reste libre
+      if(grid[y][x] !== FLOOR) continue;
+      if(Math.random() > 0.42) continue;                  // clairsemée près de la route, dense au loin
+      const loin = Math.min(Math.abs(x-13), 8) / 8;       // plus on s'éloigne, plus c'est touffu
+      if(Math.random() > 0.25 + loin*0.6) continue;
+      arbres.push({ x, y, h:1.1 + Math.random()*0.8, r:Math.random()*3, foret:true });
+    }
   }
 
   // l'escalier vers le donjon : au bout de la rue principale, au sud
@@ -1075,6 +1347,9 @@ function poserDecor(tx, ty){
 
 /* ═══════════════ 4. BÂTIR L'ÉTAGE ═══════════════ */
 let murIM, flammes=[], braises, poussiere, meshCle, porte, meshEnnemis=[];
+let meshPortail=null, colonneTP=null, teleportT=0;   // cercle de téléportation + colonne de lumière
+const SANS_CLE = true;   // plus de clé : la porte/escalier est toujours ouverte, on progresse par escalier ou portail
+let coffresPlan=[];      // positions 'C' du plan où poser des coffres
 let coffre=null, pieges=[], jumeaux=[], decors=[], objets=[];
 
 /* le matériau des murs : fabriqué une seule fois, réutilisé à chaque refonte */
@@ -1274,8 +1549,95 @@ function meublerSalle(r){
   monde.add(g);
   poserPropsSalle(r, wx, wz);   // vrais props texturés par-dessus
 }
+/* ═══ CERCLE DE TÉLÉPORTATION (remplace la clé) ═══ */
+let _texTP = null;
+/* UN SEUL dessin de cercle magique, en n'importe quelle couleur.
+   Le cercle de téléportation et la colonne de feu s'en servent tous les deux :
+   un seul dessin à corriger si un jour il ne plaît pas. */
+const _cerclesMagiques = {};
+function texCercleMagique(cle, trait, lueur){
+  if(_cerclesMagiques[cle]) return _cerclesMagiques[cle];
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d'), cx=S/2, cy=S/2;
+  g.clearRect(0,0,S,S);
+  g.strokeStyle=trait; g.lineWidth=4; g.shadowColor=lueur; g.shadowBlur=14;
+  for(const r of [0.98,0.80,0.42,0.30]){ g.beginPath(); g.arc(cx,cy,S*0.5*r,0,7); g.stroke(); }
+  const etoile=(rot)=>{ g.beginPath();
+    for(let i=0;i<3;i++){ const a=rot+i*2*Math.PI/3, x=cx+Math.cos(a)*S*0.45, y=cy+Math.sin(a)*S*0.45;
+      i?g.lineTo(x,y):g.moveTo(x,y); } g.closePath(); g.stroke(); };
+  etoile(-Math.PI/2); etoile(Math.PI/2);
+  g.lineWidth=3;
+  for(let i=0;i<24;i++){ const a=i*2*Math.PI/24, r1=S*0.41, r2=S*0.48;
+    g.beginPath(); g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4;
+  _cerclesMagiques[cle] = t; return t;
+}
+function texCercleTeleport(){
+  return texCercleMagique('teleport', 'rgba(150,232,255,0.95)', '#7fe8ff');
+}
+function _texCercleTeleportAncien(){
+  if(_texTP) return _texTP;
+  const S=512, c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d'), cx=S/2, cy=S/2;
+  g.clearRect(0,0,S,S);
+  g.strokeStyle='rgba(150,232,255,0.95)'; g.lineWidth=4; g.shadowColor='#7fe8ff'; g.shadowBlur=14;
+  for(const r of [0.98,0.80,0.42,0.30]){ g.beginPath(); g.arc(cx,cy,S*0.5*r,0,7); g.stroke(); }
+  const etoile=(rot)=>{ g.beginPath();
+    for(let i=0;i<3;i++){ const a=rot+i*2*Math.PI/3, x=cx+Math.cos(a)*S*0.45, y=cy+Math.sin(a)*S*0.45;
+      i?g.lineTo(x,y):g.moveTo(x,y); } g.closePath(); g.stroke(); };
+  etoile(-Math.PI/2); etoile(Math.PI/2);
+  g.lineWidth=3;
+  for(let i=0;i<24;i++){ const a=i*2*Math.PI/24, r1=S*0.41, r2=S*0.48;
+    g.beginPath(); g.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1); g.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2); g.stroke(); }
+  _texTP=new THREE.CanvasTexture(c); _texTP.anisotropy=4; return _texTP;
+}
+function poserPortail(wx, wz){
+  meshPortail = new THREE.Group();
+  const spin = new THREE.Group();
+  const disque = new THREE.Mesh(new THREE.CircleGeometry(1.15, 40),
+    new THREE.MeshBasicMaterial({ map:texCercleTeleport(), transparent:true, opacity:0.92,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  disque.rotation.x=-Math.PI/2; disque.position.y=0.04; spin.add(disque);
+  const anneau = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.05, 8, 40),
+    new THREE.MeshStandardMaterial({ color:0x2fd0ff, emissive:0x2fd0ff, emissiveIntensity:1.6, roughness:0.3 }));
+  anneau.rotation.x=-Math.PI/2; anneau.position.y=0.05;
+  const lum = new THREE.PointLight(0x2fd0ff, 8, 7, 1.6); lum.position.y=0.6;
+  meshPortail.add(spin, anneau, lum);
+  meshPortail.userData={ spin, anneau };
+  meshPortail.position.set(wx, 0, wz);
+  monde.add(meshPortail);
+  colonneTP = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,HT*2.2,24,1,true),
+    new THREE.MeshBasicMaterial({ color:0x69e0ff, transparent:true, opacity:0.0,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  colonneTP.position.set(wx, HT, wz); monde.add(colonneTP);
+}
+function lancerTeleport(){
+  if(teleportT>0) return;
+  teleportT=1.0; window.Sons?.porte?.();
+  bip(320,0.12,'sine',0.08); bip(520,0.14,'sine',0.08,0.12); bip(760,0.3,'sine',0.08,0.26);
+  dire('Téléportation…', 1.4);
+}
+function majPortail(dt, t){
+  if(!meshPortail) return;
+  meshPortail.userData.spin.rotation.y += dt*0.6;
+  meshPortail.userData.anneau.material.emissiveIntensity = 1.4 + Math.sin(t*3)*0.4;
+  if(teleportT>0){
+    teleportT -= dt;
+    if(colonneTP){ colonneTP.material.opacity=Math.min(0.55, colonneTP.material.opacity+dt*1.6);
+      colonneTP.rotation.y += dt*4; colonneTP.scale.x=colonneTP.scale.z=1+(1-teleportT)*0.3; }
+    if(teleportT<=0){ if(colonneTP) colonneTP.material.opacity=0; descendre(); return; }
+  } else if(colonneTP && colonneTP.material.opacity>0){
+    colonneTP.material.opacity=Math.max(0, colonneTP.material.opacity-dt*2);
+  }
+  if(teleportT<=0 && Math.hypot(meshPortail.position.x-joueur.x, meshPortail.position.z-joueur.z) < 1.0)
+    lancerTeleport();
+}
+
 function batir(){
-  hemi.color.setHex(0x6a5a44); hemi.groundColor.setHex(0x201a12); hemi.intensity = 0.95;   // donjon : bien éclairé (torche)
+  const th = etageCourant().theme || { sol:0x7d8798, plaf:0x3a4356, sky:0x6a5a44, gnd:0x201a12, int:0.95, fog:0x161208, fogD:0.020 };
+  HT = th.haut || 20.0;                                                                  // hauteur du plafond PROPRE à l'étage
+  hemi.color.setHex(th.sky); hemi.groundColor.setHex(th.gnd); hemi.intensity = th.int;   // ambiance PROPRE à l'étage
+  scene.fog = new THREE.FogExp2(th.fog, th.fogD);                                          // brouillard coloré = chaque étage a son atmosphère
   // on vide l'étage précédent
   while(monde.children.length){
     const o = monde.children.pop();
@@ -1285,7 +1647,7 @@ function batir(){
   flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
   decors=[]; objets=[];
   if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
-  ondes = []; tranches = []; projectiles = []; flashs = [];
+  ondes = []; tranches = []; projectiles = []; flashs = []; zonesFeu = [];
   murIM=null;
 
   construireMurs();
@@ -1294,19 +1656,36 @@ function batir(){
   const solT = texSol.clone(); solT.needsUpdate=true; solT.repeat.set(W, H);
   const sol = new THREE.Mesh(
     new THREE.PlaneGeometry(W*T, H*T),
-    new THREE.MeshStandardMaterial({ map:solT, bumpMap:texRelief, bumpScale:0.18, roughness:0.62, color:0x7d8798 }));
+    new THREE.MeshStandardMaterial({ map:solT, bumpMap:texRelief, bumpScale:0.18, roughness:0.62, color:th.sol }));
   sol.rotation.x = -Math.PI/2;
   sol.position.set(W*T/2, 0, H*T/2);
   sol.receiveShadow = true;
   monde.add(sol);
 
-  const plaT = texMur.clone(); plaT.needsUpdate=true; plaT.repeat.set(W*0.6, H*0.6);
-  const plafond = new THREE.Mesh(
-    new THREE.PlaneGeometry(W*T, H*T),
-    new THREE.MeshStandardMaterial({ map:plaT, roughness:1, color:0x3a4356 }));
-  plafond.rotation.x = Math.PI/2;
-  plafond.position.set(W*T/2, HT, H*T/2);
-  monde.add(plafond);
+  if(!th.ouvert){                                    // DONJON SANS MURS : en mode "ouvert", pas de plafond → le ciel
+    const plaT = texMur.clone(); plaT.needsUpdate=true; plaT.repeat.set(W*0.6, H*0.6);
+    const plafond = new THREE.Mesh(
+      new THREE.PlaneGeometry(W*T, H*T),
+      new THREE.MeshStandardMaterial({ map:plaT, roughness:1, color:th.plaf }));
+    plafond.rotation.x = Math.PI/2;
+    plafond.position.set(W*T/2, HT, H*T/2);
+    monde.add(plafond);
+  } else {
+    scene.background = texPaysage;                    // ciel isekai à la place du plafond
+    scene.fog = new THREE.FogExp2(th.fog, th.fogD);
+    // une forêt : un arbre par-dessus chaque mur (échantillonné), le mur reste pour la barrière mais devient discret
+    const nomsArbres = ['arbre1','arbre2','arbre3','arbre4','arbre5'];
+    let na = 0;
+    for(let gy=0; gy<H; gy++) for(let gx=0; gx<W; gx++){
+      if(grid[gy] && grid[gy][gx] === WALL && ((gx+gy) % 2 === 0)){
+        const nom = nomsArbres[(gx*3+gy) % nomsArbres.length];
+        const a = poser(nom, gx*T+T/2, 0, gy*T+T/2, 2.4 + ((gx*3+gy)%3)*0.5, (gx*1.7+gy)%6);
+        if(a){ monde.add(a); na++; }
+      }
+    }
+    if(murIM) murIM.visible = false;                   // on cache les murs de pierre : ce sont les arbres qui font la barrière
+    console.log('forêt :', na, 'arbres posés');
+  }
 
   /* --- les torches : un fer, une flamme, une lueur sur le mur --- */
   const geoFer = new THREE.CylinderGeometry(0.035, 0.055, 0.5, 6);
@@ -1342,12 +1721,21 @@ function batir(){
 
   /* --- les runes au sol, sous les feux --- */
   {
-    const runeGeo = new THREE.RingGeometry(0.55, 0.95, 24, 1);
-    const runeMat = new THREE.MeshBasicMaterial({ color:etageCourant().teinte, transparent:true,
-      opacity:0.30, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });
+    // Avant : un simple anneau très pâle — à l'œil, ça faisait des traits au sol.
+    // Maintenant : LE MÊME dessin de cercle magique que la téléportation et la colonne de feu,
+    // teinté de la couleur de l'étage. Un seul dessin pour tout le jeu.
+    const teinte = etageCourant().teinte;
+    const c = new THREE.Color(teinte);
+    const trait = 'rgba(' + Math.round(c.r*255) + ',' + Math.round(c.g*255) + ',' + Math.round(c.b*255) + ',0.95)';
+    const lueur = '#' + c.getHexString();
+    const runeTex = texCercleMagique('rune-' + teinte.toString(16), trait, lueur);
+    const runeGeo = new THREE.PlaneGeometry(2.1, 2.1);
+    const runeMat = new THREE.MeshBasicMaterial({ map:runeTex, transparent:true,
+      opacity:0.55, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide });
     for(const t of torches){
       const r = new THREE.Mesh(runeGeo, runeMat);
       r.rotation.x = -Math.PI/2;
+      r.rotation.z = (t.wx + t.wz) % 6.28;          // chacune tournée différemment : moins répétitif
       r.position.set(t.wx - t.dx*0.9, 0.03, t.wz - t.dy*0.9);
       monde.add(r);
     }
@@ -1402,6 +1790,8 @@ function batir(){
   const lumCle = new THREE.PointLight(0xffb84d, 14, 9, 1.8);
   meshCle.add(lumCle);
   monde.add(meshCle);
+  // plus de clé : on la masque et on pose un CERCLE DE TÉLÉPORTATION à sa place
+  if(SANS_CLE && keyPos){ meshCle.visible=false; poserPortail(keyPos.x*T+T/2, keyPos.y*T+T/2); }
 
   /* --- la porte : une arche et un rideau de lumière --- */
   porte = new THREE.Group();
@@ -1582,18 +1972,19 @@ function batir(){
       g.add(voile, oeilG, oeilD, lueur);
       g.userData.corps = voile;
 
-    } else if(e.type==='slime'){
+    } else if(e.type==='slime' || e.type==='slime_rouge'){
+      const rouge = e.type==='slime_rouge';
       g = new THREE.Group();
       const corps = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.42, 3),
-        new THREE.MeshStandardMaterial({ color:0x2fa8d8, emissive:0x0d5f88,
-          emissiveIntensity:0.55, transparent:true, opacity:0.78,
+        new THREE.IcosahedronGeometry(rouge?0.58:0.42, 3),
+        new THREE.MeshStandardMaterial({ color:rouge?0xd83030:0x2fa8d8, emissive:rouge?0x861414:0x0d5f88,
+          emissiveIntensity:0.6, transparent:true, opacity:0.82,
           roughness:0.12, metalness:0.05 }));
-      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.075,8,8),
+      const oeilG = new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),
         new THREE.MeshBasicMaterial({color:0x05070a}));
-      oeilG.position.set(-0.16,0.1,0.36);
+      oeilG.position.set(-0.16,0.12,0.36);
       const oeilD = oeilG.clone(); oeilD.position.x = 0.16;
-      const lueur = new THREE.PointLight(0x39b6e6, 5.5, 4.5, 1.8);
+      const lueur = new THREE.PointLight(rouge?0xff4a3a:0x39b6e6, 5.5, 4.8, 1.8);
       lueur.position.y = 0.3;
       g.add(corps, oeilG, oeilD, lueur);
       g.userData.corps = corps;
@@ -1618,6 +2009,12 @@ function batir(){
     g.position.set(e.x*T, hauteurs[e.type] ?? 0.3, e.y*T);
     monde.add(g);
     e.obj = g; meshEnnemis.push(g);
+    e.vieMax = e.vie;                                   // jauge de vie au-dessus du monstre
+    const jaFond = new THREE.Sprite(new THREE.SpriteMaterial({ color:0x1a0606, transparent:true, opacity:0.75, depthWrite:false }));
+    jaFond.scale.set(0.92,0.13,1); jaFond.position.y=2.05; jaFond.renderOrder=18;
+    const jaBar = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xff3333, depthWrite:false }));
+    jaBar.scale.set(0.86,0.08,1); jaBar.position.set(0,2.05,0.01); jaBar.renderOrder=19;
+    g.add(jaFond, jaBar); e.barre = jaBar; e.barreFond = jaFond;
   }
 }
 
@@ -1629,8 +2026,8 @@ function batir(){
 const arme = new THREE.Group();
 {
   const acier = new THREE.MeshStandardMaterial({
-    color:0xc9d6e4, roughness:0.22, metalness:0.95,
-    emissive:0x1b3a5c, emissiveIntensity:0.35 });
+    color:0x9ff5ff, roughness:0.15, metalness:0.4,
+    emissive:0x1cf0ff, emissiveIntensity:1.7 });   // lame d'énergie néon (cyber + épée ensorcelée)
   const sombre = new THREE.MeshStandardMaterial({
     color:0x1b1d24, roughness:0.7, metalness:0.5 });
   const or = new THREE.MeshStandardMaterial({
@@ -1642,7 +2039,7 @@ const arme = new THREE.Group();
   const pointe = new THREE.Mesh(new THREE.ConeGeometry(0.031, 0.16, 4), acier);
   pointe.position.y = 0.99; pointe.rotation.y = Math.PI/4;
   const gouttiere = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.68, 0.02),
-    new THREE.MeshStandardMaterial({ color:0x8fa8c4, roughness:0.35, metalness:0.9 }));
+    new THREE.MeshStandardMaterial({ color:0xff2bd6, emissive:0xff2bd6, emissiveIntensity:1.4, roughness:0.3, metalness:0.4 }));
   gouttiere.position.y = 0.52;
   const garde = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.045, 0.05), or);
   garde.position.y = 0.13;
@@ -1730,23 +2127,35 @@ function installerAvatar(){
   mixerPerso = null; actionsPerso = {}; actionCourante = null;
   // priorité : ton fichier perso-custom > le modèle du joueur (persoHamda/persoPatrick) > le défaut
   const cleJoueur = 'perso' + (typeof joueurNom !== 'undefined' ? joueurNom : 'Patrick');
-  const perso = MODELES.persoCustom || MODELES[cleJoueur] || MODELES.perso;
-  const anims = (perso && perso.userData && perso.userData.anims && perso.userData.anims.length)
+  const perso = (classe === 'mage' && MODELES.persoMage) ? MODELES.persoMage    // Mage → son propre VRoid
+              : (MODELES.persoCustom || MODELES[cleJoueur] || MODELES.perso);
+  let anims = (perso && perso.userData && perso.userData.anims && perso.userData.anims.length)
                 ? perso.userData.anims
                 : (MODELES.persoCustom ? ANIM_PERSO_CUSTOM : ANIM_PERSO);
   if(!perso) return;
+  // VRoid : on RECOPIE les vraies animations de l'ancien avatar sur le VRM (fini l'épouvantail fait main)
+  if(perso.userData.estVRM && perso.userData.vrm && MODELES.animSuper && ANIM_MAGE.length){
+    if(!perso.userData.clipsVRM){
+      perso.userData.clipsVRM = ANIM_MAGE.map(c => { try{ return reciblerClipVersVRM(c, MODELES.animSuper, perso.userData.vrm); }catch(e){ return null; } })
+                                          .filter(c => c && c.tracks.length);
+      console.log('clips reciblés sur le VRM :', perso.userData.clipsVRM.length);
+    }
+    if(perso.userData.clipsVRM.length) anims = perso.userData.clipsVRM;
+  }
   const bb = new THREE.Box3().setFromObject(perso);
   const h = bb.getSize(new THREE.Vector3()).y || 1;
   perso.scale.setScalar(1.7 / h);
   perso.position.set(0, 0, 0);
   let estMixamo = false;
   perso.traverse(o=>{ if(/mixamorig/i.test(o.name)) estMixamo = true; });
-  perso.rotation.y = estMixamo ? Math.PI : 0;   // Mixamo regarde +Z (demi-tour) ; Quaternius regarde déjà -Z
+  const estVRM = !!perso.userData.estVRM;
+  perso.rotation.y = (estVRM || estMixamo) ? Math.PI : 0;   // VRM et Mixamo regardent +Z (demi-tour) ; Quaternius regarde -Z
   avatar.userData.persoFace = perso;
   perso.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });
-  toonifier(perso);   // cel-shading : paliers d'ombre nets (look manga)
+  if(!estVRM) toonifier(perso);   // les VRM ont déjà leurs matériaux MToon (look anime) — ne pas les écraser
   avatar.add(perso);
   avatar.userData = { perso };
+  if(estVRM){ avatar.userData.vrm = perso.userData.vrm; joueur.estVRM = true; }   // VRM : update + animation procédurale
   if(anims.length){
     mixerPerso = new THREE.AnimationMixer(perso);
     // mapping EXACT (Quaternius) prioritaire, puis repli canonAnim (Soldier & co.)
@@ -1765,9 +2174,14 @@ function installerAvatar(){
     jouerAnim('idle');
   }
 
-  // --- l'épée dans la main droite (os Mixamo « RightHand ») ---
+  // --- l'épée dans la main droite ---
   let mainDroite = null;
-  perso.traverse(o=>{ if(!mainDroite && (/RightHand$/i.test(o.name) || /^hand_r$/i.test(o.name) || /hand_R$/.test(o.name))) mainDroite = o; });
+  if(estVRM && perso.userData.vrm && perso.userData.vrm.humanoid){
+    const H = perso.userData.vrm.humanoid;                 // VRM : l'os de la main via l'API humanoïde
+    mainDroite = (H.getRawBoneNode && H.getRawBoneNode('rightHand')) || H.getNormalizedBoneNode('rightHand');
+  } else {
+    perso.traverse(o=>{ if(!mainDroite && (/RightHand$/i.test(o.name) || /^hand_r$/i.test(o.name) || /hand_R$/.test(o.name))) mainDroite = o; });
+  }
   if(mainDroite){
     perso.updateWorldMatrix(true, true);
     const s = new THREE.Vector3(); mainDroite.getWorldScale(s);
@@ -1782,11 +2196,36 @@ function installerAvatar(){
     epee.userData.base = { x:epee.rotation.x, y:epee.rotation.y, z:epee.rotation.z };
     mainDroite.add(epee);
     avatar.userData.epeeMain = epee;
+    // ── LA DEUXIÈME ÉPÉE (escrime à deux lames, demandée par Patrick) ──
+    // Même épée, main gauche, tenue en miroir. Elle reste cachée tant qu'on
+    // n'est pas passé en mode « deux épées » (touche X).
+    let mainGauche = null;
+    if(perso.userData && perso.userData.vrm && perso.userData.vrm.humanoid){
+      const Hg = perso.userData.vrm.humanoid;
+      mainGauche = (Hg.getRawBoneNode && Hg.getRawBoneNode('leftHand')) || Hg.getNormalizedBoneNode('leftHand');
+    } else {
+      perso.traverse(o=>{ if(!mainGauche && (/LeftHand$/i.test(o.name) || /^hand_l$/i.test(o.name))) mainGauche = o; });
+    }
+    if(mainGauche){
+      const sg = new THREE.Vector3(); mainGauche.getWorldScale(sg);
+      const epeeG = arme.clone(true);
+      const echG = 0.5 / (sg.x || 1);
+      epeeG.scale.setScalar(echG);
+      epeeG.position.set(0, 0.03/(sg.x||1), 0.03/(sg.x||1));
+      epeeG.rotation.set(-0.4, 0, -Math.PI*0.5);   // miroir de la main droite
+      epeeG.userData.baseScale = echG;
+      epeeG.userData.base = { x:epeeG.rotation.x, y:epeeG.rotation.y, z:epeeG.rotation.z };
+      epeeG.visible = false;
+      mainGauche.add(epeeG);
+      avatar.userData.epeeMainG = epeeG;
+    }
   }
   // les os pour un vrai geste de frappe (épaule, avant-bras, buste)
   perso.traverse(o=>{
     if(/RightArm$/i.test(o.name))          avatar.userData.brasD   = o;
     else if(/RightForeArm$/i.test(o.name)) avatar.userData.avBrasD = o;
+    else if(/LeftArm$/i.test(o.name))      avatar.userData.brasG   = o;   // pour l'escrime à deux lames
+    else if(/LeftForeArm$/i.test(o.name))  avatar.userData.avBrasG = o;
     else if(/Spine2$/i.test(o.name))       avatar.userData.buste   = o;
   });
 }
@@ -1803,7 +2242,7 @@ function jouerAttaque(){
   const a = (set && set[joueur.combo % set.length]) || actionsPerso.attaque;
   if(!a) return false;
   // caler la vitesse du swing sur le rythme du combo : il finit son arc, fluide
-  const fenetre = ([0.40,0.30,0.44,0.62][joueur.combo] || 0.40) * 1.1;
+  const fenetre = ((COUPS_EPEE[joueur.combo % 7] || {}).duree || 0.40) * 1.1;
   const clip = a.getClip ? a.getClip() : a._clip;
   const duree = (clip && clip.duration) ? clip.duration : 0.8;
   a.timeScale = Math.min(2.4, Math.max(0.9, duree / fenetre));
@@ -1868,6 +2307,29 @@ function maisonQuaternius(m){
   g.position.set((m.x+m.w/2)*T,0,(m.y+m.h/2)*T);
   return g;
 }
+/* ═══ sol du village : dalles Quaternius carrelées (fini le plan gris) ═══ */
+function poserSolQuaternius(){
+  const tuile = MODELES.vFloor; if(!tuile) return false;
+  tuile.updateWorldMatrix(true, true);
+  let src = null; tuile.traverse(o=>{ if(o.isMesh && !src) src = o; });
+  if(!src || Array.isArray(src.material)) return false;          // multi-matériaux : on renonce proprement
+  const box = new THREE.Box3().setFromObject(tuile), sz = new THREE.Vector3(); box.getSize(sz);
+  const tw = sz.x, td = sz.z;
+  if(!(tw > 0.4) || !(td > 0.4)) return false;                  // mesure douteuse → plan de secours
+  const nx = Math.min(60, Math.ceil(W*T/tw)+1), nz = Math.min(40, Math.ceil(H*T/td)+1);   // borné : jamais de freeze
+  const inst = new THREE.InstancedMesh(src.geometry, src.material, nx*nz);
+  inst.receiveShadow = true; inst.frustumCulled = false;
+  const world = src.matrixWorld.clone(), m4 = new THREE.Matrix4(), tr = new THREE.Matrix4();
+  let i = 0;
+  for(let a=0;a<nx;a++) for(let b=0;b<nz;b++){
+    tr.makeTranslation(a*tw + tw/2, 0, b*td + td/2);
+    m4.multiplyMatrices(tr, world); inst.setMatrixAt(i++, m4);
+  }
+  inst.instanceMatrix.needsUpdate = true;
+  monde.add(inst);
+  return true;
+}
+
 function batirDehors(){
   hemi.color.setHex(0x5b6ba8); hemi.groundColor.setHex(0x171d30); hemi.intensity = 1.05;   // village : clair de lune
   while(monde.children.length){
@@ -1878,7 +2340,7 @@ function batirDehors(){
   flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[];
   decors=[]; objets=[]; murIM=null; villageois=[];
   if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
-  ondes = []; tranches = []; projectiles = []; flashs = [];
+  ondes = []; tranches = []; projectiles = []; flashs = []; zonesFeu = [];
 
   /* --- le ciel : la photo si on l'a, sinon le dôme peint --- */
   if(cielReel){
@@ -1941,14 +2403,16 @@ function batirDehors(){
     }
   }
 
-  /* --- la prairie --- */
-  const herbe = new THREE.Mesh(
-    new THREE.PlaneGeometry(W*T, H*T),
-    new THREE.MeshStandardMaterial({ color:0x54585f, roughness:0.95 }));  // sol gris ville
-  herbe.rotation.x = -Math.PI/2;
-  herbe.position.set(W*T/2, 0, H*T/2);
-  herbe.receiveShadow = true;
-  monde.add(herbe);
+  /* --- le sol : dalles Quaternius (Medieval Village) ; plan de secours si absent --- */
+  if(!poserSolQuaternius()){
+    const herbe = new THREE.Mesh(
+      new THREE.PlaneGeometry(W*T, H*T),
+      new THREE.MeshStandardMaterial({ color:0x6b5a3f, roughness:0.95 }));  // terre, plus le gris froid
+    herbe.rotation.x = -Math.PI/2;
+    herbe.position.set(W*T/2, 0, H*T/2);
+    herbe.receiveShadow = true;
+    monde.add(herbe);
+  }
 
   // des touffes, semées en une seule fournée
   {
@@ -1997,7 +2461,7 @@ function batirDehors(){
   }
 
   /* --- les deux maisons, à colombages --- */
-  for(const m of MAISONS){
+  for(const m of MAISONS_TOUTES){
     const g = maisonQuaternius(m);
     if(g){ styliser(g, 0.02); monde.add(g); }
   }
@@ -2175,19 +2639,13 @@ function batirDehors(){
 
   /* --- les villageois : ils vont quelque part, s'arrêtent, réfléchissent --- */
   villageois = [];
+  poserLesVillageois();   // (fonction séparée : rappelée quand leur fichier 3D finit d'arriver)
   const devants = [];
-  for(const m of MAISONS){
+  for(const m of MAISONS_TOUTES){
     const fx = (m.x + (m.sens>0 ? m.w + 0.35 : -0.35)) * T;
     const fz = (m.y + m.h/2) * T;
     if(fx < T || fx > (W-1)*T || fz < T || fz > (H-1)*T || mur(fx, fz)) continue;
     devants.push({ fx, fz, face: m.sens>0 ? Math.PI/2 : -Math.PI/2 });   // face à la rue
-  }
-  for(let i=0;i<devants.length && i<8;i++){
-    const d = devants[i];
-    const g = poser(i%3===2 ? 'archer' : 'villageois', d.fx, 0, d.fz, 1.1, d.face);
-    if(!g) continue;
-    monde.add(g);
-    villageois.push({ obj:g, x:d.fx, z:d.fz, face:d.face, ph:Math.random()*6, tempo:2+Math.random()*4, glance:0, glanceCur:0 });
   }
 
   /* --- props Quaternius pour donner vie au village (style validé) --- */
@@ -2272,7 +2730,9 @@ function batirDehors(){
 }
 
 /* ═══════════════ 5. LE JOUEUR ═══════════════ */
-const joueur = { x:0, z:0, vie:3, vieMax:3, cle:false, lacet:0, tangage:0,
+// « lacet » = là où la CAMÉRA regarde. « cap » = là où le CORPS est tourné.
+// Les deux sont séparés : c'est ce qui permet de faire volte-face en reculant.
+const joueur = { x:0, z:0, vie:3, vieMax:3, mana:20, manaMax:20, cle:false, lacet:0, cap:0, tangage:0,
                  roulis:0, pas:0, inv:0, atkCd:0, secousse:0, souffle:0,
                  dash:0, dashCd:0, dx:0, dz:0, epee:false,
                  combo:0, comboT:0, saut:0, vy:0 };
@@ -2322,6 +2782,7 @@ function tourner(dx, dy){
   joueur.lacet   -= dx * 0.0022;
   joueur.tangage -= dy * 0.0022;
   joueur.tangage = Math.max(-1.35, Math.min(1.35, joueur.tangage));
+  if(dx) joueur.tourneT = 0.4;   // le joueur reprend la main sur la caméra un court instant
 }
 
 document.addEventListener('mousemove', e=>{
@@ -2377,6 +2838,7 @@ function lireManette(dt){
     joueur.lacet   -= rx*Math.abs(rx) * 3.4 * dt;
     joueur.tangage -= ry*Math.abs(ry) * 2.6 * dt;
     joueur.tangage = Math.max(-1.35, Math.min(1.35, joueur.tangage));
+    if(rx) joueur.tourneT = 0.4;
   }
 
   const appui = (i)=> !!(p.buttons[i] && p.buttons[i].pressed);
@@ -2427,13 +2889,18 @@ const COEUR_SVG = `<svg viewBox="0 0 26 24"><path d="M13 23S1 15.4 1 8.2C1 4.2 4
   fill="#c8392f" stroke="#f0715f" stroke-width="1.2"/></svg>`;
 
 function dessinerCoeurs(perte=-1){
-  elCoeurs.innerHTML='';
-  for(let i=0;i<joueur.vieMax;i++){
-    const d=document.createElement('div');
-    d.className='coeur'+(i<joueur.vie?'':' vide')+(i===perte?' perte':'');
-    d.innerHTML=COEUR_SVG;
-    elCoeurs.appendChild(d);
-  }
+  const k = Math.max(0, Math.min(1, joueur.vie/joueur.vieMax));
+  const col = k>0.5 ? '#e02a2a' : (k>0.25 ? '#e0902a' : '#e02a2a');
+  const m = Math.max(0, Math.min(1, joueur.mana/joueur.manaMax));
+  elCoeurs.innerHTML =
+    // MANA (bleu) — au-dessus du sang
+    '<div style="width:210px;height:12px;background:#08122a;border:1px solid #2a4f92;border-radius:7px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5)">'
+    +'<i style="display:block;height:100%;width:'+(m*100).toFixed(1)+'%;background:linear-gradient(90deg,#2f6bff,#48c6ff);transition:width .18s"></i></div>'
+    +'<div style="font-size:10px;color:#8fbaff;margin:1px 0 3px;letter-spacing:1px">MANA '+Math.ceil(joueur.mana)+' / '+joueur.manaMax+'</div>'
+    // SANG (rouge) — en dessous
+    +'<div style="width:210px;height:16px;background:#240b0b;border:1px solid #6a2626;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.55)">'
+    +'<i style="display:block;height:100%;width:'+(k*100).toFixed(1)+'%;background:linear-gradient(90deg,'+col+',#ff9a5a);transition:width .18s"></i></div>'
+    +'<div style="font-size:11px;color:#e6b8b8;margin-top:2px;letter-spacing:1px">'+Math.ceil(joueur.vie)+' / '+joueur.vieMax+'</div>';
 }
 function dire(t, duree=3.4){ elMsg.textContent=t; elMsg.classList.add('on'); msgT=duree; }
 
@@ -2444,19 +2911,40 @@ function frapper(){
   window.Sons?.coup();
   // enchaînement : si on frappe dans la foulée, le coup suivant part plus vite
   joueur.combo = (joueur.comboT > 0) ? Math.min(15, joueur.combo + 1) : 0;   // enchaînement jusqu'à 16 coups
+  crierCoup(joueur.combo);                                                    // un cri différent par coup de l'enchaînement
   joueur.comboT = 0.8;
-  const troisieme = joueur.combo % 4 === 2;  // l'estoc revient tous les 4 coups
-  const tourbillon = joueur.combo % 4 === 3; // le tourbillon tous les 4 coups
-  joueur.atkCd = [0.40, 0.30, 0.44, 0.62][joueur.combo % 4];
+  // ── LES SEPT COUPS D'ÉPÉE ──
+  // Vrais gestes du sabre japonais, un par clic. Le 4e monte du bas vers le haut
+  // (kiriage), comme demandé — plus de trait blanc qui part tout seul.
+  const NUM = joueur.combo % 7;
+  const COUP = COUPS_EPEE[NUM];
+  const troisieme  = COUP.pointe;      // l'estoc : on pousse la pointe droit devant
+  const tourbillon = COUP.final;       // le septième : le grand coup tournant
+  // DEUX LAMES : les coups s'enchaînent plus vite (une main relaie l'autre),
+  // mais chacun tape moins fort. C'est l'échange classique de l'escrime à deux épées.
+  joueur.atkCd = COUP.duree * (armeMode === 'deux' ? 0.68 : 1);
   majJaugeCombo();
   joueur.secousse = Math.max(joueur.secousse, 0.16);
+  // Naruto Storm : cible verrouillée → on fond sur elle pour coller le combo au corps-à-corps
+  if(cible){
+    const cp = ciblePos();
+    if(cp){
+      const dx = cp.x - joueur.x, dz = cp.z - joueur.z, d = Math.hypot(dx,dz)||1;
+      if(d > 1.8 && d < 9){
+        const bond = Math.min(d - 1.4, 3.5);
+        const p = glisser(joueur.x, joueur.z, dx/d*bond, dz/d*bond);   // sans traverser les murs
+        joueur.x = p.x; joueur.z = p.z;
+        joueur.secousse = Math.max(joueur.secousse, 0.22);
+      }
+    }
+  }
   camera.getWorldDirection(avant);
   let touche = false;
   if(boss && boss.mort<=0){
     const bx = boss.x - joueur.x, bz = boss.z - joueur.z;
     const bd = Math.hypot(bx, bz);
     if(bd < 3.2 && (bx*avant.x + bz*avant.z)/(bd||1) > 0.3){
-      frapperBoss(joueur.epee ? 3 : 1);
+      frapperBoss(Math.max(1, Math.round((joueur.epee ? 3 : 1) * (armeMode === 'deux' ? 0.7 : 1))));
       window.Sons?.impact();
       joueur.secousse = 0.3;
       return;                       // un coup ne porte que sur une cible
@@ -2471,15 +2959,19 @@ function frapper(){
       const cos = (dx*avant.x + dz*avant.z) / (d||1);
       if(cos < 0.15) continue;            // viser, mais pas au millimètre
     }
-    e.vie -= (joueur.epee ? 3 : 1) + (troisieme ? 2 : 0) + (tourbillon ? 4 : 0);
+    // Deux lames : chaque coup enlève moins, mais ils partent bien plus vite.
+    const forceLame = (armeMode === 'deux') ? 0.7 : 1;
+    e.vie -= Math.max(1, Math.round(((joueur.epee ? 3 : 1) + (troisieme ? 2 : 0) + (tourbillon ? 4 : 0)) * forceLame));
     flashImpact(e.x*T, 1.0, e.y*T);
     if(e.vie <= 0){ e.vie = 0; e.mort = 0.55; }
     touche = true;
     joueur.secousse = tourbillon ? 0.75 : (troisieme ? 0.5 : 0.3);
-    if(troisieme || tourbillon){                    // ces deux-là repoussent
-      const n = d || 1, force = tourbillon ? 2.2 : 1.4;
-      e.x += dx/n * force / T; e.y += dz/n * force / T;
-    }
+    hitstop = Math.max(hitstop, 0.055);             // gel d'impact au contact
+    // IMPACT : l'ennemi part dans le SENS DU COUP, et on le suit pour enchaîner (Naruto Storm)
+    const kb = (1.4 + (troisieme?0.7:0) + (tourbillon?1.5:0)) / T;
+    e.x += avant.x * kb; e.y += avant.z * kb;
+    const pp = glisser(joueur.x, joueur.z, avant.x*0.6, avant.z*0.6);
+    joueur.x = pp.x; joueur.z = pp.z;
   }
   // le guerrier qu'on défie : un vrai adversaire qui encaisse
   if(guerrier && guerrier.vie>0 && guerrier.etat==='combat'){
@@ -2505,12 +2997,15 @@ function frapper(){
       poserObjet(Math.random() < 0.6 ? 'fiole' : 'eclat', d.x, d.z);
   }
 
-  // le quatrième coup lâche une lame d'air qui court au sol
+  // PLUS AUCUN trait blanc (Patrick, 21/08 : « je ne veux pas de trait blanc,
+  // mais un coup d'épée à la fin »). Le septième est un vrai coup, porté par le
+  // corps : il frappe plus loin, plus fort, et fait trembler l'image.
   if(tourbillon){
-    lancerTranche();
-    bip(520,0.1,'sine',0.07); bip(260,0.34,'sawtooth',0.09,0.06);
+    bip(200, 0.16, 'sawtooth', 0.12); bip(90, 0.42, 'sawtooth', 0.10, 0.05);
+    joueur.secousse = Math.max(joueur.secousse, 0.95);
+    hitstop = Math.max(hitstop, 0.09);          // l'image se fige un instant : le poids du coup
   }
-  const note = [300, 360, 240, 440][joueur.combo];
+  const note = COUP.note;
   bip(touche?note:170, touche?0.09:0.05, 'square', touche?0.07:0.03);
   if(touche){ bip(troisieme?90:140, troisieme?0.3:0.22, 'sawtooth', 0.07, 0.05); window.Sons?.impact();
     hitstop = Math.max(hitstop, tourbillon?0.09:0.055); joueur.secousse = Math.max(joueur.secousse, tourbillon?0.9:0.55); }
@@ -2518,6 +3013,7 @@ function frapper(){
 
 function blesser(vx, vz){
   if(joueur.inv>0) return;
+  if(estArene()){ joueur.inv = 1.0; window.Sons?.degat(); montrerCoup(vx, vz); joueur.secousse = Math.max(joueur.secousse, 0.5); return; }  // entraînement : vie illimitée
   joueur.vie--; joueur.inv = 1.9;
   window.Sons?.degat();
   hitstop = Math.max(hitstop, 0.075); joueur.secousse = 0.85;
@@ -2553,7 +3049,117 @@ function bip(f,d,forme,vol,quand=0){
 /* ═══════════════ 9. ÉTAGES, MORT, DÉPART ═══════════════ */
 let etat = 'titre';   // titre | jeu | mort
 
+function texGrilleNeon(){
+  const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
+  x.fillStyle='#05070f'; x.fillRect(0,0,256,256);
+  x.strokeStyle='#1cf0ff'; x.shadowColor='#1cf0ff'; x.shadowBlur=8; x.lineWidth=2;
+  x.beginPath(); x.moveTo(0,0); x.lineTo(256,0); x.moveTo(0,0); x.lineTo(0,256); x.stroke();
+  x.shadowBlur=0; x.strokeStyle='rgba(28,240,255,.18)'; x.lineWidth=1;
+  for(let i=32;i<256;i+=32){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,256); x.moveTo(0,i); x.lineTo(256,i); x.stroke(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+}
+function texFenetres(){
+  const c=document.createElement('canvas'); c.width=64; c.height=128; const x=c.getContext('2d');
+  x.fillStyle='#070912'; x.fillRect(0,0,64,128);
+  const pal=['#1cf0ff','#ff2bd6','#ffd23a','#8affc1','#2a6bff'];
+  for(let gy=6;gy<128;gy+=10){ for(let gx=6;gx<64;gx+=12){
+    if(Math.random()<0.42){ x.fillStyle='#0a0d18'; }
+    else { x.fillStyle=pal[(Math.random()*pal.length)|0]; }
+    x.fillRect(gx,gy,7,6);
+  }}
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+}
+function batirArene(){
+  while(monde.children.length){ const o=monde.children.pop(); o.traverse?.(n=>{ n.geometry?.dispose?.(); }); monde.remove(o); }
+  flammes=[]; meshEnnemis=[]; coffre=null; pieges=[]; jumeaux=[]; decors=[]; objets=[]; murIM=null; villageois=[];
+  ondes=[]; tranches=[]; projectiles=[]; flashs=[]; zonesFeu=[]; guerrier=null; cible=null; torches=[];
+  if(boss){ scene.remove(boss.jauge.mesh); boss=null; }
+  ennemis=[];
+  grid=[]; for(let y=0;y<H;y++){ const l=new Array(W).fill(FLOOR); l[0]=WALL; l[W-1]=WALL; grid.push(l); }
+  for(let x=0;x<W;x++){ grid[0][x]=WALL; grid[H-1][x]=WALL; }
+  const cx=W*T/2, cz=H*T/2;
+  // -- nuit cyberpunk : ciel noir bleuté, brouillard néon --
+  scene.background = new THREE.Color(0x060814);
+  scene.fog = new THREE.FogExp2(0x0a0a1e, 0.019);
+  hemi.color.setHex(0x2a1a4a); hemi.groundColor.setHex(0x02030a); hemi.intensity = 0.55;
+  jour.intensity = 0.9; jour.color.setHex(0x6f7cff); renderer.toneMappingExposure = 1.15;
+  // -- le sol : plateau sombre + grille néon lumineuse (TRON) --
+  const gt = texGrilleNeon(); gt.repeat.set(W, H);
+  const sol = new THREE.Mesh(new THREE.PlaneGeometry(W*T, H*T),
+    new THREE.MeshStandardMaterial({ color:0x090c18, roughness:0.35, metalness:0.7,
+      emissive:0x0a1830, emissiveMap:gt, emissiveIntensity:1.4, map:gt }));
+  sol.rotation.x = -Math.PI/2; sol.position.set(cx, 0, cz); sol.receiveShadow = true; monde.add(sol);
+  // -- anneau de combat néon au centre --
+  const anneau = new THREE.Mesh(new THREE.RingGeometry(11.5, 12.3, 64),
+    new THREE.MeshBasicMaterial({ color:0x1cf0ff, transparent:true, opacity:0.9, side:THREE.DoubleSide, depthWrite:false }));
+  anneau.rotation.x = -Math.PI/2; anneau.position.set(cx, 0.05, cz); monde.add(anneau);
+  const anneau2 = new THREE.Mesh(new THREE.RingGeometry(11.5, 12.3, 64),
+    new THREE.MeshBasicMaterial({ color:0xff2bd6, transparent:true, opacity:0.5, side:THREE.DoubleSide, depthWrite:false }));
+  anneau2.rotation.x = -Math.PI/2; anneau2.position.set(cx, 0.02, cz); anneau2.scale.setScalar(1.9); monde.add(anneau2);
+  // -- la skyline : gratte-ciels aux fenêtres allumées, en cercle autour --
+  const wt = texFenetres();
+  const N=34;
+  for(let i=0;i<N;i++){
+    const a = (i/N)*Math.PI*2 + (i%2)*0.13;
+    const rad = 44 + (i%4)*11 + Math.abs(Math.sin(i*2.1))*14;
+    const bx = cx + Math.cos(a)*rad, bz = cz + Math.sin(a)*rad;
+    const hh = 16 + Math.abs(Math.sin(i*1.7))*46;
+    const bw = 5 + (i%3)*2.4;
+    const wmat = new THREE.MeshStandardMaterial({ color:0x0b0e1c, roughness:0.6, metalness:0.5,
+      map:wt.clone(), emissive:0xffffff, emissiveMap:wt.clone(), emissiveIntensity:0.9 });
+    wmat.map.repeat.set(bw/4, hh/7); wmat.emissiveMap.repeat.copy(wmat.map.repeat);
+    wmat.map.needsUpdate = wmat.emissiveMap.needsUpdate = true;
+    const b = new THREE.Mesh(new THREE.BoxGeometry(bw, hh, bw), wmat);
+    b.position.set(bx, hh/2, bz); monde.add(b);
+    // liseré néon sur le toit
+    const col = (i%2)? 0x1cf0ff : 0xff2bd6;
+    const toit = new THREE.Mesh(new THREE.BoxGeometry(bw*1.04, 0.5, bw*1.04),
+      new THREE.MeshBasicMaterial({ color:col }));
+    toit.position.set(bx, hh+0.2, bz); monde.add(toit);
+  }
+  // -- piliers néon aux quatre coins du plateau --
+  const coins=[[3,3],[W-3,3],[3,H-3],[W-3,H-3]];
+  coins.forEach((c,i)=>{
+    const px=c[0]*T, pz=c[1]*T; const col=(i%2)?0x1cf0ff:0xff2bd6;
+    const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,9,8),
+      new THREE.MeshBasicMaterial({ color:col }));
+    pil.position.set(px,4.5,pz); monde.add(pil);
+  });
+  // -- lune / hologramme au loin --
+  const lune = new THREE.Mesh(new THREE.CircleGeometry(16,48),
+    new THREE.MeshBasicMaterial({ color:0xff3ac0, transparent:true, opacity:0.55, fog:false }));
+  lune.position.set(cx-10, 34, cz-95); monde.add(lune);
+  const halo = new THREE.Mesh(new THREE.CircleGeometry(22,48),
+    new THREE.MeshBasicMaterial({ color:0xff3ac0, transparent:true, opacity:0.14, fog:false }));
+  halo.position.set(cx-10, 34, cz-95.5); monde.add(halo);
+  // -- deux lumières d'ambiance colorées, DISCRÈTES (à 55 elles faisaient des flaques rouges/cyan criardes au sol) --
+  const l1 = new THREE.PointLight(0x1cf0ff, 10, 30, 2); l1.position.set(cx-9, 9, cz+7); monde.add(l1);
+  const l2 = new THREE.PointLight(0xff2bd6, 10, 30, 2); l2.position.set(cx+9, 9, cz-7); monde.add(l2);
+  poserGuerrier();
+}
+/* ═══ MUSIQUE d'ambiance (CC0) : apaisante au village, tendue au donjon ═══ */
+let _mus = null, _musLieu = '';
+const MUSIQUES = { village:'audio/ambiance-village.mp3', donjon:'audio/ambiance-donjon.ogg', arene:'audio/ambiance-donjon.ogg' };
+function jouerMusique(lieu){
+  if(_musLieu === lieu) return;
+  _musLieu = lieu;
+  if(_mus){ try{ _mus.pause(); }catch(e){} _mus = null; }
+  const src = MUSIQUES[lieu]; if(!src) return;
+  _mus = new Audio(src); _mus.loop = true; _mus.volume = 0.32;
+  _mus.play().catch(()=>{});   // démarre dès le 1er geste (le clic « Entrer » suffit)
+}
 function nouvelEtage(){
+  jouerMusique(estArene() ? 'arene' : estDehors() ? 'village' : 'donjon');
+  if(estArene()){
+    batirArene();
+    joueur.x = W*T*0.5 - 5; joueur.z = H*T*0.5;
+    joueur.lacet = -Math.PI/2; joueur.tangage = 0;
+    joueur.vie = joueur.vieMax; joueur.cle = true;
+    elCle.classList.remove('ok'); elEtage.textContent = 'Entraînement';
+    dessinerCoeurs();
+    dire('Entraînement — vie illimitée. R pour verrouiller, X poings/épée, V incantation.', 6);
+    return;
+  }
   if(estDehors()){
     const d = genererDehors();
     batirDehors();
@@ -2565,19 +3171,33 @@ function nouvelEtage(){
     elCle.classList.remove('ok');
     elEtage.textContent = '—';
     dessinerCoeurs();
-    scene.fog = new THREE.FogExp2(0x0e1730, 0.015);   // brume de nuit bleutée
-    scene.background = new THREE.Color(0x0a1230);     // ciel de nuit
-    jour.intensity = 2.7;                             // pleine lune : ça éclaire bien
-    jour.color.setHex(0xaec6f0);                     // clair de lune
-    renderer.toneMappingExposure = 1.05;
+    poserMomentDuJour(MOMENT_DEHORS);   // l'heure qu'il fait dehors — voir la table MOMENTS
+    if(MODELES.entreeColisee && entree){          // le Colisée : bâtiment d'entrée du donjon, autour de l'escalier
+      const col = MODELES.entreeColisee.clone(true);
+      col.position.set(entree.x*T+T/2, 0, entree.y*T+T/2);
+      col.scale.setScalar(0.62); col.rotation.y = Math.PI;
+      col.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
+      monde.add(col);
+    }
+    if(MODELES.chevalier && entree){          // gardes immobiles en allée vers le Colisée
+      for(let i=0;i<3;i++) for(const cote of [-1,1]){
+        const c = MODELES.chevalier.clone(true);
+        c.position.set((entree.x+cote*2.4)*T+T/2, 0, (entree.y-4+i*1.6)*T+T/2);
+        c.scale.setScalar(0.9); c.rotation.y = cote>0 ? -Math.PI/2 : Math.PI/2;
+        c.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
+        monde.add(c);
+      }
+    }
     return;
   }
   scene.fog = new THREE.FogExp2(0x16233c, 0.022);
   scene.background = new THREE.Color(0x080d18);
   jour.intensity = 2.2;
   renderer.toneMappingExposure = 1.3;
-  generer();
+  if(niveau===1){ genererDepuisPlan(PLAN_ETAGE1); } else { generer(); }
   batir();
+  if(coffresPlan.length) poserCoffre(coffresPlan[0].x, coffresPlan[0].y);   // un coffre posé (ouvrable avec E)
+  if(niveau===5) poserDragon();                                             // le squelette de dragon trône à l'étage 5
   const s0 = rooms[0];
   joueur.x = cX(s0)*T + T/2;
   joueur.z = cY(s0)*T + T/2;
@@ -2588,9 +3208,14 @@ function nouvelEtage(){
   elCle.classList.remove('ok');
   elEtage.textContent = niveau;
   dessinerCoeurs();
+  if(niveau===1 && !histoireDite && etat==='jeu'){
+    histoireDite = true;
+    /* histoire d'ouverture coupée — à refaire avec Patrick */;
+  }
 }
 function descendre(){
   niveau++;
+  if(niveau > niveauMax) niveauMax = niveau;
   window.Sons?.porte();
   sauvegarderPartie();
   joueur.vie = Math.min(joueur.vieMax, joueur.vie+1);
@@ -2618,11 +3243,13 @@ function perdre(){
   bip(200,0.3,'sawtooth',0.1); bip(120,0.5,'sawtooth',0.1,0.2);
 }
 let joueurNom = 'Patrick';
+let classe = 'chevalier';   // Chevalier (épée) ou Mage (feu + énergie)
 let departNiveau = 0;   // 0 = village, 1 = donjon (choisi au titre)
+let niveauMax = 1;      // le plus profond jamais atteint : sert à la reprise
 function cleSauvegarde(){ return 'kotoage:' + (joueurNom || 'Patrick'); }
 function sauvegarderPartie(){
   try{ localStorage.setItem(cleSauvegarde(), JSON.stringify({
-    v:1, niveau, vie:joueur.vie, vieMax:joueur.vieMax, epee:!!joueur.epee,
+    v:1, niveau, niveauMax, vie:joueur.vie, vieMax:joueur.vieMax, epee:!!joueur.epee,
     eclats, pouvoirs })); }catch(e){}
 }
 function chargerPartie(){
@@ -2634,9 +3261,14 @@ function effacerPartie(){ try{ localStorage.removeItem(cleSauvegarde()); }catch(
 
 function commencer(){
   const sv = chargerPartie();
-  niveau = departNiveau;                    // le choix Village (0) / Donjon (1) prime toujours
-  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; }
-  else  { joueur.vie = joueur.vieMax = 3; }
+  niveau = departNiveau;                    // le choix Village (0) / Donjon (1) / Entraînement (-1)
+  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; niveauMax = sv.niveauMax || sv.niveau || 1; }
+  else  { joueur.vie = joueur.vieMax = 10; niveauMax = 1; }   // jauge de vie granulaire (au lieu de 3 cœurs)
+  joueur.manaMax = 20 + (niveauMax-1)*6;                      // le mana max grandit avec le niveau
+  joueur.mana = joueur.manaMax;
+  if(departNiveau >= 1) niveau = Math.max(departNiveau, niveauMax);   // reprise : on revient au plus profond atteint
+  if(classe==='mage'){ joueur.epee=false; armeMode='poings'; if(!pouvoirs.includes('feu')) pouvoirs.push('feu'); dessinerPouvoirs?.(); }
+  else { armeMode='epee'; }
   joueur.cle = false;
   etat = 'jeu';
   installerAvatar();                        // (re)construit l'avatar du joueur choisi
@@ -2659,11 +3291,18 @@ btnJouer.disabled = true;
 btnJouer.textContent = 'Chargement…';
 chargerModeles().then(()=>{
   if(MODELES.perso && ANIM_MAGE.length) MODELES.perso.userData.anims = ANIM_MAGE;
+  if(MODELES.guerrier && ANIM_MAGE.length) MODELES.guerrier.userData.anims = ANIM_MAGE;   // guerrier animé comme le joueur
   installerAvatar();
   const n = Object.keys(MODELES).length;
   btnJouer.disabled = false;
   btnJouer.textContent = texteJouer;
   console.log('modèles chargés :', n, '/', Object.keys(A_CHARGER).length);
+  // démarrage auto par ancre (dev/tests headless) : #arene / #donjon / #village
+  const h = location.hash.replace('#','');
+  if(h==='arene'||h==='donjon'||h==='village'){
+    departNiveau = h==='arene'?-1 : h==='donjon'?1 : 0;
+    setTimeout(()=>{ try{ commencer(); }catch(e){ console.log('AUTOSTART', e.message); } }, 300);
+  }
 });
 
 function majChoixJoueur(){
@@ -2682,13 +3321,35 @@ document.querySelectorAll('#choix-joueur button').forEach(b=>{
     majChoixJoueur(); };
 });
 majChoixJoueur();
+document.querySelectorAll('.classe-tab').forEach(b=>{
+  b.onclick = ()=>{ document.querySelectorAll('.classe-tab').forEach(x=>x.classList.remove('on')); b.classList.add('on'); classe = b.dataset.classe; };
+});
 document.querySelectorAll('.entree-tab').forEach(b=>{
   b.onclick = ()=>{ departNiveau = +b.dataset.niv;
     document.querySelectorAll('.entree-tab').forEach(x=>x.classList.toggle('on', x===b)); };
 });
 
-btnJouer.onclick   = commencer;
-document.getElementById('rejouer').onclick = commencer;
+// --- Plein écran au lancement (le clic « Entrer » est un geste valide) ---
+function entrerPleinEcran(){
+  const el = document.documentElement;
+  const rf = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+  if(rf) try{ rf.call(el); }catch(e){}
+}
+// « 3 fois Échap pour sortir » : le navigateur QUITTE le plein écran dès le 1er Échap
+// (sécurité non désactivable). On respecte l'intention : à la sortie, on redemande
+// le plein écran, sauf si le joueur insiste (3 Échap rapprochés => on le laisse sortir).
+let _echapCompte = 0, _echapT = 0;
+document.addEventListener('fullscreenchange', ()=>{
+  if(!document.fullscreenElement && etat==='jeu'){
+    const now = performance.now();
+    if(now - _echapT < 1200) _echapCompte++; else _echapCompte = 1;
+    _echapT = now;
+    if(_echapCompte < 3){ entrerPleinEcran(); }        // on ré-entre : il faut insister
+    else { _echapCompte = 0; esprit('Plein écran quitté.', true); }  // 3e fois : on sort pour de bon
+  }
+});
+btnJouer.onclick   = ()=>{ entrerPleinEcran(); commencer(); };
+document.getElementById('rejouer').onclick = ()=>{ entrerPleinEcran(); commencer(); };
 
 
 /* ═══════════════ 9 bis. L'ESPRIT DU DONJON ═══════════════
@@ -2749,7 +3410,7 @@ function esprit(m, muet=false){
     const u = new SpeechSynthesisUtterance(m);
     if(voixFr) u.voice = voixFr;
     u.lang = 'fr-FR'; u.pitch = 0.55; u.rate = 0.97; u.volume = 0.85;
-    speechSynthesis.speak(u);
+    if(window.VOIX_TTS) speechSynthesis.speak(u);
   }
 }
 
@@ -2772,6 +3433,39 @@ function allumerFeu(tx, ty){
   torches.push({ x:tx, y:ty, wx, wz, ph });    // elle entre dans le tour des 6 lumières
 }
 
+/* ═══ le squelette de dragon, décor immobile de l'étage 5 ═══ */
+function poserDragon(){
+  const m = MODELES.dragonSquelette; if(!m) return;
+  let best = rooms[0], area = 0;
+  for(const r of rooms){ const a = r.w*r.h; if(a>area){ area=a; best=r; } }   // la plus grande salle
+  const g = m.clone(true);
+  g.position.set(cX(best)*T+T/2, 0, cY(best)*T+T/2);
+  g.scale.setScalar(1.25);
+  g.rotation.y = Math.PI*0.15;
+  g.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
+  monde.add(g);
+}
+
+/* ═══ INTERACTION (touche E) : coffre, portail, plus tard PNJ/forge ═══ */
+function ouvrirCoffre(){
+  if(!coffre || coffre.ouvert) return false;
+  coffre.ouvert = true;
+  coffre.couvercle.rotation.x = -1.15;
+  coffre.couvercle.position.set(0, 0.62, -0.24);
+  if(!joueur.epee){ joueur.epee = true; esprit("Une épée dormait dans le coffre. Elle est à toi."); }
+  else if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Le coffre rendait un cœur."); }
+  else esprit("Le coffre était vide. Le donjon a de l'humour.");
+  bip(660,0.09,'square',0.07); bip(880,0.14,'square',0.07,0.09);
+  return true;
+}
+function interagir(){
+  if(etat !== 'jeu') return;
+  if(coffre && !coffre.ouvert &&
+     Math.hypot(coffre.obj.position.x-joueur.x, coffre.obj.position.z-joueur.z) < 1.5){ ouvrirCoffre(); return; }
+  if(meshPortail && meshPortail.visible &&
+     Math.hypot(meshPortail.position.x-joueur.x, meshPortail.position.z-joueur.z) < 1.4){ lancerTeleport(); return; }
+  dire('Rien à faire ici.', 1.2);
+}
 function poserCoffre(tx, ty){
   const g = new THREE.Group();
   const caisse = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.45,0.5),
@@ -2873,6 +3567,176 @@ chargerPouvoirs();
 
 /* ═══ le cœur : ce que l'esprit comprend ═══
    Fidèle au jeu 2D — mêmes mots-clés, mêmes réponses, dans le même ordre. */
+/* ═══ INCANTATIONS façon SLAYERS (version française) — dis le nom ou le chant, l'attaque part ═══ */
+const INCANTATIONS = [
+  { cles:['dragon slave','dragonne slave','dragon slaive'], nom:'Dragon Slave', elem:'feu', gros:true,
+    chant:"Toi qui es plus sombre que le crépuscule, toi qui es plus rouge que le sang qui coule… au nom de ce qui dort dans l'abîme du temps éternel, je t'invoque, Maître des ténèbres ultimes ! DRAGON SLAVE !" },
+  { cles:['giga slave','giga slaive'], nom:'Giga Slave', elem:'feu', gros:true,
+    chant:"Ténèbres plus noires que la poix, plus profondes que la nuit la plus profonde ! Seigneur des Cauchemars, brillant comme l'or sur la Mer du Chaos, je me voue à toi ! GIGA SLAVE !" },
+  { cles:['boule de feu','fireball','flamme'], nom:'Boule de Feu', elem:'feu',
+    chant:"Source de toute puissance, lumière qui brûle au-delà de l'écarlate, rassemble-toi dans ma main ! BOULE DE FEU !" },
+  { cles:['fleche de feu','flare arrow'], nom:'Flèche de Flammes', elem:'feu',
+    chant:"Flèche ardente, transperce mes ennemis ! FLARE ARROW !" },
+  { cles:['fleche de glace','freeze arrow','glace','givre'], nom:'Flèche de Glace', elem:'eau',
+    chant:"Souffle du gel venu des profondeurs, cristallise et frappe ! FREEZE ARROW !" },
+  { cles:['ra tilt','ra tirt','flux astral'], nom:'Ra Tilt', elem:'vent', gros:true,
+    chant:"Flux astral jailli de l'abîme, consume tout sur ton passage ! RA TILT !" },
+  { cles:['lame de vent','bourrasque','vent'], nom:'Lame de Vent', elem:'vent',
+    chant:"Vent tranchant, fends l'air et coupe ! " },
+  { cles:['trait d\'eau','vague','eau'], nom:"Trait d'Eau", elem:'eau',
+    chant:"Onde vive, jaillis et emporte-les ! " },
+];
+// ---- Voix clonée du héros (mp3 pré-générés dans voix/<style>/) ----
+const VOIX_INC = {
+  'Dragon Slave':'inc_dragon_slave','Giga Slave':'inc_giga_slave','Boule de Feu':'inc_boule_de_feu',
+  'Flèche de Flammes':'inc_fleche_de_flammes','Flèche de Glace':'inc_fleche_de_glace',
+  'Ra Tilt':'inc_ra_tilt','Lame de Vent':'inc_lame_de_vent',"Trait d'Eau":'inc_trait_deau'
+};
+let VOIX_STYLE = 'anime';         // 'anime' (voix montée) ou 'brut' (voix normale)
+const _voixCache = {};
+let VOIX_ACTIVE = false;   // COUPÉE à la demande de Patrick (21/08) : la voix ne lui plaît pas.
+                           // Les fichiers restent dans voix/ ; remettre à true pour la rallumer.
+function direVoix(cle){
+  if(!VOIX_ACTIVE) return false;
+  if(!cle) return false;
+  try{
+    let a = _voixCache[VOIX_STYLE+'/'+cle];
+    if(!a){ a = new Audio('voix/'+VOIX_STYLE+'/'+cle+'.mp3'); a.volume = 0.95; _voixCache[VOIX_STYLE+'/'+cle] = a; }
+    a.currentTime = 0; const p = a.play(); if(p && p.catch) p.catch(()=>{});
+    return true;
+  }catch(e){ return false; }
+}
+// MODE PAROLE : le héros dit ce que TU écris, sans lancer de sort
+function parlerJoueur(texte){
+  esprit('Toi : « '+texte.trim()+' »', true);
+  if(typeof voixDuMonde==='function') voixDuMonde(texte, false);   // panneau devant le joueur : il "parle"
+  const cle = DLG_PAROLE[normaliser(texte)];                        // si une réplique connue existe, on la joue
+  if(cle) direVoix(cle);
+}
+const DLG_PAROLE = {};   // rempli plus bas avec les dialogues pré-générés
+
+/* ── LA COLONNE DE FEU : l'attaque suprême ──
+   Un cercle magique rouge et or s'allume au sol autour de la cible verrouillée,
+   puis une colonne de feu monte. Le cercle est le MÊME dessin que celui de la
+   téléportation, juste dans une autre couleur. */
+let colonnesFeu = [];
+function colonneDeFeu(){
+  const cp = (typeof ciblePos === 'function') ? ciblePos() : null;
+  const x = cp ? cp.x : joueur.x - Math.sin(joueur.lacet)*5;
+  const z = cp ? cp.z : joueur.z - Math.cos(joueur.lacet)*5;
+  if(joueur.mana < 12){ dire('Pas assez de mana pour la colonne de feu.', 1.8); return; }
+  joueur.mana -= 12; dessinerCoeurs();
+
+  const g = new THREE.Group();
+  // le cercle magique au sol
+  const cercle = new THREE.Mesh(new THREE.PlaneGeometry(6, 6),
+    new THREE.MeshBasicMaterial({ map:texCercleMagique('feu','rgba(255,190,70,0.95)','#ff7a20'),
+      transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+  cercle.rotation.x = -Math.PI/2; cercle.position.y = 0.06; g.add(cercle);
+  // la colonne
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.1, 14, 20, 1, true),
+    new THREE.MeshBasicMaterial({ color:0xff7a20, transparent:true, opacity:0,
+      depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+  col.position.y = 7; g.add(col);
+  const cœur = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 14, 14, 1, true),
+    new THREE.MeshBasicMaterial({ color:0xffe9a0, transparent:true, opacity:0,
+      depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+  cœur.position.y = 7; g.add(cœur);
+  const lum = new THREE.PointLight(0xff8a30, 0, 18, 2); lum.position.y = 3; g.add(lum);
+
+  g.position.set(x, 0, z); monde.add(g);
+  colonnesFeu.push({ obj:g, cercle, col, cœur, lum, t:0, x, z, brule:false });
+  joueur.secousse = Math.max(joueur.secousse, 0.6);
+  bip(90, 0.5, 'sawtooth', 0.12); bip(220, 0.4, 'sine', 0.08, 0.1);
+}
+function majColonnesFeu(dt){
+  for(let i = colonnesFeu.length - 1; i >= 0; i--){
+    const c = colonnesFeu[i]; c.t += dt;
+    const k = c.t / 2.4;                                  // la vie de la colonne : 2,4 secondes
+    if(k >= 1){ monde.remove(c.obj); colonnesFeu.splice(i,1); continue; }
+    const monte = Math.min(1, c.t / 0.5);                 // elle jaillit en une demi-seconde
+    const fin   = Math.max(0, 1 - Math.max(0, (k - 0.6) / 0.4));
+    c.cercle.material.opacity = 0.9 * fin;
+    c.cercle.rotation.z += dt * 1.6;
+    c.cercle.scale.setScalar(0.5 + monte * 0.7);
+    c.col.material.opacity  = 0.55 * monte * fin;
+    c.cœur.material.opacity = 0.85 * monte * fin;
+    c.col.scale.y = c.cœur.scale.y = monte;
+    c.col.rotation.y += dt * 3;  c.cœur.rotation.y -= dt * 4;
+    c.lum.intensity = 22 * monte * fin;
+    if(!c.brule && c.t > 0.4){                            // le feu mord une fois, quand la colonne est montée
+      c.brule = true;
+      if(typeof poserZoneFeu === 'function') poserZoneFeu(c.x, c.z, 2.4, 2.2);
+    }
+  }
+}
+
+/* ── LES SEPT COUPS D'ÉPÉE ──
+   Un clic = un coup, et sept coups d'affilée si tu enchaînes. Chacun est un
+   vrai geste de sabre, avec son nom d'origine. Une seule table : changer un
+   coup ici le change partout — dans le bras, dans les dégâts, dans le son.
+     nom     : le geste
+     duree   : le temps du coup (plus court = plus vif)
+     degats  : ce qu'il enlève en plus
+     portee  : jusqu'où il touche, en mètres
+     bras    : d'où part le bras et où il finit (haut, bas, gauche, droite)
+     pointe  : c'est un coup d'estoc (on pousse la pointe)
+     final   : c'est le coup final de l'enchaînement */
+const COUPS_EPEE = [
+  { nom:'Shomen',     duree:0.40, degats:0, portee:2.4, bras:'haut-bas',      pointe:false, final:false, note:300 },
+  { nom:'Kesa',       duree:0.30, degats:0, portee:2.4, bras:'epaule-hanche', pointe:false, final:false, note:360 },
+  { nom:'Tsuki',      duree:0.44, degats:2, portee:2.9, bras:'estoc',         pointe:true,  final:false, note:240 },
+  { nom:'Kiriage',    duree:0.42, degats:1, portee:2.5, bras:'bas-haut',      pointe:false, final:false, note:420 },  // celui que Patrick voulait
+  { nom:'Do',         duree:0.34, degats:1, portee:2.6, bras:'lateral',       pointe:false, final:false, note:330 },
+  { nom:'Gyaku-kesa', duree:0.38, degats:1, portee:2.5, bras:'hanche-epaule', pointe:false, final:false, note:390 },
+  { nom:'Tourbillon', duree:0.62, degats:4, portee:3.1, bras:'tournant',      pointe:false, final:true,  note:440 },
+];
+
+/* ── LES CRIS DE COMBAT ──
+   Un cri différent par coup de l'enchaînement : 1er « haa », 2e « hayaa », 3e « ouatcha ».
+   Les fichiers vont dans cris/fille/ et cris/garcon/, nommés coup1.mp3, coup2.mp3, coup3.mp3.
+   S'ils manquent, rien ne casse : le jeu reste simplement silencieux. */
+const CRIS_COUP = ['coup1', 'coup2', 'coup3'];
+const _crisCache = {};
+function crierCoup(indexCoup){
+  const voix = (classe === 'mage') ? 'garcon' : 'fille';
+  const nom  = CRIS_COUP[indexCoup % CRIS_COUP.length];
+  const cle  = voix + '/' + nom;
+  try{
+    let a = _crisCache[cle];
+    if(!a){ a = new Audio('cris/' + cle + '.mp3'); a.volume = 0.75; _crisCache[cle] = a; }
+    a.currentTime = 0; const p = a.play(); if(p && p.catch) p.catch(()=>{});
+  }catch(e){}
+}
+
+/* Combien de fois ? Lit un nombre écrit en toutes lettres ou en chiffre dans la
+   phrase de Patrick : « deux boules de feu » → 2. Une seule fonction, tous les sorts
+   s'en servent — au lieu d'un compteur recopié dans chaque sort. */
+const MOTS_NOMBRE = { un:1, une:1, deux:2, trois:3, quatre:4, cinq:5, six:6 };
+function nombreDemande(t){
+  const chiffre = t.match(/\b([1-9])\b/);                 // « 3 boules de feu »
+  if(chiffre) return Math.min(6, +chiffre[1]);
+  for(const mot in MOTS_NOMBRE) if(new RegExp('\\b'+mot+'\\b').test(t)) return MOTS_NOMBRE[mot];
+  return 1;
+}
+
+function lancerIncantation(inc, combien){
+  combien = Math.max(1, Math.min(6, combien || 1));
+  if(combien > 1){                                        // on répète le sort, espacé, sans reprendre le chant
+    for(let i=1;i<combien;i++)
+      setTimeout(()=>{ try{
+        if(inc.gros && typeof lancerFeuCharge==='function' && inc.elem==='feu') lancerFeuCharge(100);
+        else lancerProjectile(inc.elem);
+      }catch(e){} }, i*260);
+  }
+  direVoix(VOIX_INC[inc.nom]);                                          // la voix D'ABORD : un pépin du sort ne la coupe jamais
+  esprit('『 '+inc.nom+' 』  '+inc.chant);
+  if(typeof voixDuMonde==='function') voixDuMonde(inc.chant, false);   // affiche le chant, sans la voix-robot du navigateur
+  try{
+    if(inc.gros && typeof lancerFeuCharge==='function' && inc.elem==='feu') lancerFeuCharge(100);
+    else lancerProjectile(inc.elem);
+  }catch(e){ console.warn('incantation:', e.message); }
+}
 function traiterChat(texte){
   const t = normaliser(texte);
   if(!t) return;
@@ -2892,14 +3756,27 @@ function traiterChat(texte){
     return;
   }
 
+  // incantations Slayers : on cherche le nom du sort ou un mot-clé du chant
+  // ATTAQUE SUPRÊME : cercle magique + colonne de feu autour de la cible verrouillée
+  if(t.includes('colonne de feu') || t.includes('colonne') && t.includes('feu')){
+    const n = nombreDemande(t);
+    colonneDeFeu();
+    for(let i=1;i<n;i++) setTimeout(()=>{ try{ colonneDeFeu(); }catch(e){} }, i*420);
+    esprit('『 Colonne de Feu 』  Que la terre s\'ouvre et que le feu monte !');
+    return;
+  }
+
+  const inc = INCANTATIONS.find(s => s.cles.some(c => t.includes(c)));
+  if(inc){ lancerIncantation(inc, nombreDemande(t)); return; }   // « deux boules de feu » en lance bien deux
+
   if(t.includes('feu') || t.includes('flamme')){
-    lancerProjectile('feu'); esprit("System Call! Une boule de feu jaillit de ta main.");
+    lancerProjectile('feu'); esprit("« "+texte.trim()+" »  —  une boule de feu jaillit ! 🔥");
 
   } else if(t.includes('eau') || t.includes('glace') || t.includes('vague')){
-    lancerProjectile('eau'); esprit("System Call! Un trait d'eau file devant toi.");
+    lancerProjectile('eau'); esprit("« "+texte.trim()+" »  —  un trait d'eau file ! 💧");
 
   } else if(t.includes('vent') || t.includes('lame de vent') || t.includes('bourrasque')){
-    lancerProjectile('vent'); esprit("System Call! Une lame de vent fend l'air.");
+    lancerProjectile('vent'); esprit("« "+texte.trim()+" »  —  une lame de vent fend l'air ! 🌪️");
 
   } else if(t.includes('potion') || t.includes('soigne') || t.includes('vie')){
     if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Une potion apparaît dans ta main. Un cœur de plus."); }
@@ -3013,7 +3890,8 @@ function traiterChat(texte){
     // un pouvoir inventé par le joueur : il porte son nom, il fait ce qu'il a dit
     const inv = Object.keys(pouvoirsPerso).find(n=>t.includes(normaliser(n)));
     if(inv){ traiterChat(pouvoirsPerso[inv]); return; }
-    esprit("Je n'ai pas compris. Essaie : une potion, une épée, un coffre, un chemin, un piège, brise les murs vers la gauche, je me duplique.");
+    // pas un sort, pas un pouvoir : le héros PARLE (mode parole, sans jeter de sort)
+    parlerJoueur(texte);
   }
 }
 
@@ -3071,14 +3949,19 @@ function fermerOreilles(){
 let saisieOuverte = false;
 function ouvrirSaisie(){
   saisieOuverte = true;
+  document.exitPointerLock?.();                       // libère la souris AVANT le focus, sinon le champ le perd
   elSaisie.classList.add('on'); elEsprit.classList.add('on');
-  elSaisieT.value = ''; elSaisieT.focus();
-  document.exitPointerLock?.();
+  elSaisieT.value = '';
+  elSaisieT.placeholder = "parle à l'esprit…  (Entrée = valider · Échap = fermer)";
+  setTimeout(()=>elSaisieT.focus(), 40);              // focus après la libération du pointer lock
 }
 function fermerSaisie(){
   saisieOuverte = false;
   elSaisie.classList.remove('on'); elSaisieT.blur();
+  if(etat==='jeu'){ try{ renderer.domElement.requestPointerLock(); }catch(e){} }   // on reprend le jeu
 }
+// Échap de secours : ferme le champ même si le focus a filé
+addEventListener('keydown', ev=>{ if(saisieOuverte && ev.key==='Escape'){ ev.preventDefault(); fermerSaisie(); } }, true);
 elSaisieT.addEventListener('keydown', ev=>{
   ev.stopPropagation();
   if(ev.key === 'Enter'){ const v = elSaisieT.value; fermerSaisie(); traiterChat(v); }
@@ -3097,16 +3980,40 @@ addEventListener('keyup', ev=>{
 /* Espace : SAUTER (si on est au sol). */
 function foncer(){
   if(etat !== 'jeu' || joueur.dashCd > 0 || joueur.dash > 0) return;
+  const cp = (typeof ciblePos === 'function') ? ciblePos() : null;
+  if(cp && joueur.mana >= 8){                          // DRAGON DASH : fonce sur la cible verrouillée, en 3D, coûte du mana
+    const dx = cp.x - joueur.x, dz = cp.z - joueur.z, dh = Math.hypot(dx, dz) || 1;
+    joueur.dx = dx/dh; joueur.dz = dz/dh;
+    const cy = (cp.y !== undefined ? cp.y : 1.2);
+    joueur.dvy = cy - joueur.saut;                     // composante verticale (foncer en montant/descendant vers la cible)
+    joueur.dash = 0.30; joueur.dashCd = 0.7;           // plus puissant que le dash normal
+    joueur.dragonDash = true;
+    joueur.mana = Math.max(0, joueur.mana - 8); dessinerCoeurs();
+    joueur.secousse = Math.max(joueur.secousse, 0.35);
+    bip(520, 0.10, 'sawtooth', 0.06); bip(260, 0.16, 'sawtooth', 0.05, 0.05);
+    return;
+  }
   if(!joueur.dx && !joueur.dz){ joueur.dx = -Math.sin(joueur.lacet); joueur.dz = -Math.cos(joueur.lacet); }
-  joueur.dash = 0.17; joueur.dashCd = 0.85;
+  joueur.dash = 0.17; joueur.dashCd = 0.85; joueur.dvy = 0; joueur.dragonDash = false;
   joueur.secousse = Math.max(joueur.secousse, 0.25);
   bip(420, 0.09, 'sine', 0.05); bip(180, 0.14, 'sawtooth', 0.04, 0.04);
 }
+let _spaceT = 0;
 addEventListener('keydown', ev=>{
   if(saisieOuverte || ev.code !== 'Space') return;
   ev.preventDefault();
-  if(etat !== 'jeu' || joueur.saut > 0.01) return;   // pas de double saut
-  joueur.vy = 5.2;                                    // impulsion vers le haut
+  if(etat !== 'jeu') return;
+  const now = performance.now();
+  if(now - _spaceT < 300){                             // DOUBLE-TAP Espace → décoller / atterrir (vol style DBZ, en mana)
+    if(!joueur.vol && joueur.mana < 5){ dire('Pas assez de mana pour t\'envoler.', 1.6); _spaceT = 0; return; }
+    joueur.vol = !joueur.vol;
+    if(joueur.vol){ joueur.vy = 0; if(joueur.saut < 1.4) joueur.saut = 1.6; dire('Envol ! Espace monte · Maj descend · re-double Espace pour atterrir', 2.6); }
+    else dire('Tu redescends.', 1.4);
+    bip(680, 0.12, 'sine', 0.07); _spaceT = 0; return;
+  }
+  _spaceT = now;
+  if(joueur.vol || joueur.saut > 0.01) return;         // en vol, Espace fait monter (géré dans la boucle) ; sinon pas de double saut
+  joueur.vy = 5.2;                                      // impulsion de saut
   bip(520, 0.08, 'sine', 0.05);
 });
 /* Clic droit : foncer (l'esquive, déplacée de l'Espace vers la souris). */
@@ -3281,7 +4188,7 @@ function voixDuMonde(texte, parler=true){
     if(voixFr) u.voice = voixFr;
     u.lang = 'fr-FR';
     u.pitch = 1.15; u.rate = 1.02; u.volume = 0.8;   // neutre, sans chaleur
-    speechSynthesis.speak(u);
+    if(window.VOIX_TTS) speechSynthesis.speak(u);
   }
 }
 
@@ -3299,14 +4206,17 @@ debloquer = function(nom){
 
 addEventListener('keydown', ev=>{
   if(saisieOuverte) return;
-  if(ev.code === 'Tab' || ev.code === 'KeyE'){ ev.preventDefault(); basculerStatut(); }
+  if(ev.code === 'Tab'){ ev.preventDefault(); basculerStatut(); }
+  if(ev.code === 'KeyE'){ ev.preventDefault(); interagir(); }
   if(ev.code === 'KeyF'){ ev.preventDefault(); basculerVue(); }
   if(ev.code === 'KeyP'){ ev.preventDefault(); baisserQualite(); }
   if(ev.code === 'KeyX'){ ev.preventDefault();
-    armeMode = armeMode==='epee' ? 'poings' : 'epee';
-    const em = avatar.userData.epeeMain; if(em) em.visible = (armeMode==='epee');
-    arme.visible = (vue===1 && armeMode==='epee');
-    dire(armeMode==='epee' ? 'Épée dégainée. ⚔️' : 'À mains nues — taijutsu. 👊', 2);
+    // X fait le tour des trois façons de se battre : une épée → DEUX épées → poings.
+    armeMode = armeMode==='epee' ? 'deux' : (armeMode==='deux' ? 'poings' : 'epee');
+    majArmesEnMain();
+    dire(armeMode==='epee' ? 'Épée dégainée. ⚔️'
+       : armeMode==='deux' ? 'Deux épées — escrime à deux lames. ⚔️⚔️'
+       : 'À mains nues — taijutsu. 👊', 2);
   }
   if(ev.code === 'KeyG'){ ev.preventDefault();
     if(guerrier && guerrier.vie>0 && guerrier.etat==='dort'){
@@ -3315,6 +4225,7 @@ addEventListener('keydown', ev=>{
       else dire('Approche-toi du guerrier pour le défier.', 2);
     }
   }
+  if(ev.code === 'KeyR'){ ev.preventDefault(); if(cible) deverrouiller(); else verrouiller(); }
   if(ev.code === 'KeyC' && ev.shiftKey){        // Maj+C : ciel photo / ciel peint
     ev.preventDefault();
     if(scene.background === cielReel){
@@ -3337,6 +4248,28 @@ const PALIER = 5;
 let boss = null, ondes = [], cleVerrouillee = false, bossSalle = null, eclats = 0;
 let projectiles = [];   // boules de feu, jets d'eau, lames de vent
 let guerrier = null;   // le guerrier qu'on défie à l'étage 1
+let cible = null;      // cible verrouillée (façon Naruto/Budokai)
+let marqueurCible = null;
+function posDe(c){
+  const o = c.ref;
+  if(c.kind==='ennemi')   return { x:o.x*T, z:o.y*T, vivant:o.vie>0 };
+  if(c.kind==='guerrier') return { x:o.x, z:o.z, vivant:o.vie>0 };
+  if(c.kind==='boss')     return { x:o.x, z:o.z, vivant:o.mort<=0 };
+  return null;
+}
+function ciblePos(){ return cible ? posDe(cible) : null; }
+function verrouiller(){
+  const cands = [];
+  for(const e of (ennemis||[])) if(e.vie>0) cands.push({kind:'ennemi', ref:e});
+  if(guerrier && guerrier.vie>0) cands.push({kind:'guerrier', ref:guerrier});
+  if(boss && boss.mort<=0) cands.push({kind:'boss', ref:boss});
+  let best=null, bd=1e9;
+  for(const c of cands){ const p=posDe(c); const d=Math.hypot(p.x-joueur.x, p.z-joueur.z); if(d<bd){ bd=d; best=c; } }
+  cible = best;
+  if(marqueurCible) marqueurCible.visible = !!cible;
+  dire(cible ? 'Cible verrouillée 🔒 (R pour relâcher)' : 'Aucune cible en vue.', 1.8);
+}
+function deverrouiller(){ cible=null; if(marqueurCible) marqueurCible.visible=false; dire('Verrou relâché.', 1.2); }
 let jumeauxDepuis = -1;
 
 function estPalier(n){ return n > 0 && n % PALIER === 0; }
@@ -3417,17 +4350,39 @@ function flashImpact(x, y, z){
   m.position.set(x, y, z); monde.add(m);
   flashs.push({ obj:m, vie:0.16 });
 }
+/* ── LE DÉPASSEMENT ──
+   Enchaîne les ondes et une force monte en toi. Quand la jauge est pleine,
+   tu DÉPASSES : pendant quelques secondes, tes ondes sont plus grandes,
+   plus dorées, et frappent plus loin. Si tu t'arrêtes, la jauge retombe.
+   La force ne se reçoit pas : elle se débloque. */
+function monterElan(combien){
+  joueur.elan = Math.min(100, (joueur.elan || 0) + combien);
+  if(joueur.elan >= 100 && (joueur.depassement || 0) <= 0){
+    joueur.depassement = 7;                       // sept secondes de dépassement
+    joueur.elan = 0;
+    dire('DÉPASSEMENT ! Tes ondes redoublent.', 2.4);
+    joueur.secousse = Math.max(joueur.secousse, 0.9);
+    bip(160, 0.5, 'sawtooth', 0.13); bip(480, 0.4, 'sine', 0.10, 0.08);
+  }
+}
+function majDepassement(dt){
+  if((joueur.depassement || 0) > 0){ joueur.depassement -= dt; if(joueur.depassement <= 0) dire('Le dépassement retombe.', 1.6); }
+  else if((joueur.elan || 0) > 0) joueur.elan = Math.max(0, joueur.elan - dt * 14);   // il retombe si on s'arrête
+}
+
 function lancerOnde(x, z){
+  const fort = (joueur.depassement || 0) > 0;     // en dépassement, l'onde est plus grande et dorée
   const m = new THREE.Mesh(
-    new THREE.RingGeometry(0.4, 0.75, 40),
-    new THREE.MeshBasicMaterial({ color:0x8fdcff, transparent:true, opacity:0.85,
+    new THREE.RingGeometry(fort ? 0.5 : 0.4, fort ? 1.1 : 0.75, 40),
+    new THREE.MeshBasicMaterial({ color: fort ? 0xffd070 : 0x8fdcff, transparent:true, opacity: fort ? 0.95 : 0.85,
       blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
   m.rotation.x = -Math.PI/2;
   m.position.set(x, 0.09, z);
   monde.add(m);
-  ondes.push({ obj:m, r:0.6, x, z, touche:false });
-  joueur.secousse = Math.max(joueur.secousse, 0.5);
-  bip(90, 0.35, 'sawtooth', 0.11);
+  ondes.push({ obj:m, r:0.6, x, z, touche:false, fort });
+  joueur.secousse = Math.max(joueur.secousse, fort ? 0.8 : 0.5);
+  bip(fort ? 70 : 90, 0.35, 'sawtooth', fort ? 0.14 : 0.11);
+  monterElan(fort ? 8 : 22);                      // chaque onde fait monter la jauge
 }
 
 /* Un vrai projectile élémentaire lancé vers l'avant : feu, eau, ou lame de vent. */
@@ -3455,6 +4410,57 @@ function lancerProjectile(type){
   projectiles.push({ obj:mesh, dx, dz, v:c.v, degat:c.degat, vie:2.2, type });
   window.Sons?.coup(); joueur.secousse = Math.max(joueur.secousse, 0.22);
 }
+/* ═══ FEU AU SOL : une flaque de flammes qui brûle, blesse, puis se consume ═══ */
+let zonesFeu = [];
+function poserZoneFeu(x, z, rayon=1.7, duree=4.0){
+  const g = new THREE.Group();
+  const disque = new THREE.Mesh(new THREE.CircleGeometry(rayon, 22),
+    new THREE.MeshBasicMaterial({ color:0xff5a1e, transparent:true, opacity:0.5,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  disque.rotation.x = -Math.PI/2; disque.position.y = 0.05; g.add(disque);
+  const fls = [];
+  for(let i=0;i<7;i++){
+    const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map:texFlamme, color:0xff7a2a,
+      blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }));
+    const a = Math.random()*6.28, r = Math.random()*rayon*0.75;
+    fl.position.set(Math.cos(a)*r, 0.32, Math.sin(a)*r); fl.scale.set(0.8,1.15,1);
+    g.add(fl); fls.push({ sp:fl, ph:Math.random()*6 });
+  }
+  const lum = new THREE.PointLight(0xff5a1e, 6, rayon*3, 1.6); lum.position.y = 0.6; g.add(lum);
+  g.position.set(x, 0, z); monde.add(g);
+  zonesFeu.push({ obj:g, disque, fls, lum, x, z, rayon, t:duree, duree, tick:0 });
+}
+function lancerFeuCharge(charge){
+  const k = Math.max(0, Math.min(1, charge/100));
+  lancerProjectile('feu');
+  const p = projectiles[projectiles.length-1];
+  if(p){ p.degat = 3 + Math.round(k*9); p.chargeK = k; p.obj.scale.setScalar(1 + k*1.8); }
+  esprit('🔥 Boule de feu chargée !');
+}
+const elJaugeEn = document.getElementById('jauge-energie');
+function majJaugeEnergie(){
+  if(!elJaugeEn) return;
+  const e = joueur.energie || 0;
+  elJaugeEn.style.opacity = (joueur.chargeActive || e > 1) ? '1' : '0';
+  if(elJaugeEn.firstElementChild) elJaugeEn.firstElementChild.style.width = e + '%';
+}
+function majZonesFeu(dt, t){
+  for(let i=zonesFeu.length-1;i>=0;i--){
+    const z = zonesFeu[i]; z.t -= dt;
+    const k = Math.max(0, z.t / z.duree);                 // 1 → 0 : le feu meurt petit à petit
+    z.disque.material.opacity = 0.5*k; z.lum.intensity = 6*k;
+    for(const f of z.fls){ f.sp.material.opacity = 0.9*k;
+      f.sp.position.y = 0.32 + Math.sin(t*6+f.ph)*0.12; f.sp.scale.set(0.8*k+0.2, 1.15*k+0.2, 1); }
+    z.tick -= dt;
+    if(z.tick <= 0){ z.tick = 0.5;                         // dégâts toutes les 0.5 s
+      if(Math.hypot(z.x-joueur.x, z.z-joueur.z) < z.rayon) blesser(joueur.x-z.x, joueur.z-z.z);
+      for(const e of (ennemis||[])) if(e.vie>0 && Math.hypot(z.x-e.x*T, z.z-e.y*T) < z.rayon){ e.vie-=1; flashImpact(e.x*T,1.1,e.y*T); e.brule=0.6; if(e.vie<=0){ e.vie=0; e.mort=0.55; } }
+      if(guerrier && guerrier.vie>0 && Math.hypot(z.x-guerrier.x, z.z-guerrier.z) < z.rayon){ guerrier.vie-=1; guerrier.jouer?.('hit'); if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer?.('mort'); guerrier.mortT=1.8; } }
+    }
+    if(z.t <= 0){ monde.remove(z.obj); zonesFeu.splice(i,1); }
+  }
+}
+
 function majProjectiles(dt){
   for(let i=projectiles.length-1;i>=0;i--){
     const p = projectiles[i];
@@ -3477,7 +4483,7 @@ function majProjectiles(dt){
       if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !',3); }
       fini = true;
     }
-    if(fini){ monde.remove(p.obj); projectiles.splice(i,1); }
+    if(fini){ if(p.type==='feu') poserZoneFeu(px, pz, 1.7+(p.chargeK||0)*2.6, 4+(p.chargeK||0)*3); monde.remove(p.obj); projectiles.splice(i,1); }
   }
 }
 
@@ -3683,17 +4689,26 @@ function majTranches(dt){
 }
 
 /* les ondes courent au sol jusqu'à s'éteindre */
-function majOndes(dt){
+function majOndes(dt, t){
+  majDepassement(dt);                     // la jauge monte quand on enchaîne, retombe quand on s'arrête
   for(let i=ondes.length-1;i>=0;i--){
     const o = ondes[i];
-    o.r += dt*7.5;
+    o.r += dt * (o.fort ? 10.5 : 7.5);    // une onde de dépassement court plus vite et plus loin
     o.obj.scale.setScalar(o.r);
     o.obj.material.opacity = Math.max(0, 0.85 - o.r/9);
     const d = Math.hypot(joueur.x-o.x, joueur.z-o.z);
     if(!o.touche && Math.abs(d - o.r*0.6) < 0.6){ o.touche = true; blesser(joueur.x-o.x, joueur.z-o.z); }
-    if(o.r > 14){ monde.remove(o.obj); ondes.splice(i,1); }
+    if(o.r > (o.fort ? 20 : 14)){ monde.remove(o.obj); ondes.splice(i,1); }
+  }
+  // Mage : maintiens F pour charger l'énergie, relâche pour lâcher un feu chargé (façon Naruto Storm)
+  if(classe==='mage' && etat==='jeu'){
+    if(touches.KeyF){ joueur.energie = Math.min(100, (joueur.energie||0) + dt*55); joueur.chargeActive = true; }
+    else if(joueur.chargeActive){ joueur.chargeActive = false; if((joueur.energie||0) > 18) lancerFeuCharge(joueur.energie); joueur.energie = 0; }
+    majJaugeEnergie();
   }
   majProjectiles(dt);
+  majZonesFeu(dt, t);
+  majColonnesFeu(dt);                    // l'attaque suprême : cercle magique + colonne de feu
   for(let i=flashs.length-1;i>=0;i--){
     const f = flashs[i]; f.vie -= dt;
     const k = Math.max(0, f.vie/0.16);
@@ -3789,23 +4804,51 @@ const elPerf = document.getElementById('perf');
 
 function poserGuerrier(){
   const g = MODELES.guerrier; if(!g) return;
-  const r = rooms[Math.min(2, rooms.length-1)] || rooms[0];
-  const gx = cX(r)*T + T/2, gz = cY(r)*T + T/2;
+  let gx, gz;
+  if(estArene()){ gx = W*T*0.5 + 6; gz = H*T*0.5; }
+  else { const r = rooms[Math.min(2, rooms.length-1)] || rooms[0]; gx = cX(r)*T + T/2; gz = cY(r)*T + T/2; }
   g.scale.setScalar(1);
   const bb = new THREE.Box3().setFromObject(g);
   const h = bb.getSize(new THREE.Vector3()).y || 1;
   g.scale.setScalar(1.78 / h);
   g.position.set(gx, 0, gz);
-  g.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false;
-    if(o.material && o.material.emissive){ o.material = o.material.clone(); o.material.emissive.setHex(0x400a0a); } }});
+  const estVRMg = !!g.userData.estVRM;
+  if(estVRMg){
+    g.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } });   // VRoid : on garde ses matériaux anime
+  } else {
+    g.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.frustumCulled = false;
+      if(o.material){ o.material = o.material.clone();
+        if(o.material.color) o.material.color.setRGB(Math.min(1,o.material.color.r*0.5+0.45), o.material.color.g*0.32, o.material.color.b*0.32);
+        if(o.material.emissive) o.material.emissive.setHex(0x5a0e0e); } }});
+  }
   monde.add(g);
   const mix = new THREE.AnimationMixer(g);
   const act = {};
-  const EX = { Idle_Loop:'idle', Walk_Loop:'walk', Sword_Attack:'attaque', Hit_Chest:'hit', Hit_Head:'hit', Death01:'mort' };
-  for(const c of (g.userData.anims||[])){ const k = EX[c.name]; if(k && !act[k]) act[k] = mix.clipAction(c); }
+  let anims = g.userData.anims || [];
+  // adversaire VRoid : on lui recopie AUSSI les vraies animations (mêmes mouvements que le joueur)
+  if(estVRMg && g.userData.vrm && MODELES.animSuper && ANIM_MAGE.length){
+    if(!g.userData.clipsVRM){
+      g.userData.clipsVRM = ANIM_MAGE.map(c => { try{ return reciblerClipVersVRM(c, MODELES.animSuper, g.userData.vrm); }catch(e){ return null; } })
+                                     .filter(c => c && c.tracks.length);
+    }
+    if(g.userData.clipsVRM.length) anims = g.userData.clipsVRM;
+  }
+  const clipsRecopies = estVRMg && anims !== (g.userData.anims || []) && anims.length > 0;
+  // MÊME logique robuste que le joueur : mapping exact PUIS repli par mots-clés (canonAnim),
+  // sinon le guerrier reste en T-pose (« raide comme du bois »).
+  const EX = { Idle_Loop:'idle', Idle_A:'idle', Walk_Loop:'walk', Walking_A:'walk', Walking_B:'walk',
+               Running_A:'walk', Running_B:'walk', Sprint_Loop:'walk', Jog_Fwd_Loop:'walk',
+               Sword_Attack:'attaque', Throw:'attaque', Punch_Jab:'attaque', Punch_Cross:'attaque',
+               Hit_Chest:'hit', Hit_Head:'hit', Hit_A:'hit', Death01:'mort', Death_A:'mort' };
+  for(const c of anims){ const k = EX[c.name]; if(k && !act[k]) act[k] = mix.clipAction(c); }
+  for(const c of anims){ let k = canonAnim(c.name); if(k==='sprint') k='walk'; if(k && !act[k]) act[k] = mix.clipAction(c); }
+  if(!act.idle && anims[0]) act.idle = mix.clipAction(anims[0]);   // filet : jamais figé
+  if(!act.walk) act.walk = act.idle;
   guerrier = {
-    obj:g, mix, act, cour:null, vie:8, vieMax:8, x:gx, z:gz, etat:'dort', cd:0, mortT:0,
-    jouer(n){ const a = this.act[n] || this.act.idle; if(!a) return;
+    obj:g, mix, act, cour:null, vrm: estVRMg ? g.userData.vrm : null, vrmClips: clipsRecopies, pas:0, attaqueT:0,
+    vie:estArene()?30:8, vieMax:estArene()?30:8, x:gx, z:gz, etat:estArene()?'combat':'dort', cd:0, mortT:0, arene:estArene(),
+    jouer(n){ if(this.vrm && !this.vrmClips){ if(n==='attaque'||n==='hit') this.attaqueT = 0.4; return; }   // secours sans clips : os à la main
+      const a = this.act[n] || this.act.idle; if(!a) return;
       if(a === this.cour && n!=='attaque' && n!=='hit') return;
       if(n==='attaque'||n==='hit'||n==='mort'){ a.reset().setLoop(THREE.LoopOnce,1); a.clampWhenFinished = true; }
       else a.setLoop(THREE.LoopRepeat, Infinity);
@@ -3818,21 +4861,311 @@ function poserGuerrier(){
 function majGuerrier(dt){
   const G = guerrier; if(!G) return;
   G.mix.update(dt);
-  if(G.vie <= 0){ if(G.mortT>0){ G.mortT -= dt; if(G.mortT<=0){ monde.remove(G.obj); guerrier = null; } } return; }
+  if(G.vie <= 0){
+    if(G.mortT>0){ G.mortT -= dt;
+      if(G.mortT<=0){
+        if(G.arene){                                   // entraînement : l'adversaire renaît
+          G.vie = G.vieMax; G.cd = 0; G.etat = 'combat';
+          G.x = W*T*0.5 + 6; G.z = H*T*0.5 + (joueur.z < H*T*0.5 ? 4 : -4);
+          G.obj.position.set(G.x, 0, G.z); G.obj.visible = true;
+          if(cible && cible.kind==='guerrier') deverrouiller();
+          dire('Nouvel adversaire. 🔒 R pour verrouiller.', 2);
+        } else { monde.remove(G.obj); guerrier = null; }
+      }
+    }
+    return;
+  }
   const dx = joueur.x - G.x, dz = joueur.z - G.z, d = Math.hypot(dx, dz) || 1;
-  G.obj.rotation.y = Math.atan2(dx, dz) + Math.PI;      // il regarde le joueur
+  // il regarde le joueur — le VRoid regarde +Z (pas de demi-tour), l'ancien modèle regardait -Z (demi-tour)
+  G.obj.rotation.y = Math.atan2(dx, dz) + (G.vrm ? 0 : Math.PI);
+  if(G.vrm){
+    if(G.vrmClips){ G.vrm.update(dt); }                 // vraies animations recopiées : le VRM propage
+    else {                                              // secours : os à la main
+      const bouge = (G._lx!==undefined) && (Math.hypot(G.x-G._lx, G.z-G._lz) > 0.003);
+      G._lx = G.x; G._lz = G.z;
+      if(bouge) G.pas += dt*9;
+      if(G.attaqueT>0) G.attaqueT -= dt;
+      animerVRM(G.vrm, dt, horloge.elapsedTime, bouge, false, G.attaqueT>0, {pas:G.pas, atkCd:G.attaqueT, tangage:0});
+    }
+  }
   if(G.etat === 'dort'){ G.jouer('idle'); return; }
-  G.cd -= dt;
-  if(d > 2.2){ const v = 2.4*dt; G.x += dx/d*v; G.z += dz/d*v; G.obj.position.set(G.x, 0, G.z); G.jouer('walk'); }
-  else { G.jouer('attaque');
-    if(G.cd <= 0){ G.cd = 1.5; if(d < 2.7) blesser(G.x - joueur.x, G.z - joueur.z); } }
+  G.cd -= dt; G.dashCd = Math.max(0,(G.dashCd||0)-dt);
+  if(G.chakra===undefined) G.chakra = 100;
+  const nx = dx/d, nz = dz/d;
+
+  if(!G.arene){
+    // donjon : comportement simple (fonce et frappe)
+    if(d > 2.2){ const v=2.4*dt; G.x+=nx*v; G.z+=nz*v; G.obj.position.set(G.x,0,G.z); G.jouer('walk'); }
+    else { G.jouer('attaque'); if(G.cd<=0){ G.cd=1.5; if(d<2.7) blesser(G.x-joueur.x,G.z-joueur.z); } }
+    return;
+  }
+
+  // ── ARÈNE : IA de combat façon Naruto Storm (consignes de Patrick) ──
+  if(d > 5.0) G.chakra = Math.min(100, G.chakra + dt*22);   // 4. recharge SEULEMENT à distance de sécurité
+  if(d > 6.5){                                              // se replacer (recharge en marchant)
+    const v=2.6*dt; G.x+=nx*v; G.z+=nz*v; G.obj.position.set(G.x,0,G.z); G.jouer('walk');
+  } else if(d > 2.6){                                       // 2. dash offensif d'interception si ressource
+    if(G.dashCd<=0 && G.chakra>=30){
+      G.chakra-=30; G.dashCd=1.6;
+      const bond=Math.min(d-2.0,3.2); G.x+=nx*bond; G.z+=nz*bond; G.obj.position.set(G.x,0,G.z);
+      G.jouer('attaque'); window.Sons?.porte?.();
+      if(G.cd<=0){ G.cd=0.6; blesser(G.x-joueur.x,G.z-joueur.z); }
+    } else { const v=3.0*dt; G.x+=nx*v; G.z+=nz*v; G.obj.position.set(G.x,0,G.z); G.jouer('walk'); }
+  } else {                                                  // 2. portée courte : boucle de combos
+    G.jouer('attaque');
+    if(G.cd<=0){
+      G.cd=0.42; blesser(G.x-joueur.x,G.z-joueur.z); G.combo=(G.combo||0)+1;
+      if(G.combo>=3 && G.chakra<40){                        // après le combo : repli/esquive pour recharger
+        G.combo=0; G.dashCd=1.2;
+        const cote=(Math.random()<0.5?1:-1);
+        G.x+=(-nz)*cote*2.2 - nx*1.2; G.z+=(nx)*cote*2.2 - nz*1.2;
+        G.obj.position.set(G.x,0,G.z); G.jouer('walk');
+      }
+    }
+  }
+  G.x=Math.max(T,Math.min(W*T-T,G.x)); G.z=Math.max(T,Math.min(H*T-T,G.z)); G.obj.position.set(G.x,0,G.z);
 }
 let autoFps = { acc:0, n:0 };
 let hitstop = 0;   // fige le jeu un instant au contact = impact (retour Gemini)
-let armeMode = 'epee';   // 'epee' ou 'poings' (touche X)
+let armeMode = 'epee';   // 'epee', 'deux' (deux lames) ou 'poings' — touche X
+// Qui tient quoi, à UN SEUL endroit. Avant, ces trois lignes étaient recopiées
+// à chaque appui sur X ; une seule oubliée et une épée restait affichée pour rien.
+function majArmesEnMain(){
+  const d = avatar && avatar.userData ? avatar.userData.epeeMain  : null;
+  const g = avatar && avatar.userData ? avatar.userData.epeeMainG : null;
+  if(d) d.visible = (armeMode === 'epee' || armeMode === 'deux');
+  if(g) g.visible = (armeMode === 'deux');
+  arme.visible = (vue === 1 && armeMode !== 'poings');
+}
 let flashs = [];
+let _regenT = 0;         // throttle du redraw des jauges pendant la régénération
+
+// ---- RECIBLAGE des vraies animations (Quaternius) vers un VRM — formule de l'exemple officiel three-vrm ----
+// (étude Braignak : specs/SPEC-MOUVEMENTS-BRAIGNAK.md — licences MIT + CC0 relevées)
+const QUAT_VRM_MAP = {
+  pelvis:'hips', spine_01:'spine', spine_02:'chest', spine_03:'upperChest', neck_01:'neck', Head:'head',
+  clavicle_l:'leftShoulder', upperarm_l:'leftUpperArm', lowerarm_l:'leftLowerArm', hand_l:'leftHand',
+  clavicle_r:'rightShoulder', upperarm_r:'rightUpperArm', lowerarm_r:'rightLowerArm', hand_r:'rightHand',
+  thigh_l:'leftUpperLeg', calf_l:'leftLowerLeg', foot_l:'leftFoot', ball_l:'leftToes',
+  thigh_r:'rightUpperLeg', calf_r:'rightLowerLeg', foot_r:'rightFoot', ball_r:'rightToes',
+};
+function reciblerClipVersVRM(clip, sourceRoot, vrm){
+  const tracks = [];
+  const restInv = new THREE.Quaternion(), parentRest = new THREE.Quaternion(), q = new THREE.Quaternion();
+  sourceRoot.updateWorldMatrix(true, true);
+  const srcHips = sourceRoot.getObjectByName('pelvis');
+  const hSrc = srcHips ? srcHips.getWorldPosition(new THREE.Vector3()).y : 1;
+  const hVrm = (vrm.humanoid.normalizedRestPose && vrm.humanoid.normalizedRestPose.hips)
+             ? vrm.humanoid.normalizedRestPose.hips.position[1] : 1;
+  const echelleHanches = hVrm / (hSrc || 1);
+  const vrm0 = vrm.meta && vrm.meta.metaVersion === '0';
+  for(const tr of clip.tracks){
+    const nomOs = tr.name.split('.')[0], prop = tr.name.split('.')[1];
+    const nomVRM = QUAT_VRM_MAP[nomOs]; if(!nomVRM) continue;
+    const noeud = vrm.humanoid.getNormalizedBoneNode(nomVRM); if(!noeud) continue;
+    const src = sourceRoot.getObjectByName(nomOs); if(!src) continue;
+    if(prop === 'quaternion'){
+      src.getWorldQuaternion(restInv).invert();
+      src.parent.getWorldQuaternion(parentRest);
+      const v = tr.values.slice();
+      for(let i=0;i<v.length;i+=4){
+        q.fromArray(v, i).premultiply(parentRest).multiply(restInv);
+        if(vrm0){ q.x = -q.x; q.z = -q.z; }   // ancien format VRM : miroir
+        q.toArray(v, i);
+      }
+      tracks.push(new THREE.QuaternionKeyframeTrack(noeud.name+'.quaternion', tr.times.slice(), v));
+    } else if(prop === 'position' && nomVRM === 'hips'){
+      // BIOMÉCANIQUE : on copie le DÉPLACEMENT des hanches autour de leur repos (le petit rebond du pas),
+      // PAS la position brute — sinon les proportions différentes enfoncent le corps dans le sol (« moitié de corps »).
+      const restSrc = src.position;                                    // repos du squelette source
+      const restVrm = (vrm.humanoid.normalizedRestPose.hips && vrm.humanoid.normalizedRestPose.hips.position) || [0,1,0];
+      const v = tr.values.slice();
+      for(let i=0;i<v.length;i+=3){
+        let dx = (v[i]-restSrc.x)*echelleHanches, dy = (v[i+1]-restSrc.y)*echelleHanches, dz = (v[i+2]-restSrc.z)*echelleHanches;
+        if(vrm0){ dx = -dx; dz = -dz; }
+        v[i] = restVrm[0]+dx; v[i+1] = restVrm[1]+dy; v[i+2] = restVrm[2]+dz;
+      }
+      tracks.push(new THREE.VectorKeyframeTrack(noeud.name+'.position', tr.times.slice(), v));
+    }
+  }
+  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
+}
+
+// ---- Animation PROCÉDURALE d'un avatar VRM (VRoid) : mouvements amples via les os humanoïdes ----
+// (le VRM n'a pas de clips de gameplay ; on anime ses os à la main, comme le corps du héros voulu par Patrick)
+const _vrmZero = new THREE.Euler();
+// ═══ LES OS D'UN CORPS — deux façons de les nommer, un seul code ═══
+// Nos personnages viennent de deux fabriques différentes, et elles ne donnent
+// PAS les mêmes noms aux os. Vérifié en lisant les fichiers le 21/08 :
+//   villageoiseModel.vrm (les filles) → J_Bip_L_UpperArm, J_Bip_C_Hips…
+//   model1.vrm           (les garçons) → LeftArm, Hips, LeftUpLeg…
+// Avant, on ne cherchait que le premier alphabet : les garçons n'avaient AUCUN
+// os trouvé, donc aucun mouvement — ils glissaient. C'était ça, le bug.
+const ALPHABET_OS = [
+  ['lUA',   [/L_UpperArm/,  /^LeftArm$/     ]],
+  ['rUA',   [/R_UpperArm/,  /^RightArm$/    ]],
+  ['lLA',   [/L_LowerArm/,  /^LeftForeArm$/ ]],
+  ['rLA',   [/R_LowerArm/,  /^RightForeArm$/]],
+  ['lUL',   [/L_UpperLeg/,  /^LeftUpLeg$/   ]],
+  ['rUL',   [/R_UpperLeg/,  /^RightUpLeg$/  ]],
+  ['lLL',   [/L_LowerLeg/,  /^LeftLeg$/     ]],
+  ['rLL',   [/R_LowerLeg/,  /^RightLeg$/    ]],
+  ['hips',  [/C_Hips/,      /^Hips$/        ]],
+  ['spine', [/C_Spine$/,    /^Spine$/       ]],
+  ['chest', [/C_Chest/,     /^Spine2$/      ]],
+];
+function trouverOsCorps(racine){
+  const os = {};
+  racine.traverse(o => {
+    const n = o.name || '';
+    // Un VRoid a DEUX jeux d'os : les vrais (que la peau écoute) et des os
+    // « de commande » nommés Normalized_… qui ne pilotent rien sur une copie.
+    if(/^Normalized_/.test(n)) return;
+    for(const [cle, formes] of ALPHABET_OS){
+      if(os[cle]) continue;
+      if(formes.some(f => f.test(n))){
+        os[cle] = o;
+        o.userData.repos = o.quaternion.clone();   // on retient sa POSE DE REPOS
+        break;
+      }
+    }
+  });
+  os.trouves = Object.keys(os).length;             // pour que les tests puissent vérifier
+  return os;
+}
+const _eulerOs = new THREE.Euler(), _quatOs = new THREE.Quaternion();
+// Tourner un os À PARTIR de son repos. C'est ce que fait une vraie animation.
+// Écraser la pose de repos (l'ancienne façon) donne le fameux « marche comme un robot ».
+function poserOs(os, x, y, z){
+  if(!os || !os.userData.repos) return;
+  // On applique le mouvement AVANT le repos (à gauche), pas après. Sens concret :
+  // « balance le bras vers l'avant » au lieu de « tord le bras sur lui-même ».
+  // Les deux fabriques n'orientent pas leurs os pareil ; le repère du parent, lui,
+  // est le même pour tout le monde. C'est ce qui rend un seul code valable partout.
+  _eulerOs.set(x, y, z);
+  os.quaternion.copy(_quatOs.setFromEuler(_eulerOs)).multiply(os.userData.repos);
+}
+
+// LE CORPS EN L'AIR — le vol et le saut, écrits à UN SEUL endroit.
+// Pourquoi ici et pas dans animerVRM : les vraies animations recopiées (marche,
+// repos) n'ont NI pose de vol NI pose de saut. Il faut donc les reposer PAR-DESSUS
+// elles. Écrit une fois, appelé deux fois. Rend vrai si une pose a été posée.
+function poserCorpsEnLAir(vrm, t, src){
+  if(!vrm || !vrm.humanoid) return false;
+  src = src || joueur;
+  const enVol = !!src.vol, haut = Math.min(1, (src.saut || 0) / 1.6);
+  if(!enVol && (src.saut || 0) <= 0.15) return false;
+  const H = vrm.humanoid, g = n => H.getNormalizedBoneNode(n);
+  const lUA=g('leftUpperArm'), rUA=g('rightUpperArm'), lLA=g('leftLowerArm'), rLA=g('rightLowerArm');
+  const lUL=g('leftUpperLeg'), rUL=g('rightUpperLeg'), lLL=g('leftLowerLeg'), rLL=g('rightLowerLeg');
+  const hips=g('hips'), spine=g('spine'), chest=g('chest');
+  window.__poseAir = (window.__poseAir||0)+1;   // témoin de passage (lu par tests/sonde-vol.js)
+  if(enVol){
+    // EN VOL — comme un mage qui plane : le buste penche en avant, les bras s'ouvrent
+    // en arrière comme des ailes, les jambes se tendent derrière. Tout respire doucement.
+    const souffle = Math.sin(t*1.6)*0.10;              // le corps monte et descend, porté
+    if(lUA) lUA.rotation.set(0.35 + souffle*0.5, 0.25,  1.85);   // bras ouverts, tirés en arrière
+    if(rUA) rUA.rotation.set(0.35 - souffle*0.5, -0.25, -1.85);
+    if(lLA) lLA.rotation.set(0, 0,  0.30);                        // coudes à peine pliés
+    if(rLA) rLA.rotation.set(0, 0, -0.30);
+    if(lUL) lUL.rotation.set(0.55 + souffle*0.2, 0.05, 0);        // jambes tendues derrière
+    if(rUL) rUL.rotation.set(0.50 - souffle*0.2, -0.05, 0);
+    if(lLL) lLL.rotation.set(0.28, 0, 0);
+    if(rLL) rLL.rotation.set(0.22, 0, 0);
+    if(hips)  hips.rotation.set(-0.35, 0, souffle*0.15);          // le bassin bascule : on plane
+    if(spine) spine.rotation.set(-0.20 + souffle*0.10, 0, 0);
+    if(chest) chest.rotation.set(-0.12, 0, 0);
+  } else {
+    // EN L'AIR après un saut : les bras montent pour l'équilibre, les jambes se replient
+    if(lUA) lUA.rotation.set(-0.9*haut, 0.15,  1.35);
+    if(rUA) rUA.rotation.set(-0.9*haut, -0.15, -1.35);
+    if(lLA) lLA.rotation.set(0, 0,  0.55);
+    if(rLA) rLA.rotation.set(0, 0, -0.55);
+    if(lUL) lUL.rotation.set(-0.55*haut, 0, 0);                   // genou avant remonté
+    if(rUL) rUL.rotation.set(-0.15*haut, 0, 0);
+    if(lLL) lLL.rotation.set(0.95*haut, 0, 0);                    // jambe repliée sous soi
+    if(rLL) rLL.rotation.set(0.35*haut, 0, 0);
+    if(hips)  hips.rotation.set(-0.10*haut, 0, 0);
+    if(spine) spine.rotation.set(0.12*haut, 0, 0);
+    if(chest) chest.rotation.set(0.06*haut, 0, 0);
+  }
+  return true;
+}
+
+function animerVRM(vrm, dt, t, marche, court, attaque, src){
+  if(!vrm || !vrm.humanoid){ return; }
+  src = src || joueur;                                    // porteur : joueur par défaut, sinon un autre (guerrier…)
+  const H = vrm.humanoid, g = n => H.getNormalizedBoneNode(n);
+  const ph = src.pas || 0;                                // phase de pas (déjà avancée par la marche)
+  // ── Référence : NARUTO STORM / BUDOKAI TENKAICHI 3 (demande de Patrick) ──
+  // Jamais raide : stance de combat au repos, course ninja penchée (sprint), coups qui engagent tout le corps.
+  const amp = marche ? (court ? 1.5 : 1.0) : 0;
+  const resp = Math.sin(t*1.9)*0.05;
+  const lUA=g('leftUpperArm'), rUA=g('rightUpperArm'), lLA=g('leftLowerArm'), rLA=g('rightLowerArm');
+  const lUL=g('leftUpperLeg'), rUL=g('rightUpperLeg'), lLL=g('leftLowerLeg'), rLL=g('rightLowerLeg');
+  const hips=g('hips'), spine=g('spine'), chest=g('chest'), head=g('head');
+  const sw = Math.sin(ph), swc = Math.cos(ph);
+  if(poserCorpsEnLAir(vrm, t, src)){
+    // le corps en l'air est traité ailleurs, à un seul endroit (voir plus haut)
+  } else if(!marche){
+    // STANCE DE COMBAT (Storm) : jambes fléchies, buste légèrement penché, gardes hautes, tout respire
+    const b = Math.sin(t*1.5)*0.05;                       // flottement de la garde
+    if(lUA) lUA.rotation.set(0.55+b, 0.25,  0.95 + resp);
+    if(rUA) rUA.rotation.set(0.55-b, -0.25, -0.95 - resp);
+    if(lLA) lLA.rotation.set(0, 0,  1.05 + b);            // avant-bras repliés = poings en garde
+    if(rLA) rLA.rotation.set(0, 0, -1.05 + b);
+    if(lUL) lUL.rotation.set(-0.22, 0.1, 0);              // jambes fléchies, appuis écartés
+    if(rUL) rUL.rotation.set(-0.14, -0.1, 0);
+    if(lLL) lLL.rotation.set(0.38, 0, 0);
+    if(rLL) rLL.rotation.set(0.3, 0, 0);
+    if(hips) hips.rotation.set(-0.06, 0.12, 0);
+    if(spine) spine.rotation.set(0.16 + resp, -0.1, 0);   // penché vers l'avant, prêt à bondir
+    if(chest) chest.rotation.set(resp, 0.08, 0);
+  } else if(court){
+    // COURSE réelle (étude biomécanique) : tronc penché ~5° seulement, COUDES PLIÉS À 90° qui
+    // vont d'avant en arrière, épaules et bassin en sens opposés, grandes foulées genou fléchi
+    if(lUA) lUA.rotation.set(sw*0.85, 0,  0.35);          // le bras balance d'avant en arrière
+    if(rUA) rUA.rotation.set(-sw*0.85, 0, -0.35);
+    if(lLA) lLA.rotation.set(0, 0,  1.35);                // coude plié ~90°, il le reste
+    if(rLA) rLA.rotation.set(0, 0, -1.35);
+    if(lUL) lUL.rotation.set(-sw*amp*1.1 - 0.1, 0, 0);
+    if(rUL) rUL.rotation.set(sw*amp*1.1 - 0.1, 0, 0);
+    if(lLL) lLL.rotation.set(Math.max(0, sw)*amp*1.5 + 0.15, 0, 0);   // genou qui plie fort en l'air
+    if(rLL) rLL.rotation.set(Math.max(0,-sw)*amp*1.5 + 0.15, 0, 0);
+    if(hips) hips.rotation.set(-0.04, -sw*0.12, swc*0.04);            // bassin tourne...
+    if(spine) spine.rotation.set(0.09, sw*0.10, 0);                   // ...épaules en sens inverse, tronc ~5°
+    if(chest) chest.rotation.set(0.05, sw*0.06, 0);
+  } else {
+    // MARCHE ample (BT3) : grands balanciers, contre-rotation buste/hanches
+    if(lUA) lUA.rotation.set(sw*amp*1.3, 0,  1.1 + resp);
+    if(rUA) rUA.rotation.set(-sw*amp*1.3, 0, -1.1 - resp);
+    if(lLA) lLA.rotation.set(0, 0, 0.15 + Math.max(0, sw)*amp*0.6);
+    if(rLA) rLA.rotation.set(0, 0, -0.15 - Math.max(0,-sw)*amp*0.6);
+    if(lUL) lUL.rotation.set(-sw*amp*1.15, 0, 0);
+    if(rUL) rUL.rotation.set(sw*amp*1.15, 0, 0);
+    if(lLL) lLL.rotation.set(Math.max(0, sw)*amp*1.35, 0, 0);
+    if(rLL) rLL.rotation.set(Math.max(0,-sw)*amp*1.35, 0, 0);
+    if(hips) hips.rotation.set(0, -sw*amp*0.18, swc*amp*0.06);
+    if(spine) spine.rotation.set(resp + amp*0.08, sw*amp*0.16, 0);
+    if(chest) chest.rotation.set(resp*0.6, -sw*amp*0.11, 0);
+  }
+  if(attaque){                                            // COUP (Storm) : tout le corps s'engage — fente + torsion + bras qui fend
+    const k = Math.sin(Math.min(1,(0.62-(src.atkCd||0))/0.62)*Math.PI);
+    if(rUA) rUA.rotation.set(-1.9*k + 0.4, 0.35*k, -0.85 + 0.9*k);
+    if(rLA) rLA.rotation.set(0, 0, -0.45 - 1.0*k);
+    if(lUA) lUA.rotation.set(0.7*k + 0.4, 0.2, 0.95);     // le bras libre équilibre
+    if(spine) spine.rotation.set(0.25*k, -0.55*k, 0);     // grosse torsion du buste
+    if(hips) hips.rotation.set(-0.08, -0.3*k, 0);
+    if(lUL) lUL.rotation.set(-0.35*k - 0.15, 0.1, 0);     // fente avant
+  }
+  if(head) head.rotation.set(-(src.tangage||0)*0.3, sw*amp*0.05, 0);
+  vrm.update(dt);                                         // springbones (cheveux, tenue) + expressions
+}
+
 function boucle(){
-  const dtReal = Math.min(0.05, horloge.getDelta());
+  const brut = horloge.getDelta();          // le vrai temps écoulé depuis l'image précédente
+  const dtVrai = Math.min(0.5, brut);       // borne LARGE : pour les minuteries (attentes des villageois)
+  const dtReal = Math.min(0.05, brut);      // borne SERRÉE : pour les déplacements, sinon on traverse les murs
   let dt = dtReal;
   if(hitstop > 0){ hitstop -= dtReal; dt = 0.0008; }   // impact : quasi-gel, mais on rend encore
   const t  = horloge.elapsedTime;
@@ -3848,6 +5181,12 @@ function boucle(){
   }
 
   if(etat==='jeu'){
+    /* -- régénération vie & mana : petit à petit, plus vite si le niveau est élevé -- */
+    let _rg = false;
+    if(joueur.vie  < joueur.vieMax ){ joueur.vie  = Math.min(joueur.vieMax,  joueur.vie  + (0.25 + niveauMax*0.06)*dt); _rg = true; }
+    if(joueur.mana < joueur.manaMax){ joueur.mana = Math.min(joueur.manaMax, joueur.mana + (0.60 + niveauMax*0.30)*dt); _rg = true; }
+    if(_rg){ _regenT += dt; if(_regenT > 0.2){ _regenT = 0; dessinerCoeurs(); } }
+
     /* -- marche -- */
     const pad = lireManette(dt);
     let av = (touches.KeyW||touches.KeyZ ?1:0) - (touches.KeyS ?1:0);
@@ -3857,8 +5196,28 @@ function boucle(){
     joueur.dashCd = Math.max(0, joueur.dashCd - dt);
     // flèches gauche/droite : tourner sans souris (utile si le pointeur n'est pas capturé)
     // tourner au clavier : flèches gauche/droite, ou J et L
-    if(touches.ArrowLeft  || touches.KeyJ) joueur.lacet += dt*2.0;
-    if(touches.ArrowRight || touches.KeyL) joueur.lacet -= dt*2.0;
+    if(touches.ArrowLeft  || touches.KeyJ){ joueur.lacet += dt*2.0; joueur.tourneT = 0.4; }
+    if(touches.ArrowRight || touches.KeyL){ joueur.lacet -= dt*2.0; joueur.tourneT = 0.4; }
+    // -- VERROUILLAGE : on reste tourné vers la cible (tous les coups vont vers elle) --
+    if(cible){
+      const cp = ciblePos();
+      if(!cp || !cp.vivant){ deverrouiller(); }
+      else {
+        const ang = Math.atan2(-(cp.x - joueur.x), -(cp.z - joueur.z));
+        let d = ang - joueur.lacet; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI;
+        joueur.tourneT = Math.max(0, (joueur.tourneT||0) - dt);
+        // verrou "adapté" : on ne recentre que si le joueur ne tourne pas activement, et en douceur
+        if((joueur.tourneT||0) <= 0) joueur.lacet += d * Math.min(1, dt*3.2);
+        if(!marqueurCible){
+          marqueurCible = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 6, 20),
+            new THREE.MeshBasicMaterial({ color:0xff3a3a, transparent:true, opacity:0.9, depthWrite:false }));
+          marqueurCible.rotation.x = Math.PI/2; scene.add(marqueurCible);
+        }
+        marqueurCible.visible = true;
+        marqueurCible.position.set(cp.x, 2.2 + Math.sin(t*4)*0.1, cp.z);
+        marqueurCible.rotation.z += dt*2;
+      }
+    } else if(marqueurCible){ marqueurCible.visible = false; }
     if(touches.ArrowUp)   joueur.tangage = Math.min( 1.35, joueur.tangage + dt*1.4);
     if(touches.ArrowDown) joueur.tangage = Math.max(-1.35, joueur.tangage - dt*1.4);
     const v = (court?8.0:3.7) * dt;   // marche posée ; Shift = fonce (Naruto)
@@ -3867,8 +5226,24 @@ function boucle(){
       const sx = (-Math.sin(joueur.lacet)*av + Math.cos(joueur.lacet)*la)/n*v;
       const sz = (-Math.cos(joueur.lacet)*av - Math.sin(joueur.lacet)*la)/n*v;
       joueur.dx = sx/v; joueur.dz = sz/v;          // on retient la direction pour foncer
+      // -- LE DEMI-TOUR -- Le corps se tourne VERS là où il va, au lieu de rester
+      // collé à la caméra. C'est ce que font Zelda, Genshin, Dark Souls quand on
+      // n'est verrouillé sur personne. Avant, reculer faisait marcher en crabe.
+      if(!cible && joueur.atkCd <= 0){
+        const butCap = Math.atan2(-sx, -sz);                 // là où le corps DOIT regarder
+        let dc = butCap - joueur.cap;
+        while(dc >  Math.PI) dc -= 2*Math.PI;                // toujours par le plus court chemin
+        while(dc < -Math.PI) dc += 2*Math.PI;                // sinon il fait un tour complet
+        joueur.cap += dc * Math.min(1, dt*11);               // ~0,15 s pour faire volte-face
+      }
       const p = glisser(joueur.x, joueur.z, sx, sz);
       joueur.x = p.x; joueur.z = p.z;
+      // collision : on ne traverse pas les monstres (ni le guerrier)
+      for(const e of (ennemis||[])){ if(e.vie<=0) continue;
+        const ex=e.x*T, ez=e.y*T, cdx=joueur.x-ex, cdz=joueur.z-ez, cd2=Math.hypot(cdx,cdz);
+        if(cd2<0.85 && cd2>0.001){ joueur.x=ex+cdx/cd2*0.85; joueur.z=ez+cdz/cd2*0.85; } }
+      if(guerrier && guerrier.vie>0){ const gdx=joueur.x-guerrier.x, gdz=joueur.z-guerrier.z, gd2=Math.hypot(gdx,gdz);
+        if(gd2<0.9 && gd2>0.001){ joueur.x=guerrier.x+gdx/gd2*0.9; joueur.z=guerrier.z+gdz/gd2*0.9; } }
       joueur.pas += dt*(court?13:8.5);
       const pasAv = Math.floor(joueur.pas/Math.PI);
       if(pasAv !== joueur.pasPrec && joueur.saut<=0){ joueur.pasPrec = pasAv; window.Sons?.pas(); }
@@ -3876,14 +5251,26 @@ function boucle(){
     } else {
       joueur.souffle = Math.max(0, joueur.souffle - dt*0.7);
     }
+    // Verrouillé sur un ennemi, ou en train de frapper : là on GARDE l'ennemi en
+    // face, et on recule en crabe. C'est voulu — c'est le mode combat.
+    if(cible || joueur.atkCd > 0){
+      let dl = joueur.lacet - joueur.cap;
+      while(dl >  Math.PI) dl -= 2*Math.PI;
+      while(dl < -Math.PI) dl += 2*Math.PI;
+      joueur.cap += dl * Math.min(1, dt*14);
+    }
 
     /* -- foncer -- */
     if(joueur.dash > 0){
       joueur.dash -= dt;
-      const vd = 17 * dt;
+      const vd = (joueur.dragonDash ? 26 : 17) * dt;     // Dragon Dash : plus rapide
       const p = glisser(joueur.x, joueur.z, joueur.dx*vd, joueur.dz*vd);
       joueur.x = p.x; joueur.z = p.z;
-      joueur.inv = Math.max(joueur.inv, 0.12);     // on passe à travers les coups
+      if(joueur.dragonDash && joueur.dvy){               // composante verticale (foncer vers la cible en 3D)
+        joueur.saut = Math.max(0, joueur.saut + joueur.dvy * dt * 4.2);
+      }
+      joueur.inv = Math.max(joueur.inv, 0.12);           // on passe à travers les coups
+      if(joueur.dash <= 0){ joueur.dragonDash = false; joueur.dvy = 0; }
     }
 
     /* -- l'enchaînement retombe si on n'enchaîne pas -- */
@@ -3892,8 +5279,42 @@ function boucle(){
       if(joueur.comboT <= 0){ joueur.combo = 0; elCombo.classList.remove('on'); }
     }
 
-    /* -- le saut : gravité, retombée, pas de double saut -- */
-    if(joueur.vy !== 0 || joueur.saut > 0){
+    /* -- VOL (style DBZ) : altitude libre, pas de gravité, coûte du mana -- */
+    if(joueur.vol){
+      // ── LE VOL, en quatre états (règles de Budokai Tenkaichi) ──
+      const monte   = touches.Space ? 1 : 0;
+      const descend = (touches.ShiftLeft || touches.ShiftRight) ? 1 : 0;
+      const avance  = !!(av || la);
+
+      // 1) MONTÉE / DESCENTE : mouvement pur en hauteur, avec de l'élan (pas de à-coups)
+      const butVy = (monte - descend) * 7.0;
+      joueur.volVy = (joueur.volVy || 0) + (butVy - (joueur.volVy || 0)) * Math.min(1, dt*6);
+      joueur.saut = Math.max(0, joueur.saut + joueur.volVy * dt);
+
+      // 2) VOL STATIONNAIRE : si on ne fait rien, le corps flotte doucement de haut en bas
+      if(!monte && !descend && !avance){
+        joueur.flotte = (joueur.flotte || 0) + dt*2.0;
+        joueur.saut += Math.sin(joueur.flotte) * 0.1 * dt * 2.0;
+      }
+
+      // 3) INCLINAISONS : on penche en avant quand on avance, on s'incline dans les virages
+      const butTangage = avance ? 0.28 : (joueur.volVy > 1 ? -0.20 : (joueur.volVy < -1 ? 0.20 : 0));
+      const butRoulisV = la * -0.35;                              // virage à droite → on penche à droite
+      joueur.volTangage = (joueur.volTangage || 0) + (butTangage - (joueur.volTangage || 0)) * Math.min(1, dt*4);
+      joueur.volRoulis  = (joueur.volRoulis  || 0) + (butRoulisV - (joueur.volRoulis  || 0)) * Math.min(1, dt*4);
+
+      // 4) ZOOM DE VITESSE : plus on va vite, plus la vue s'ouvre — la vitesse se sent
+      const rapide = (avance ? 1 : 0) * (court ? 1 : 0.45) + (joueur.dash > 0 ? 1.4 : 0);
+      const butFov = 60 + rapide * 14;
+      camera.fov += (butFov - camera.fov) * Math.min(1, dt*3);
+      camera.updateProjectionMatrix();
+
+      joueur.vy = 0;
+      joueur.mana = Math.max(0, joueur.mana - dt*2.5);   // le vol consomme le mana
+      if(joueur.mana <= 0){ joueur.vol = false; dire('Plus de mana : tu redescends.', 2); }
+      if(joueur.saut < 0.05 && descend){ joueur.vol = false; }   // posé au sol → fin du vol
+    } else if(joueur.vy !== 0 || joueur.saut > 0){
+      /* -- le saut : gravité, retombée, pas de double saut -- */
       joueur.saut += joueur.vy * dt;
       joueur.vy   -= 15 * dt;                         // gravité
       if(joueur.saut <= 0){ joueur.saut = 0; joueur.vy = 0; }  // au sol
@@ -3912,6 +5333,10 @@ function boucle(){
 
     /* -- la caméra recule quand on se regarde, et se rapproche si un mur gêne -- */
     let vise = (vue === 3) ? 3.8 : 0;
+    if(vue === 3 && cible){                                     // LOCK-ON (DBZ) : recule pour garder le joueur ET l'adversaire à l'écran
+      const cp = ciblePos();
+      if(cp) vise = Math.min(8.5, 3.8 + Math.hypot(cp.x-joueur.x, cp.z-joueur.z) * 0.55);
+    }
     if(vue === 3){
       for(let d = 0.6; d <= 3.8; d += 0.3){
         const cx = joueur.x + Math.sin(joueur.lacet)*d;
@@ -3934,7 +5359,13 @@ function boucle(){
     /* -- le corps : il suit, il marche, il respire -- */
     if(vue === 3){
       avatar.position.set(joueur.x, joueur.saut, joueur.z);
-      avatar.rotation.y = joueur.lacet + Math.PI;   // il regarde vers l'avant
+      // Le corps suit SON cap, pas la caméra (voir « LE DEMI-TOUR » plus haut).
+      // VÉRIFIÉ EN JEU (capture) : sans +PI il fait face à la caméra en avançant = marche à l'envers
+      avatar.rotation.y = joueur.cap + Math.PI;
+      // EN VOL : le corps pique du nez quand on avance, et penche dans les virages.
+      // C'est ça qui fait qu'on SENT le vol, au lieu de glisser à plat dans l'air.
+      avatar.rotation.x = joueur.vol ? (joueur.volTangage || 0) : 0;
+      avatar.rotation.z = joueur.vol ? (joueur.volRoulis  || 0) : 0;
       let anim = 'idle';
       if(joueur.saut > 0.06)     anim = 'jump';
       else if(av || la)          anim = court ? 'sprint' : 'walk';
@@ -3947,12 +5378,24 @@ function boucle(){
         actionCourante.timeScale = court ? 2.2 : 1.3;   // les pieds suivent la vitesse -> moins de glisse
       else if(actionCourante && actionCourante.timeScale!==1 && anim==='idle') actionCourante.timeScale = 1;
       if(mixerPerso) mixerPerso.update(dt);
+      if(avatar.userData.vrm){
+        if(mixerPerso){
+          // La marche recopiée n'a AUCUNE pose de vol ni de saut : on repose donc
+          // bras et jambes PAR-DESSUS elle, AVANT que le VRM propage. Sans ça, on
+          // vole raide comme un piquet (constaté en jeu par Patrick, 21/08).
+          poserCorpsEnLAir(avatar.userData.vrm, t, joueur);
+          avatar.userData.vrm.update(dt);   // le VRM propage (cheveux, tenue)
+        }
+        else animerVRM(avatar.userData.vrm, dt, t, (av||la), court, joueur.atkCd>0);   // secours si la recopie a échoué
+      }
 
       // -- LA FRAPPE : un vrai geste de bras sur le squelette, APRÈS le mixer --
-      avatar.rotation.x = 0;
+      // On ne remet à plat QUE si on n'est pas en vol : sinon cette ligne effaçait
+      // le piqué et le virage posés plus haut (bug trouvé le 21/08).
+      if(!joueur.vol) avatar.rotation.x = 0;
       const em = avatar.userData.epeeMain;
       if(joueur.atkCd > 0){
-        const dA = [0.40,0.30,0.44,0.62][joueur.combo % 4] || 0.40;
+        const dA = (COUPS_EPEE[joueur.combo % 7] || {}).duree || 0.40;
         const kA = joueur.atkCd / dA;                    // 1 -> 0 sur le coup
         const elanCombat = Math.sin(kA*Math.PI);         // 0 -> 1 -> 0
         const sensA = (joueur.combo % 2) ? -1 : 1;       // alterne gauche/droite CHAQUE coup
@@ -3960,41 +5403,35 @@ function boucle(){
         const fx = -Math.sin(joueur.lacet), fz = -Math.cos(joueur.lacet);
         avatar.position.x += fx * elanCombat * 0.28;
         avatar.position.z += fz * elanCombat * 0.28;
-        if(joueur.combo % 4 === 3) avatar.rotation.y += (1-kA) * Math.PI * 2;   // tourbillon
+        if((COUPS_EPEE[joueur.combo % 7] || {}).final) avatar.rotation.y += (1-kA) * Math.PI * 2;   // le coup final tourne
         else                       avatar.rotation.y += elanCombat * 0.55 * sensA;  // slash G/D
         avatar.rotation.x = elanCombat * 0.18;
         // le bras procédural seulement si le modèle n'a PAS d'anim d'attaque
+        // ESCRIME À DEUX LAMES : un coup sur deux part de la main GAUCHE.
+        // C'est ce qui donne le va-et-vient de Kirito au lieu d'un seul bras qui répète.
+        const gaucher = (armeMode === 'deux') && (joueur.combo % 2 === 1);
         if(!actionsPerso.attaque){
-          const bras = avatar.userData.brasD, avb = avatar.userData.avBrasD, buste = avatar.userData.buste;
+          const bras  = gaucher ? avatar.userData.brasG   : avatar.userData.brasD;
+          const avb   = gaucher ? avatar.userData.avBrasG : avatar.userData.avBrasD;
+          const buste = avatar.userData.buste;
           if(bras)  bras.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.bras*sensA));
           if(avb)   avb.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), -elanCombat*FRAPPE.avbras));
           if(buste) buste.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),  elanCombat*FRAPPE.buste*sensA));
         }
-        if(em && em.userData.base) em.rotation.z = em.userData.base.z + elanCombat * 1.2 * sensA;
-      } else if(em && em.userData.base){
-        em.rotation.z = em.userData.base.z;
+        // La lame qui frappe pivote ; l'autre reste sagement en garde.
+        const lame = gaucher ? avatar.userData.epeeMainG : em;
+        if(lame && lame.userData.base) lame.rotation.z = lame.userData.base.z + elanCombat * 1.2 * sensA * (gaucher ? -1 : 1);
+        const autre = gaucher ? em : avatar.userData.epeeMainG;
+        if(autre && autre.userData.base) autre.rotation.z = autre.userData.base.z;
+      } else {
+        if(em && em.userData.base) em.rotation.z = em.userData.base.z;
+        const eg = avatar.userData.epeeMainG;
+        if(eg && eg.userData.base) eg.rotation.z = eg.userData.base.z;
       }
 
-      // -- TRAÎNÉE DE LAME : un arc lumineux qui balaie (effet anime / Naruto) --
-      if(!avatar.userData.trainee){
-        const tm = new THREE.Mesh(
-          new THREE.TorusGeometry(0.85, 0.05, 6, 20, Math.PI*1.25),
-          new THREE.MeshBasicMaterial({ color:0xcfeeff, transparent:true, opacity:0, depthWrite:false, fog:false }));
-        tm.rotation.x = Math.PI/2; tm.position.set(0.15, 1.05, 0.55); tm.renderOrder = 6;
-        avatar.add(tm); avatar.userData.trainee = tm;
-      }
-      const tr = avatar.userData.trainee;
-      if(joueur.atkCd > 0){
-        const dA = [0.40,0.30,0.44,0.62][joueur.combo] || 0.40;
-        const kA = joueur.atkCd / dA, el = Math.sin(kA*Math.PI);
-        const sensA = joueur.combo === 1 ? -1 : 1;
-        tr.visible = true;
-        tr.material.opacity = 0.75 * el;
-        tr.material.color.setHex(joueur.epee ? 0x8fd0ff : 0xcfeeff);
-        tr.rotation.z = (0.6 - (1 - kA)) * Math.PI * 1.4 * sensA;   // il balaie de haut en bas
-      } else {
-        tr.material.opacity = 0;
-      }
+      // TRAÎNÉE DE LAME RETIRÉE — Patrick : « un coup d'épée ne doit pas laisser de trace ».
+      // On garde le mouvement du bras et l'impact ; plus de croissant lumineux artificiel.
+      if(avatar.userData.trainee) avatar.userData.trainee.visible = false;
     }
     tete.rotation.set(0,0,0);
     tete.rotateY(joueur.lacet);
@@ -4007,7 +5444,7 @@ function boucle(){
       const bal = Math.sin(joueur.pas)*0.05*marche;
       const lat = Math.cos(joueur.pas*0.5)*0.035*marche;
       // le coup : un arc rapide de haut en bas, puis retour
-      const duree = [0.40, 0.30, 0.44, 0.62][joueur.combo] || 0.40;
+      const duree = (COUPS_EPEE[joueur.combo % 7] || {}).duree || 0.40;
       const k = joueur.atkCd > 0 ? joueur.atkCd/duree : 0;
       const coup = Math.sin(k*Math.PI);
       const sens = joueur.combo === 1 ? -1 : 1;      // le deuxième part en revers
@@ -4039,8 +5476,10 @@ function boucle(){
       : 40 + Math.sin(t*7.3)*2.4 + Math.sin(t*13.1)*1.4;
     if(joueur.inv>0){
       joueur.inv -= dt;
-      lampe.color.setHex(Math.sin(t*30)>0 ? 0xff4433 : 0xbfd8ff);
-    } else lampe.color.setHex(0xbfd8ff);
+      // (le clignotement ROUGE de la lampe faisait des flaques rouges au sol — retiré, Patrick le trouvait nul ;
+      //  le croissant rouge à l'écran + la secousse suffisent comme retour de dégât)
+    }
+    lampe.color.setHex(0xbfd8ff);
     joueur.atkCd = Math.max(0, joueur.atkCd - dt);
 
     /* -- les six lumières vont aux torches les plus proches -- */
@@ -4099,7 +5538,7 @@ function boucle(){
 
     /* -- la clé -- */
     if(!estDehors() && !joueur.cle && cleVerrouillee && meshCle.visible) meshCle.visible = false;
-    if(!estDehors() && !joueur.cle && !cleVerrouillee){
+    if(!SANS_CLE && !estDehors() && !joueur.cle && !cleVerrouillee){
       meshCle.rotation.y += dt*1.6;
       meshCle.position.y = 1.15 + Math.sin(t*1.9)*0.11;
       meshCle.children[4].scale.setScalar(1.8 + Math.sin(t*3.1)*0.25);
@@ -4114,7 +5553,7 @@ function boucle(){
 
     /* -- la porte -- */
     const u = porte.userData;
-    const ouverte = joueur.cle;
+    const ouverte = SANS_CLE || joueur.cle;
     u.rideau.material.color.setHex(ouverte ? 0x49d18a : 0xc8392f);
     u.lum.color.setHex(ouverte ? 0x49d18a : 0xc8392f);
     u.rideau.material.opacity = 0.22 + Math.sin(t*2.4)*0.09;
@@ -4122,9 +5561,12 @@ function boucle(){
   
     if(ouverte && Math.hypot(porte.position.x-joueur.x, porte.position.z-joueur.z) < 1.2) descendre();
 
+    /* -- le cercle de téléportation -- */
+    majPortail(dt, t);
+
     /* -- le gardien et ses ondes -- */
     majBoss(dt, t);
-    majOndes(dt);
+    majOndes(dt, t);
     majTranches(dt);
 
     /* -- le paysan : un adversaire, pas un obstacle -- */
@@ -4214,6 +5656,12 @@ function boucle(){
         continue;
       }
       const dist = Math.hypot(joueur.x - e.x*T, joueur.z - e.y*T);
+      if(e.barre){                                  // jauge de vie du monstre
+        const k = Math.max(0, e.vie/(e.vieMax||e.vie));
+        e.barre.scale.x = 0.86*k; e.barre.position.x = -0.43*(1-k);
+        e.barre.material.color.setHex(k>0.5?0x44e05a:(k>0.25?0xe0a83a:0xe03a3a));
+        e.barre.visible = e.barreFond.visible = (dist < 12);
+      }
       if(e.type === 'paysan'){
         majPaysan(e, dist);
         e.obj.position.set(e.x*T, 0, e.y*T);
@@ -4224,7 +5672,7 @@ function boucle(){
         // il avance vers toi, une case à la fois, sans traverser la pierre
         const vx = (joueur.x - e.x*T), vz = (joueur.z - e.y*T);
         const n  = Math.hypot(vx,vz)||1;
-        const vitesses = { rat:1.9, slime:1.05, squelette:1.35, spectre:0.85 };
+        const vitesses = { rat:1.9, slime:1.05, slime_rouge:1.7, squelette:1.35, spectre:0.85 };
         const vit = (vitesses[e.type] ?? 1.2)*dt;
         const nx = e.x*T + vx/n*vit, nz = e.y*T + vz/n*vit;
         if(e.type==='spectre'){ e.x = nx/T; e.y = nz/T; }   // il passe à travers
@@ -4235,13 +5683,18 @@ function boucle(){
       }
       let yb;
       if(e.type==='slime')          yb = 0.42 + Math.abs(Math.sin(t*3.4+e.ph))*0.16;
+      else if(e.type==='slime_rouge') yb = 0.5 + Math.abs(Math.sin(t*4.2+e.ph))*0.6;   // gros bond agressif
       else if(e.type==='squelette') yb = Math.abs(Math.sin(t*6.5+e.ph))*0.07;
       else if(e.type==='spectre')   yb = 0.35 + Math.sin(t*1.6+e.ph)*0.22;
       else                          yb = 0.22 + Math.abs(Math.sin(t*11+e.ph))*0.05;
       e.obj.position.set(e.x*T, yb, e.y*T);
       e.obj.rotation.y = Math.atan2(joueur.x - e.x*T, joueur.z - e.y*T);
-      if(e.type==='slime'){
-        const s = 1 + Math.sin(t*3.4+e.ph)*0.14;
+      // brûlure : le monstre rougeoie tant qu'il est passé dans le feu
+      const _cm = e.obj.userData.corps && e.obj.userData.corps.material;
+      if(e.brule>0){ e.brule -= dt; if(_cm && _cm.emissive){ _cm.emissive.setHex(0xff7a30); _cm.emissiveIntensity = 0.3; e.__brulait=true; } }   // orange discret (plus de rouge criard)
+      else if(e.__brulait){ e.__brulait=false; if(_cm) _cm.emissiveIntensity = 0; }
+      if(e.type==='slime' || e.type==='slime_rouge'){
+        const s = 1 + Math.sin(t*(e.type==='slime_rouge'?4.2:3.4)+e.ph)*0.2;
         e.obj.userData.corps.scale.set(1/Math.sqrt(s), s, 1/Math.sqrt(s));
       } else if(e.type==='squelette'){
         e.obj.rotation.z = Math.sin(t*6.5+e.ph)*0.09;     // il claque en marchant
@@ -4267,11 +5720,67 @@ function boucle(){
 
     /* -- les villageois : devant leur maison, un léger balancement + un coup d'oeil -- */
     for(const v of villageois){
-      v.tempo -= dt;
-      if(v.tempo <= 0){ v.glance = (Math.random()-0.5)*1.1; v.tempo = 3 + Math.random()*5; }   // il tourne la tête/hanches
+      // TRAJET FIXE : il va d'une étape à la suivante, s'arrête un moment, repart. Toujours le même tour.
+      if(!v.marche){
+        v.attente -= dtVrai;   // vraie horloge : sinon une attente de 4 s dure une demi-minute quand ca rame
+        if(v.attente <= 0 && v.etapes && v.etapes.length > 1){
+          v.etape = (v.etape + 1) % v.etapes.length;
+          v.marche = true;
+        }
+      }
+      if(v.marche && v.etapes){
+        const but = v.etapes[v.etape];
+        const ddx = but.x - v.x, ddz = but.z - v.z, dd = Math.hypot(ddx, ddz);
+        if(dd < 0.15){ v.marche = false; v.attente = 3 + Math.random()*5; v.glance = (Math.random()-0.5)*1.1; }
+        else {
+          const vv = 1.05*dt; v.x += ddx/dd*vv; v.z += ddz/dd*vv; v.pas += dt*7;
+          // MÊME formule que le joueur : chez lui rotation = lacet + π, et lacet = atan2(-dx,-dz),
+          // ce qui revient à atan2(dx,dz) TOUT COURT. Le +π que j'avais mis ici était en trop :
+          // c'est lui qui faisait marcher les villageois à reculons. (bug déjà vu sur le joueur)
+          v.face = Math.atan2(ddx, ddz);
+        }
+      }
       v.glanceCur += (v.glance - v.glanceCur) * Math.min(1, dt*2);
-      v.obj.rotation.y = v.face + Math.sin(t*0.6 + v.ph)*0.10 + v.glanceCur;                    // balancement doux
-      v.obj.position.set(v.x, Math.sin(t*1.4 + v.ph)*0.015, v.z);                               // respire
+      v.obj.rotation.y = v.face + (v.marche ? 0 : Math.sin(t*0.6 + v.ph)*0.10 + v.glanceCur);
+      v.obj.position.set(v.x, Math.sin(t*1.4 + v.ph)*0.015, v.z);
+      // os du CLONE (le vrm original ne pilote pas les clones) : marche ample / respiration
+      if(!v.os) v.os = trouverOsCorps(v.obj);
+      // On tourne les os À PARTIR DE LEUR REPOS, jamais en position absolue.
+      // Avant, on écrasait la pose de repos : les bras partaient en croix et
+      // la marche faisait « robot ». C'est la cause, pas un détail.
+      const O = v.os, sw2 = Math.sin(v.pas), swc = Math.cos(v.pas);
+      const resp = Math.sin(t*1.9 + v.ph)*0.04;            // respiration
+      if(v.marche){
+        // Chiffres pris sur la marche humaine réelle : la hanche va de +30° à -30°,
+        // le genou plie jusqu'à 60°, les bras balancent à l'opposé des jambes.
+        poserOs(O.lUA,  sw2*0.72, 0, 0);
+        poserOs(O.rUA, -sw2*0.72, 0, 0);
+        poserOs(O.lLA, Math.max(0,  sw2)*0.45, 0, 0);      // le coude plie quand le bras avance
+        poserOs(O.rLA, Math.max(0, -sw2)*0.45, 0, 0);
+        poserOs(O.lUL, -sw2*0.62, 0, 0);
+        poserOs(O.rUL,  sw2*0.62, 0, 0);
+        poserOs(O.lLL, Math.max(0,  sw2)*1.05, 0, 0);      // genou : plié derrière, tendu devant
+        poserOs(O.rLL, Math.max(0, -sw2)*1.05, 0, 0);
+        poserOs(O.hips,  Math.abs(swc)*0.03, -sw2*0.14, swc*0.05);   // le bassin tourne et roule
+        poserOs(O.spine, resp + 0.05, sw2*0.12, 0);                   // les épaules tournent À L'INVERSE
+        poserOs(O.chest, resp*0.6, sw2*0.08, 0);
+      } else {
+        // À L'ARRÊT : ce sont des habitants, pas des gardes. Ils respirent et
+        // changent d'appui d'une jambe sur l'autre.
+        v.appui += dt*0.5;
+        const bal = Math.sin(v.appui)*0.05;
+        poserOs(O.lUA, resp*0.5 + bal*0.3, 0, 0);
+        poserOs(O.rUA, resp*0.5 - bal*0.3, 0, 0);
+        poserOs(O.lLA, 0.10, 0, 0);
+        poserOs(O.rLA, 0.10, 0, 0);
+        poserOs(O.lUL,  bal*0.4, 0, 0);
+        poserOs(O.rUL, -bal*0.4, 0, 0);
+        poserOs(O.lLL, Math.max(0,  bal)*0.5, 0, 0);
+        poserOs(O.rLL, Math.max(0, -bal)*0.5, 0, 0);
+        poserOs(O.hips,  0, bal*0.5, -bal*0.6);
+        poserOs(O.spine, resp, -bal*0.4, 0);
+        poserOs(O.chest, resp*0.6, 0, 0);
+      }
     }
 
     /* -- les écrans de l'isekai -- */
@@ -4357,16 +5866,11 @@ function boucle(){
       }
     }
 
-    /* -- le coffre s'ouvre quand tu le touches -- */
-    if(coffre && !coffre.ouvert &&
-       Math.hypot(coffre.obj.position.x - joueur.x, coffre.obj.position.z - joueur.z) < 1.1){
-      coffre.ouvert = true;
-      coffre.couvercle.rotation.x = -1.15;
-      coffre.couvercle.position.set(0, 0.62, -0.24);
-      if(!joueur.epee){ joueur.epee = true; esprit("Une épée dormait dans le coffre. Elle est à toi."); }
-      else if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Le coffre rendait un cœur."); }
-      else esprit("Le coffre était vide. Le donjon a de l'humour.");
-      bip(660,0.09,'square',0.07); bip(880,0.14,'square',0.07,0.09);
+    /* -- le coffre : on l'ouvre avec la touche E (interagir) -- */
+    if(coffre && !coffre.ouvert){
+      const pres = Math.hypot(coffre.obj.position.x - joueur.x, coffre.obj.position.z - joueur.z) < 1.4;
+      if(pres && !coffre.indice){ coffre.indice = true; dire('Appuie sur E pour ouvrir le coffre.', 2.4); }
+      if(!pres) coffre.indice = false;
     }
   }
 
@@ -4450,7 +5954,12 @@ if(_skC) _skC.onclick = ()=>{
 window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur, T, W, H,
              traiterChat, esprit, caseDevant, dirCardinale, voixDuMonde, basculerStatut,
              arme, armeDos, avatar, basculerVue,
+             get armeMode(){ return armeMode; },   // 'epee' | 'deux' | 'poings' — pour les tests
              get boss(){ return boss; },
+             get guerrier(){ return guerrier; },   // pour tester son animation
+             get MODELES(){ return MODELES; }, get ANIM_MAGE(){ return ANIM_MAGE; },
+             get villageois(){ return villageois; }, frapper, get etageCourant(){ return etageCourant; },
+             poserLesVillageois,
              /* aller directement à un étage — pour essayer un gardien sans tout refaire */
              allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
              get pouvoirs(){ return pouvoirs; },
