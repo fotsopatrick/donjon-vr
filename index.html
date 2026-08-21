@@ -1357,8 +1357,13 @@ const SANS_CLE = true;   // plus de clé : la porte/escalier est toujours ouvert
 let coffresPlan=[];      // positions 'C' du plan où poser des coffres
 let coffre=null, pieges=[], jumeaux=[], decors=[], objets=[];
 
-/* le matériau des murs : fabriqué une seule fois, réutilisé à chaque refonte */
-const geoMur = new THREE.BoxGeometry(T, HT, T);
+/* le matériau des murs : fabriqué une seule fois, réutilisé à chaque refonte.
+   La BOÎTE du mur, elle, se refait à chaque lieu (voir construireMurs) car la
+   hauteur HT change d'un étage à l'autre. Bug du 22/08 : la boîte était figée à
+   la hauteur du DÉPART, mais posée à HT/2 ; quand HT grandissait, le mur montait
+   sans grandir et son bas décollait du sol → « murs invisibles » en bas. */
+let geoMur = new THREE.BoxGeometry(T, HT, T);
+let geoMurH = HT;   // la hauteur pour laquelle la boîte a été taillée
 const murT = texMur.clone();    murT.needsUpdate = true; murT.repeat.set(2, 2.4);
 const relT = texRelief.clone(); relT.needsUpdate = true; relT.repeat.set(2, 2.4);
 const matMur = new THREE.MeshStandardMaterial({
@@ -1370,6 +1375,9 @@ const matMur = new THREE.MeshStandardMaterial({
    qu'un sort perce un passage ou dresse un mur. */
 function construireMurs(){
   if(murIM){ monde.remove(murIM); murIM.dispose(); }
+  // On retaille la boîte du mur à la hauteur du lieu, si elle a changé.
+  // Sinon le mur flotte (bug du 22/08). Il monte du SOL (y=0) jusqu'au plafond.
+  if(geoMurH !== HT){ geoMur.dispose(); geoMur = new THREE.BoxGeometry(T, HT, T); geoMurH = HT; }
   const murs=[];
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){
     if(grid[y][x]!==WALL) continue;

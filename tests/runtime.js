@@ -207,6 +207,42 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
         const r = JSON.parse(apres);
         assert(r.stun > 0 || r.sonne > 0, 'à la fin, le perdant doit être sonné (vu : ' + apres + ')');
       } },
+    { nom: 'murs_au_sol', desc: 'GARDE-FOU murs : le bas des murs touche le SOL, même après un étage plus haut',
+      run: async () => {
+        // On descend à l'étage 1 (plafond à 30 m), PUIS on revient au village.
+        // C'est le trajet qui faisait flotter les murs (la hauteur restait à 30).
+        await load('#donjon'); await demarrer();
+        // On s'assure d'être VRAIMENT en jeu avant de descendre (le menu peut rester).
+        for (let i = 0; i < 10 && (await ev('window.D&&window.D.etat')) !== 'jeu'; i++) {
+          await ev('(function(){var b=document.getElementById("jouer");if(b&&!b.disabled)b.click();})()'); await sleep(700);
+        }
+        await ev('window.D.allerA(1)'); await sleep(4000);
+        // PATIENCE : les murs se reconstruisent à l'image suivante. Sans cette
+        // attente, le test crie « murs introuvables » alors qu'ils arrivent.
+        for (let i = 0; i < 14 && !(await ev('!!(window.D.murIM && window.D.murIM.count>0)')); i++) await sleep(700);
+        const diag = await ev('JSON.stringify({etat:window.D&&window.D.etat, niveau:window.D&&window.D.etageCourant&&"?", murIM:!!(window.D.murIM), count:window.D.murIM?window.D.murIM.count:0})');
+        // Rend {aucun:true} s'il n'y a pas de mur instancié (cas normal du village,
+        // dont la palissade est faite de modèles). Rend {bas} sinon.
+        const mesurer = () => ev(`(function(){
+          var m = window.D.murIM; if(!m || !m.count) return { aucun:true };
+          var h = m.geometry.parameters.height;
+          var mat = new window.D.THREE.Matrix4(), p = new window.D.THREE.Vector3();
+          var pire = 0;
+          for(var i=0;i<Math.min(m.count,40);i++){ m.getMatrixAt(i,mat); p.setFromMatrixPosition(mat);
+            var bas = p.y - h/2; if(Math.abs(bas) > Math.abs(pire)) pire = bas; }
+          return { hauteur:h, basLePirePlusEloigne:Math.round(pire*100)/100 };
+        })()`);
+        const donjon = await mesurer();
+        assert(donjon && !donjon.aucun, 'murs introuvables à l\'étage 1 — état vu : ' + diag);
+        assert(Math.abs(donjon.basLePirePlusEloigne) < 0.4,
+          'à l\'étage 1, le bas d\'un mur flotte à ' + donjon.basLePirePlusEloigne + ' m du sol (doit être ~0)');
+        // Retour au village : soit il n'a AUCUN mur instancié (normal), soit s'il
+        // en a un (fantôme du donjon), il ne doit pas flotter. Les deux sont bons.
+        await ev('window.D.allerA(0)'); await sleep(3500);
+        const village = await mesurer();
+        assert(village.aucun || Math.abs(village.basLePirePlusEloigne) < 0.4,
+          'de retour au village, un mur flotte à ' + village.basLePirePlusEloigne + ' m du sol (doit toucher le sol)');
+      } },
     { nom: 'deux_epees', desc: 'ESCRIME À DEUX LAMES : la touche X donne une 2e épée, et les DEUX sont visibles',
       run: async () => {
         await load('#arene'); await demarrer();

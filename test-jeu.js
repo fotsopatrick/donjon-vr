@@ -80,6 +80,10 @@ v('plafond très haut (HT>=8)', (function(){
   return !!m && parseFloat(m[1]) >= 8;
 })());
 v('couloirs elargis (2 cases)', /grid\[y\+1\]\[x\]=FLOOR/.test(script) && /grid\[y\]\[x\+1\]=FLOOR/.test(script));
+// GARDE-FOU MUR AU SOL (Patrick 22/08 : « murs invisibles, déplacés vers le haut »).
+// La boîte du mur DOIT se refaire quand la hauteur HT change, sinon le mur monte
+// sans grandir et son bas décolle du sol → mur invisible en bas.
+v('la boite du mur se refait quand la hauteur change', /geoMurH\s*!==\s*HT/.test(script) && /geoMur\s*=\s*new THREE\.BoxGeometry\(T,\s*HT,\s*T\)/.test(script));
 // GARDE-FOU CERCLE (Patrick 22/08 : « impossible d'atteindre les cercles ») :
 // dans le plan de l'étage 1, le cercle K doit rester PRÈS du départ S (moins de
 // 4 cases), sinon il se retrouve caché au fond du labyrinthe et on ne l'atteint plus.
