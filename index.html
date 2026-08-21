@@ -4941,7 +4941,7 @@ function majChoc(dt){
 
 function finirChoc(){
   const G = guerrier;
-  choc.actif = false; choc.attente = 1.2;
+  choc.actif = false; choc.attente = 3.0;   // 3 s avant de pouvoir recroiser le fer
   fairtBriller(avatar.userData.epeeMain, 0);
   if(G) fairtBriller(G.epee, 0);
   semerEtincelles(choc.point, 120);
@@ -5232,7 +5232,33 @@ function trouverOsCorps(racine){
     }
   });
   os.trouves = Object.keys(os).length;             // pour que les tests puissent vérifier
+  rabattreLesBras(racine, os);
   return os;
+}
+
+// LES BRAS EN CROIX — un personnage 3D est fabriqué bras tendus sur les côtés.
+// Si on anime « à partir du repos », il garde les bras en croix : l'épouvantail.
+// Ici on mesure où pointe VRAIMENT chaque bras, et on calcule la rotation qui le
+// ramène le long du corps. On la range DANS la pose de repos : ensuite tout le
+// reste du code marche sans savoir que ce problème existe.
+const _vA = new THREE.Vector3(), _vB = new THREE.Vector3(), _qP = new THREE.Quaternion(), _qC = new THREE.Quaternion();
+function rabattreLesBras(racine, os){
+  racine.updateWorldMatrix(true, true);
+  const paires = [['lUA','lLA', 1], ['rUA','rLA', -1]];
+  for(const [haut, bas, cote] of paires){
+    const epaule = os[haut], coude = os[bas];
+    if(!epaule || !coude || !epaule.parent) continue;
+    epaule.getWorldPosition(_vA); coude.getWorldPosition(_vB);
+    const dir = _vB.sub(_vA).normalize();                    // où pointe le bras aujourd'hui
+    if(Math.abs(dir.y) > 0.72) continue;                     // il pend déjà : rien à faire
+    // Où il DOIT pointer : vers le bas, très légèrement écarté (bras relâché).
+    const but = new THREE.Vector3(cote*0.22, -0.975, 0).normalize();
+    const corrMonde = new THREE.Quaternion().setFromUnitVectors(dir, but);
+    // On exprime cette rotation dans le repère du parent (l'épaule), pas du monde.
+    epaule.parent.getWorldQuaternion(_qP);
+    _qC.copy(_qP).invert().multiply(corrMonde).multiply(_qP);
+    epaule.userData.repos = _qC.clone().multiply(epaule.userData.repos);
+  }
 }
 const _eulerOs = new THREE.Euler(), _quatOs = new THREE.Quaternion();
 // Tourner un os À PARTIR de son repos. C'est ce que fait une vraie animation.
@@ -5848,8 +5874,12 @@ function boucle(){
     majGuerrier(dt);
     // LE CHOC D'ÉPÉES : on regarde si les deux lames se croisent pendant que les
     // DEUX attaquent. C'est la seule condition — sinon on ne calcule rien.
+    // Conditions STRICTES, sinon le choc se déclenche sans arrêt et l'adversaire
+    // reste planté à agiter les bras pendant que tu prends des coups (vu le 22/08).
     if(!choc.actif && choc.attente <= 0 && guerrier && guerrier.vie > 0 && guerrier.arene
-       && joueur.atkCd > 0 && (guerrier.attaqueT > 0 || guerrier.cd > 0.25) && lamesSeCroisent()){
+       && (guerrier.sonne||0) <= 0 && joueur.atkCd > 0.18
+       && Math.hypot(guerrier.x - joueur.x, guerrier.z - joueur.z) < 2.6
+       && (guerrier.attaqueT > 0.18 || guerrier.cd > 0.34) && lamesSeCroisent()){
       demarrerChoc();
     }
     majChoc(dt);

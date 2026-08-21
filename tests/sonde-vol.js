@@ -45,13 +45,16 @@ const getJSON = p => new Promise((r, j) =>
   console.log('vue de dos :', await lire('window.D.avatar.visible'));
   console.log('avant le vol :', await lire('JSON.stringify({vrm:!!(window.D.avatar&&window.D.avatar.userData&&window.D.avatar.userData.vrm),mana:Math.round(window.D.joueur.mana||0)})'));
   erreurs.length = 0;
-  console.log('on décolle :', await lire('window.D.joueur.vol=true; window.D.joueur.saut=4; "ok"'));
+  if((process.argv[3]||'') !== '#village')
+    console.log('on décolle :', await lire('window.D.joueur.vol=true; window.D.joueur.saut=4; "ok"'));
   await dodo(2500);
   console.log('pendant le vol :', await lire('JSON.stringify({vol:!!window.D.joueur.vol,saut:Math.round((window.D.joueur.saut||0)*10)/10})'));
   if((process.argv[3]||'')==='#village'){
     await dodo(4000);
     console.log('villageois :', await lire('(window.D.villageois||[]).length'));
     console.log('os trouvés  :', await lire('JSON.stringify((window.D.villageois||[]).map(function(v){return v.os?(v.os.trouves||0):-1;}))'));
+    console.log('ombres portées par villageois :', await lire('JSON.stringify((window.D.villageois||[]).map(function(v){var n=0;v.obj.traverse(function(o){if(o.isMesh&&o.castShadow)n++;});return n;}))'));
+    console.log('lumieres qui font des ombres  :', await lire('(function(){var n=0;window.D.scene.traverse(function(o){if(o.isLight&&o.castShadow)n++;});return n;})()'));
   }
   console.log('épaule gauche :', await lire('(function(){var v=window.D.avatar.userData.vrm;var b=v.humanoid.getRawBoneNode("leftUpperArm");return b?(b.rotation.x+b.rotation.z):"pas d os";})()'));
   console.log("passages dans la pose en l air :", await lire("window.__poseAir||0"));

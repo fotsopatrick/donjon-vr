@@ -182,10 +182,12 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
       run: async () => {
         await load('#arene'); await demarrer(); await sleep(3000);
         assert(await ev('!!(window.D.guerrier && window.D.guerrier.epee)'), 'l\'adversaire n\'a pas d\'épée en main');
-        const posAvant = await ev('JSON.stringify([Math.round(window.D.joueur.x*10)/10, Math.round(window.D.guerrier.x*10)/10])');
         await ev('window.D.demarrerChoc()');
         await sleep(300);
         assert(await ev('window.D.choc.actif'), 'le choc ne démarre pas');
+        // On relève la position UNE FOIS le choc commencé : avant, l'adversaire
+        // bougeait encore normalement, et le test se plaignait pour rien.
+        const posAvant = await ev('JSON.stringify([Math.round(window.D.joueur.x*10)/10, Math.round(window.D.guerrier.x*10)/10])');
         // On verse du mana en tenant la touche E, et la poussée doit monter.
         await key('KeyE', 'keyDown'); await sleep(900);
         const f1 = await ev('window.D.choc.forceJ');
