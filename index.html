@@ -294,13 +294,26 @@ window.addEventListener('unhandledrejection', e=>{
 // Numéro de version, affiché à côté du compteur en haut à droite. Si Patrick
 // ne voit PAS ce numéro, ou en voit un plus ancien, c'est qu'il tourne sur une
 // vieille copie chargée dans son onglet -> il doit rouvrir en fenêtre neuve.
-const VERSION_JEU = 'v22h-noir';
+const VERSION_JEU = 'v22i-collider';
 
 // Mise à jour d'avatar PROTÉGÉE. Les cheveux/vêtements qui bougent (springbones)
 // d'un avatar cloné peuvent planter (offset undefined) et FIGER tout le jeu -
 // c'était la cause de l'écran noir + « je ne peux pas bouger » (22/08). Si un
 // avatar plante, on le note et on n'y retouche plus, mais le jeu continue.
 const _vrmCasses = new WeakSet();
+// RETIRE les colliders de springbone cassés (leur 'shape' est undefined sur les
+// clones VRoid). Pendant le dessin, three-vrm lit shape.offset -> plantage ->
+// écran figé/noir (22/08). On les sort du graphe : les cheveux ne rebondissent
+// plus, mais le jeu ne plante plus. À appeler sur toute racine 3D.
+function neutraliserColliders(racine){
+  if(!racine) return;
+  const cible = racine.scene || racine;
+  const aRetirer = [];
+  try { cible.traverse(o=>{ if(o.colliderMatrix !== undefined || /collider/i.test(o.name||'')) aRetirer.push(o); }); }
+  catch(e){}
+  aRetirer.forEach(o=>{ try{ o.removeFromParent(); }catch(e){} });
+  if(racine.springBoneManager){ try{ racine.springBoneManager = null; }catch(e){} }
+}
 function majVrm(v, dt){
   if(!v || _vrmCasses.has(v)) return;
   try { v.update(dt); }
@@ -939,6 +952,7 @@ function poser(nom, x, y, z, echelle = 1, rotY = 0){
     // On la met de côté le temps du clone, puis on la remet.
     const fiche = m.userData; m.userData = { estVRM:true };
     try{ g = cloneSkinned(m); } finally { m.userData = fiche; }
+    neutraliserColliders(g);   // retire les colliders cassés du clone (sinon plantage au dessin)
   } else {
     g = m.clone(true);
   }
@@ -2221,6 +2235,7 @@ function installerAvatar(){
     }
     if(perso.userData.clipsVRM.length) anims = perso.userData.clipsVRM;
   }
+  neutraliserColliders(perso);   // avatar joueur : retire les colliders cassés (anti-plantage au dessin)
   const bb = new THREE.Box3().setFromObject(perso);
   const h = bb.getSize(new THREE.Vector3()).y || 1;
   perso.scale.setScalar(1.7 / h);
@@ -3328,6 +3343,7 @@ function nouvelEtage(){
     histoireDite = true;
     /* histoire d'ouverture coupée — à refaire avec Patrick */;
   }
+  neutraliserColliders(scene);   // retire les colliders cassés qui figent le dessin
 }
 function descendre(){
   niveau++;
