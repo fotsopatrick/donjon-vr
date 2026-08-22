@@ -20,6 +20,11 @@ except ImportError:          # hors Blender (tests python purs)
     bpy = None
     bmesh = None
 
+try:
+    from material_lib import MaterialLibrary
+except ImportError:
+    MaterialLibrary = None
+
 import math
 import random
 
@@ -175,7 +180,6 @@ class DungeonChamber:
             raise RuntimeError("dungeon_kit : Blender (bpy) requis")
         self.param = parametrer(scene_spec or {}, dims, seed)
         self.rng = random.Random(int(seed) or 0)
-        self.mats = {}
         self.objets = []
         self.ancre = None
         self.angles_colonnes = []      # angles des colonnes (utile aux portes)
@@ -183,192 +187,15 @@ class DungeonChamber:
         self._construire_materiaux()
 
     # ============================ MATÉRIAUX ==============================
-    def _mat_plat(self, nom, rgba, rough=0.85, metal=0.0, emissive=None, force=0.0):
-        m = bpy.data.materials.new(nom)
-        m.use_nodes = True
-        bsdf = m.node_tree.nodes.get("Principled BSDF")
-        bsdf.inputs["Base Color"].default_value = rgba
-        bsdf.inputs["Roughness"].default_value = rough
-        bsdf.inputs["Metallic"].default_value = metal
-        if emissive:
-            bsdf.inputs["Emission Color"].default_value = emissive
-            bsdf.inputs["Emission Strength"].default_value = force
-        m.diffuse_color = rgba
-        self.mats[nom] = m
-        return m
-
-    def _generer_texture(self, nom, base, mode="stone", taille=512,
-                         usure=False, echelle=64, seed=0):
-        """Génère une VRAIE texture image (blocs de pierre / patine métal).
-
-        CRUCIAL : l'exporteur glTF ne peut PAS cuire les nœuds procéduraux
-        (noise/voronoi) -> baseColorFactor vide -> matériaux BLANCS dans
-        Three.js. Une texture image, elle, est exportée telle quelle et
-        survit jusqu'au jeu. La texture est déterministe (seed)."""
-        rnd = random.Random(int(seed) ^ (hash(nom) & 0xffffff))
-        img = bpy.data.images.new(nom + "_tex", width=taille, height=taille)
-        px = [0.0] * (taille * taille * 4)
-        cs = max(24, echelle)
-        nb = taille // cs
-        tons = {}
-        if mode == "metal":
-            tons = {(bi, bj): rnd.uniform(0.70, 1.05)
-                    for bi in range(nb) for bj in range(nb)}
-        else:
-            tons = {(bi, bj): rnd.uniform(0.68, 1.30)
-                    for bi in range(nb) for bj in range(nb)}
-        for j in range(taille):
-            dec = (cs // 2) if (j // cs) % 2 else 0
-            bj = j // cs
-            mj = j % cs
-            for i in range(taille):
-                bi = (i + dec) // cs
-                mi = (i + dec) % cs
-                tone = tons.get((bi, bj), 1.0)
-                mortier = 0.0
-                if mi < 2 or mj < 2 or mi > cs - 2 or mj > cs - 2:
-                    mortier = 0.38
-                bruit = rnd.uniform(-0.05, 0.05)
-                facteur = tone * (1.0 - mortier)
-                v = [max(0.0, min(1.0, base[c] * facteur + bruit))
-                     for c in range(3)]
-                if usure:
-                    d = math.hypot(i - taille / 2, j - taille / 2) / (taille / 2)
-                    us = 1.0 - 0.35 * max(0.0, min(1.0, d))
-                    v = [max(0.0, min(1.0, x * us)) for x in v]
-                o = (j * taille + i) * 4
-                px[o] = v[0]; px[o+1] = v[1]; px[o+2] = v[2]; px[o+3] = 1.0
-        img.pixels[:] = px
-        img.pack()
-        return img
-
-    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True,
-                    blocs=True, usure=False, echelle_blocks=5.0, seed=0):
-        """Pierre avec VRAIE texture (blocs/mortier/teinte par bloc) exportable
-        en glTF, + noise/bump pour la preview Blender."""
-        m = bpy.data.materials.new(nom)
-        m.use_nodes = True
-        nodes = m.node_tree.nodes
-        links = m.node_tree.links
-        for n in list(nodes):
-            nodes.remove(n)
-        out = nodes.new("ShaderNodeOutputMaterial")
-        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-        coord = nodes.new("ShaderNodeTexCoord")
-
-        # VRAIE texture : exportable, visible dans le jeu
-        img = self._generer_texture(nom, base, usure=usure,
-                                    echelle=int(echelle_blocks * 45), seed=seed)
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = img
-        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-
-        # rugosité constante (exportable)
-        bsdf.inputs["Roughness"].default_value = rough
-
-        # bump preview (non exporté, mais enrichit le rendu Blender)
-        if bump:
-            noiseN = nodes.new("ShaderNodeTexNoise")
-            noiseN.inputs["Scale"].default_value = 30.0
-            bump = nodes.new("ShaderNodeBump")
-            bump.inputs["Strength"].default_value = 0.35
-            links.new(coord.outputs["Object"], noiseN.inputs["Vector"])
-            links.new(noiseN.outputs["Fac"], bump.inputs["Height"])
-            links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
-        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
-        m.diffuse_color = (base[0], base[1], base[2], 1)
-        self.mats[nom] = m
-        return m
-
-    def _mat_metal(self, nom, base, rough=0.35, patine=True, seed=0):
-        """Métal avec patine exportable (texture image), metallic constant."""
-        m = bpy.data.materials.new(nom)
-        m.use_nodes = True
-        nodes = m.node_tree.nodes
-        links = m.node_tree.links
-        for n in list(nodes):
-            nodes.remove(n)
-        out = nodes.new("ShaderNodeOutputMaterial")
-        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-        bsdf.inputs["Metallic"].default_value = 0.85
-        bsdf.inputs["Roughness"].default_value = rough
-        img = self._generer_texture(nom, base, mode="metal",
-                                    echelle=110, seed=seed)
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = img
-        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
-        m.diffuse_color = (base[0], base[1], base[2], 1)
-        self.mats[nom] = m
-        return m
-
-    def _mat_eau(self, nom, base, emissive, force, ripple=0.12):
-        """Eau/énergie centrale : émission contrôlée + vaguelettes (bump)."""
-        m = bpy.data.materials.new(nom)
-        m.use_nodes = True
-        nodes = m.node_tree.nodes
-        links = m.node_tree.links
-        for n in list(nodes):
-            nodes.remove(n)
-        out = nodes.new("ShaderNodeOutputMaterial")
-        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-        coord = nodes.new("ShaderNodeTexCoord")
-        bsdf.inputs["Base Color"].default_value = (base[0], base[1], base[2], 1)
-        bsdf.inputs["Roughness"].default_value = 0.15
-        bsdf.inputs["Metallic"].default_value = 0.1
-        bsdf.inputs["Emission Color"].default_value = (emissive[0], emissive[1], emissive[2], 1)
-        bsdf.inputs["Emission Strength"].default_value = force
-        if ripple > 0:
-            noise = nodes.new("ShaderNodeTexNoise")
-            noise.inputs["Scale"].default_value = 28.0
-            bump = nodes.new("ShaderNodeBump")
-            bump.inputs["Strength"].default_value = ripple
-            links.new(coord.outputs["Object"], noise.inputs["Vector"])
-            links.new(noise.outputs["Fac"], bump.inputs["Height"])
-            links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
-        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
-        m.diffuse_color = (base[0], base[1], base[2], 1)
-        self.mats[nom] = m
-        return m
-
+    # DÉLÉGUÉ à material_lib : bibliothèque nommée, réutilisable (maisons,
+    # donjons, props), exportable glTF. Jamais de matériaux ad hoc ici.
     def _construire_materiaux(self):
-        p = self.param
-        atmos = " ".join(p["atmosphere"])
+        atmos = " ".join(self.param["atmosphere"])
         sombre = 0.08 if "dark" in atmos else 0.0
-        f = 1 - sombre
-        seed0 = int(p["seed"])
+        lib = MaterialLibrary(seed=self.param["seed"], sombre=sombre)
+        self.mats = lib.construire_presets(self.param["arena"]["color"])
+        self.lib = lib
 
-        # dark_stone : le mur — blocs de pierre, teinte par bloc, usé
-        self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f),
-                         rough=0.95, blocs=True, echelle_blocks=5.0, seed=seed0)
-        # stone_floor : plus clair, usé vers le centre, blocs larges
-        self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f),
-                         rough=0.88, blocs=True, usure=True,
-                         echelle_blocks=8.0, seed=seed0 + 1)
-        # stone_trim : parement clair pour bordures/marches/éléments
-        self._mat_pierre("stone_trim", (0.60 * f, 0.58 * f, 0.55 * f),
-                         rough=0.85, blocs=True, echelle_blocks=6.0, seed=seed0 + 2)
-        # pierre_gradins : ton intermédiaire
-        self._mat_pierre("pierre_gradins", (0.38 * f, 0.37 * f, 0.36 * f),
-                         rough=0.9, blocs=True, echelle_blocks=6.0, seed=seed0 + 3)
-
-        couleur = p["arena"]["color"]
-        if "cyan" in couleur or "bleu" in couleur:
-            eau = (0.08, 0.40, 0.52, 1)
-            eau_em = (0.20, 0.65, 0.95, 1)
-        else:
-            eau = (0.90, 0.34, 0.08, 1)
-            eau_em = (1.0, 0.52, 0.20, 1)
-        self._mat_eau("central_water", eau, eau_em, force=3.2, ripple=0.10)
-        self._mat_plat("feu_orange", (1.0, 0.45, 0.12, 1), rough=0.6,
-                       emissive=(1.0, 0.45, 0.15, 1), force=4.5)
-        # lueur au sol sous les torches (flaque de lumière chaude)
-        self._mat_plat("feu_sol", (0.60, 0.32, 0.10, 1), rough=0.8,
-                       emissive=(0.85, 0.40, 0.14, 1), force=1.2)
-        self._mat_metal("metal", (0.15, 0.16, 0.19, 1), rough=0.35, seed=seed0 + 4)
-        self._mat_metal("metal_bleu", (0.12, 0.16, 0.24, 1), rough=0.30, seed=seed0 + 5)
-        # bois sombre : porte de la salle (storytelling)
-        self._mat_plat("bois", (0.20, 0.13, 0.08, 1), rough=0.85)
 
     # ============================ HELPERS ================================
     def _ajouter(self, primitive, kwargs, mat, nom):
