@@ -970,8 +970,10 @@ function poser(nom, x, y, z, echelle = 1, rotY = 0){
     g = m.clone(true);
   }
   if(estVRM){
-    // PAS d'ombre sur les copies (villageois) : elle se plaquait sur eux comme une tache noire.
-    g.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false; o.castShadow=false; o.receiveShadow=false; } });
+    // OMBRES (22/08, zone pilote) : les copies projettent une OMBRE DOUCE au sol
+    // (castShadow) mais ne reçoivent PAS d'ombre (receiveShadow=false) : plus de
+    // « tache noire plaquée sur eux » — ils sont DANS le monde, pas posés dessus.
+    g.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false; o.castShadow=true; o.receiveShadow=false; } });
     g.position.set(x, y, z);
     g.rotation.y = rotY + Math.PI;                          // le VRM regarde +Z → demi-tour
     g.scale.setScalar(echelle * 0.92);                      // le VRM fait déjà ~1,7 m
@@ -997,6 +999,22 @@ function poser(nom, x, y, z, echelle = 1, rotY = 0){
 const chargeurTex = new THREE.TextureLoader();
 let texPaysage = chargeurTex.load('paysages/isekai-chateau.jpg');   // toile de fond isekai (château flottant)
 texPaysage.colorSpace = THREE.SRGBColorSpace;
+/* Version JAUGEÉ du fond (zone pilote stylized, 22/08) : le château photo était
+   trop vif et trop clair pour le premier plan. On le désature, on le fonce un
+   peu et on le contraste légèrement pour qu'il partage la lumière du village. */
+let texPaysageGrade = null;
+const _chargeurImg = new THREE.ImageLoader();
+_chargeurImg.load('paysages/isekai-chateau.jpg', img => {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.filter = 'saturate(0.72) brightness(0.9) contrast(0.98)';
+  g.drawImage(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  texPaysageGrade = t;
+  if(estDehors() && scene) scene.background = texPaysageGrade;
+});
 const MATIERES = {};
 
 function matiere(nom, repeteX = 1, repeteY = 1){
@@ -1073,6 +1091,75 @@ const MAISONS_SUD = [
    Avant, la liste était lue à cinq endroits — on en oubliait toujours un. */
 const MAISONS_TOUTES = MAISONS.concat(MAISONS_SUD);
 
+/* ═══ ZONE PILOTE — stylized realism (WorldArtDirectionProfile v2) ═══
+   Petite zone pour valider visuellement la direction artistique cible :
+   la place centrale, les 6 maisons autour, la rue vers l'escalier du donjon.
+   Ici les maisons GARDENT leurs matériaux PBR (Quaternius), la place et le
+   puits passent en pierre PBR, des lanternes chaudes s'allument.
+   Le reste du village reste en rendu actuel (cel-shading = héritage). */
+const ZONE_PILOTE = { x0:8, x1:19, y0:2, y1:18 };   // en cases de grille
+function dansZonePilote(px, pz){
+  const tx = Math.floor(px/T), tz = Math.floor(pz/T);
+  return tx >= ZONE_PILOTE.x0 && tx <= ZONE_PILOTE.x1 &&
+         tz >= ZONE_PILOTE.y0 && tz <= ZONE_PILOTE.y1;
+}
+/* une matière réaliste stylisée : texture photo + relief, éclairée par pixel */
+function matPBR(nom, repeteX = 1, repeteY = 1, teinte = 0xffffff, rough = 0.78){
+  const t = matiere(nom, repeteX, repeteY);
+  return new THREE.MeshStandardMaterial({ map:t, bumpMap:texRelief, bumpScale:0.16,
+    color:teinte, roughness:rough, metalness:0.05 });
+}
+/* une lanterne de rue : poteau de bois, verre chaud émissif, lueur optionnelle */
+function poserLanterne(x, z, avecLumiere = false){
+  const g = new THREE.Group();
+  const bois = new THREE.MeshStandardMaterial({ color:0x3a2a1c, roughness:0.9 });
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 2.3, 8), bois);
+  poste.position.y = 1.15;
+  const capot = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.3, 8), bois);
+  capot.position.y = 2.35; capot.rotation.x = Math.PI;
+  const verre = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0),
+    new THREE.MeshStandardMaterial({ color:0xffb45e, emissive:0xff8a3a, emissiveIntensity:1.8,
+      transparent:true, opacity:0.95, roughness:0.2 }));
+  verre.position.y = 2.05;
+  g.add(poste, capot, verre);
+  if(avecLumiere){ const l = new THREE.PointLight(0xff9a4a, 6, 8, 1.6); l.position.y = 2.0; g.add(l); }
+  g.position.set(x, 0, z);
+  return g;
+}
+/* Harmonise les couleurs d'un groupe à la palette de la zone pilote :
+   - les matériaux ORANGE (toits) : désaturés et foncés, fini le orange criard ;
+   - les matériaux très CLAIRS (façades crépies) : moins lumineux, fini le blanc brûlé ;
+   - le reste : léger adoucissement vers une matière commune, désaturée.
+   La géométrie, les textures et les props ne changent pas : seule la couleur parle. */
+function harmoniserPilot(racine, force = 1){
+  racine.traverse(o=>{
+    if(!o.isMesh || !o.material) return;
+    const estTableau = Array.isArray(o.material);
+    const mats = estTableau ? o.material : [o.material];
+    for(let i=0;i<mats.length;i++){
+      const m = mats[i];
+      if(!m || !m.color || m.isMeshToonMaterial) continue;
+      const r = m.color.r, g = m.color.g, b = m.color.b;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const lum = (r + g + b) / 3;
+      let sF = 0.85, bF = 1;
+      if(mx - mn > 0.18 && (r - g) > 0.22 && (r - b) > 0.36) { sF = 0.5; bF = 0.8; }  // toit orange
+      else if(lum > 0.86){ sF = 0.75; bF = 0.88; }                                   // façade très claire
+      const mix = (1 - sF) * force;
+      // ON CLONE AVANT DE MUTER : les matériaux Quaternius sont PARTAGÉS entre
+      // toutes les copies (et le donjon). Sans clone, on les foncerait deux fois
+      // à chaque rechargement et on gâcherait les props du donjon.
+      const nv = m.clone();
+      nv.color.r = r + (lum - r) * mix;
+      nv.color.g = g + (lum - g) * mix;
+      nv.color.b = b + (lum - b) * mix;
+      nv.color.multiplyScalar(1 - (1 - bF) * force);
+      if(estTableau){ o.material[i] = nv; } else { o.material = nv; }
+    }
+  });
+  return racine;
+}
+
 /* ── LES MOMENTS DU JOUR ──
    Un seul endroit décide de la lumière du dehors. Changer d'heure change TOUT
    d'un coup : les maisons, les habitants, le sol, le ciel, la brume.
@@ -1089,8 +1176,10 @@ const MOMENTS = {
   // l'heure dorée : soleil bas, ombres longues, tout devient chaud — le rendu « anime »
   // Le soleil est bas, mais le CIEL éclaire fort les ombres : sinon tout ce que
   // le soleil ne touche pas devient noir (essai du 21/08 : moitié du village dans le noir).
-  dore:      { soleil:[-0.6, 0.62, 0.5], force:2.6, couleur:0xffcf88,
-               ciel:0xffe3c0, sol:0xd0a878, forceCiel:3.2, brume:0xf3d8ae, epaisseur:0.008, eclat:1.22 },
+  // ADOUCIE le 22/08 (zone pilote stylized) : moins d'orange, moins d'exposition —
+  // les façades ne brûlent plus, le sol cesse de dominer en orange.
+  dore:      { soleil:[-0.6, 0.62, 0.5], force:2.35, couleur:0xffe0b0,
+               ciel:0xe8e4e0, sol:0xb0a488, forceCiel:2.2, brume:0xd6d2c6, epaisseur:0.007, eclat:1.12 },
   matin:     { soleil:[0.8, 0.45, -0.4], force:2.8, couleur:0xffe6c0,
                ciel:0xdcefff, sol:0x9fb18a, forceCiel:1.6, brume:0xdcecff, epaisseur:0.009, eclat:1.20 },
   crepuscule:{ soleil:[-0.95, 0.18, 0.25], force:2.2, couleur:0xff9a5c,
@@ -1109,7 +1198,7 @@ function poserMomentDuJour(nom){
   // le plancher de lumière suit le moment : plus fort le jour, plus discret le soir
   ambiance.intensity = (m.ambiance !== undefined) ? m.ambiance : 0.5;
   scene.fog = new THREE.FogExp2(m.brume, m.epaisseur);
-  scene.background = texPaysage;
+  scene.background = texPaysageGrade || texPaysage;   // le fond jaugé (désaturé, foncé) une fois chargé
   renderer.toneMappingExposure = m.eclat;
 }
 
@@ -2580,7 +2669,17 @@ function batirDehors(){
   // l'écran de Patrick, pas en test sans écran.
   for(const m of MAISONS_TOUTES){
     const g = maisonQuaternius(m);
-    if(g){ styliser(g, 0.02); monde.add(g); }
+    if(!g) continue;
+    const cx = (m.x + m.w/2)*T, cz = (m.y + m.h/2)*T;
+    if(dansZonePilote(cx, cz)){
+      // ZONE PILOTE : on garde les matériaux PBR Quaternius (stylized realism)
+      // et on harmonise les couleurs : toits moins orange, façades moins brûlées.
+      g.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      harmoniserPilot(g, 1);
+    } else {
+      styliser(g, 0.02);
+    }
+    monde.add(g);
   }
 
   /* --- les fanions, tendus au-dessus de la place --- */
@@ -2623,9 +2722,9 @@ function batirDehors(){
     }
     monde.add(rues);
 
-    // la place : un rond de pavés au croisement des deux rues
+    // la place : un rond de pavés au croisement des deux rues (pierre PBR dans la zone pilote)
     const place = new THREE.Mesh(new THREE.CircleGeometry(5.2, 28),
-      mat('paves', 5, 5));
+      matPBR('paves', 7, 7));
     place.rotation.x = -Math.PI/2;
     place.position.set(13*T, 0.03, 9*T);
     place.receiveShadow = true;
@@ -2635,7 +2734,7 @@ function batirDehors(){
   /* --- le puits, au milieu de la place : le cœur du village --- */
   {
     const p = new THREE.Group();
-    const pierreP = mat('mur-pierre', 2.5, 0.8);
+    const pierreP = matPBR('mur-pierre', 2.5, 0.8);
     const margelle = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.85, 16), pierreP);
     margelle.position.y = 0.42;
     const rebord = new THREE.Mesh(new THREE.TorusGeometry(1.07, 0.09, 6, 18), pierreP);
@@ -2645,7 +2744,7 @@ function batirDehors(){
       new THREE.MeshBasicMaterial({ color:0x0a0c10 }));
     trou.rotation.x = -Math.PI/2; trou.position.y = 0.83;
     // les deux montants et le toit
-    const boisP = mat('bois', 0.4, 1.6, 0x9a7c56);
+    const boisP = matPBR('bois', 0.4, 1.6, 0x9a7c56, 0.85);
     for(const c of [-1, 1]){
       const m = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.1, 0.16), boisP);
       m.position.set(c*0.9, 1.5, 0);
@@ -2654,12 +2753,12 @@ function batirDehors(){
     const faite = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.1, 8), boisP);
     faite.rotation.z = Math.PI/2; faite.position.y = 2.5;
     const toitP = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 2.5, 3, 1, false),
-      mat('toit-chaume', 2, 1.2));
+      matPBR('toit-chaume', 2, 1.2));
     toitP.rotation.set(0, Math.PI/2, Math.PI/2);
     toitP.position.y = 2.9;
     // le seau, pendu à sa corde
     const corde = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 5),
-      new THREE.MeshLambertMaterial({ color:0x6b5a42 }));
+      new THREE.MeshStandardMaterial({ color:0x6b5a42, roughness:0.95 }));
     corde.position.y = 1.95;
     const seau = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.3, 10), boisP);
     seau.position.y = 1.28;
@@ -2769,18 +2868,35 @@ function batirDehors(){
   const propsVil = ['propTonneau','propCoffre','propBanc','propBibli','propBougeoir','propTonneau','propLivres'];
   for(let i=0;i<devants.length;i++){
     const d = devants[i], off = d.face>0 ? 1.4 : -1.4;
-    poserProp(propsVil[i%propsVil.length], d.fx + off, 0, d.fz + (Math.random()-0.5)*1.4, 1, Math.random()*6.28);
-    if(i%2===0) poserProp('propTonneau', d.fx + off*0.55, 0, d.fz + 1.3, 1, Math.random()*6.28);
+    const p1 = poserProp(propsVil[i%propsVil.length], d.fx + off, 0, d.fz + (Math.random()-0.5)*1.4, 1, Math.random()*6.28);
+    if(p1 && dansZonePilote(d.fx + off, d.fz)) harmoniserPilot(p1, 0.85);
+    if(i%2===0){ const p2 = poserProp('propTonneau', d.fx + off*0.55, 0, d.fz + 1.3, 1, Math.random()*6.28);
+      if(p2 && dansZonePilote(d.fx + off*0.55, d.fz + 1.3)) harmoniserPilot(p2, 0.85); }
   }
-  for(let k=0;k<6;k++){   // un petit marché sur la place
-    const ax = 13*T + (Math.random()-0.5)*6, az = 9*T + (Math.random()-0.5)*6;
-    if(!mur(ax, az)) poserProp(k%2 ? 'propCoffre' : 'propTonneau', ax, 0, az, 1, Math.random()*6.28);
+  // le marché de la place : ARRANGÉ le 22/08 (zone pilote) — un vrai cercle
+  // d'étals autour du puits, hiérarchie nette (étal → puits → entrée du donjon).
+  // Plus de remplissage au hasard : trois étals fixes, face au puits.
+  {
+    const etals = [
+      { x:13*T - 5.8, z:9*T, rot:Math.PI/2 },
+      { x:13*T + 5.8, z:9*T, rot:-Math.PI/2 },
+      { x:13*T, z:9*T - 5.8, rot:Math.PI },
+    ];
+    for(const e of etals){
+      if(mur(e.x, e.z)) continue;
+      const banc = poserProp('propBanc', e.x, 0, e.z, 1, e.rot);
+      if(banc) harmoniserPilot(banc, 0.85);
+      const coffre = poserProp('propCoffre', e.x + Math.cos(e.rot)*1.1, 0, e.z + Math.sin(e.rot)*1.1, 0.9, e.rot);
+      if(coffre) harmoniserPilot(coffre, 0.85);
+      const tonneau = poserProp('propTonneau', e.x - Math.cos(e.rot)*0.9, 0, e.z - Math.sin(e.rot)*0.9, 1, e.rot+0.5);
+      if(tonneau) harmoniserPilot(tonneau, 0.85);
+    }
   }
 
   /* --- l'escalier qui descend au donjon --- */
   porte = new THREE.Group();
   {
-    const pierre = mat('mur-pierre', 1.5, 0.6);
+    const pierre = matPBR('mur-pierre', 1.5, 0.6);
     for(let i=0;i<7;i++){
       const m = new THREE.Mesh(new THREE.BoxGeometry(T*0.9, 0.18, T/7), pierre);
       m.position.set(0, -0.09 - i*0.2, -T*0.42 + i*(T*0.92/7));
@@ -2843,7 +2959,117 @@ function batirDehors(){
   /* Dehors, on garde les matières telles quelles : ce sont les textures qui
      donnent la matière, pas les paliers de lumière. Seuls les habitants et les
      modèles importés passent au trait, pour rester lisibles. */
-  for(const v of villageois) cerner(v.obj, 0.012);
+  for(const v of villageois) cerner(v.obj, 0.009);   // contour plus fin : ils se fondent dans le décor stylized
+  batirZonePilote();
+}
+
+/* ═══ ZONE PILOTE stylized realism — le set dressing qui change tout ═══
+   Appelée à la fin du hameau. Ajoute sur la place et l'entrée du donjon :
+   un chemin de pierre PBR, des lanternes chaudes (deux éclairantes, quatre
+   émissives), et une margelle de pavés qui encadre la place. Le reste du
+   village n'est pas touché. */
+function batirZonePilote(){
+  if(!estDehors()) return;
+
+  /* --- le chemin de pierre de la place à l'escalier du donjon --- */
+  {
+    const solP = matPBR('paves', 1, 1, 0xffffff, 0.82);
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(T*2.2, T*7),
+      solP);
+    g.rotation.x = -Math.PI/2;
+    g.position.set(13*T, 0.045, (9 + 3.5)*T);
+    g.receiveShadow = true;
+    monde.add(g);
+  }
+
+  /* --- les lanternes : quatre autour de la place, deux à l'entrée du donjon --- */
+  {
+    const ex = entree.x*T + T/2, ez = entree.y*T + T/2;
+    monde.add(poserLanterne(13*T - 4.2, 9*T - 4.2));
+    monde.add(poserLanterne(13*T + 4.2, 9*T - 4.2));
+    monde.add(poserLanterne(13*T - 4.2, 9*T + 4.2));
+    monde.add(poserLanterne(13*T + 4.2, 9*T + 4.2));
+    // les deux portes de l'entrée éclairent vraiment (lueur chaude)
+    monde.add(poserLanterne(ex - T*1.4, ez + T*0.4, true));
+    monde.add(poserLanterne(ex + T*1.4, ez + T*0.4, true));
+  }
+
+  /* --- une margelle de pavés clairs qui encadre le rond de la place --- */
+  {
+    const p = new THREE.Mesh(new THREE.RingGeometry(5.6, 6.4, 36),
+      matPBR('mur-pierre', 3, 3, 0xd8cfbe, 0.85));
+    p.rotation.x = -Math.PI/2;
+    p.position.set(13*T, 0.032, 9*T);
+    p.receiveShadow = true;
+    monde.add(p);
+  }
+
+  /* --- le puits devient le POINT FOCAL : anneau de pierre + lanterne suspendue --- */
+  {
+    const px = 13*T, pz = 9*T;
+    const anneau = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.55, 20),
+      matPBR('mur-pierre', 2, 2, 0xc9bfae, 0.9));
+    anneau.rotation.x = -Math.PI/2; anneau.position.set(px, 0.04, pz);
+    anneau.receiveShadow = true;
+    monde.add(anneau);
+    // lanterne suspendue (émissive, sans lumière dynamique : zéro coût)
+    const sus = new THREE.Group();
+    const corde = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 5),
+      new THREE.MeshStandardMaterial({ color:0x4a3a26, roughness:0.9 }));
+    corde.position.y = 2.15;
+    const orbe = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0),
+      new THREE.MeshStandardMaterial({ color:0xffc77a, emissive:0xff8a3a, emissiveIntensity:2.2,
+        transparent:true, opacity:0.96, roughness:0.15 }));
+    orbe.position.y = 1.75;
+    sus.add(corde, orbe); sus.position.set(px, 0, pz);
+    monde.add(sus);
+  }
+
+  /* --- des parterres de fleurs aux façades (clusters, jamais au hasard) --- */
+  {
+    const parterres = [
+      { x:9.0*T, z:10.5*T },    // devant la maison A (ouest)
+      { x:17.5*T, z:9.0*T },    // devant la maison E (est)
+      { x:10.5*T, z:14.5*T },   // devant la maison C (ouest, sud)
+    ];
+    const fleurs = ['fleurJ','fleurR','fleurV'];
+    for(const p of parterres){
+      if(mur(p.x, p.z)) continue;
+      for(let i=0;i<5;i++){
+        const a = (i/5)*Math.PI*2 + p.x;
+        const fx = p.x + Math.cos(a)*0.7, fz = p.z + Math.sin(a)*0.7;
+        if(mur(fx, fz)) continue;
+        const f = poser(fleurs[i%3], fx, 0, fz, 0.9 + (i%3)*0.15, Math.random()*6.28);
+        if(f) monde.add(f);
+      }
+    }
+  }
+
+  /* --- deux bancs face au puits, pour s'arrêter et regarder la place --- */
+  {
+    const bancs = [
+      { x:13*T - 5.0, z:9*T - 4.6, rot:0.6 },
+      { x:13*T + 5.0, z:9*T + 4.6, rot:-2.4 },
+    ];
+    for(const b of bancs){
+      if(mur(b.x, b.z)) continue;
+      const bn = poserProp('propBanc', b.x, 0, b.z, 1, b.rot);
+      if(bn) harmoniserPilot(bn, 0.85);
+    }
+  }
+
+  /* --- un buisson et des fleurs de part et d'autre de l'entrée du donjon --- */
+  {
+    const ex = entree.x*T + T/2, ez = entree.y*T + T/2;
+    for(const dx of [-2.6, 2.6]){
+      const bx = ex + dx, bz = ez - T*1.2;
+      if(mur(bx, bz)) continue;
+      const b = poser('buisson', bx, 0, bz, 1.3, Math.random()*6.28);
+      if(b) monde.add(b);
+      const f = poser('fleurV', bx - 0.5, 0, bz + 0.4, 1, Math.random()*6.28);
+      if(f) monde.add(f);
+    }
+  }
 }
 
 /* ═══════════════ 5. LE JOUEUR ═══════════════ */
@@ -3314,9 +3540,15 @@ function nouvelEtage(){
     // CONFIG PROUVÉE (22/08) qui supprime le noir dehors : on coupe TOUTE la passe
     // d'ombre au niveau du MOTEUR (pas seulement la source) et on met une lumière
     // ambiante FORTE. C'est exactement l'état qui a donné un village clair et net.
-    renderer.shadowMap.enabled = false;
-    jour.castShadow = false;
-    ambiance.intensity = 3.0;
+    // DEHORS — OMBRES DOUCES + AMBIANCE ÉQUILIBRÉE (22/08, zone pilote stylized).
+    // L'ancienne config (ombres coupées + ambiance 3.0) aplatissait le village :
+    // tout était éclairé pareil, plus de profondeur, façades brûlées.
+    // Maintenant : ombres PCFSoft (fenêtre ±48 qui suit le joueur) + ambiance
+    // dosée + heure dorée adoucie (MOMENTS.dore). Si ça rame, autoFps descend
+    // d'un cran et coupe les ombres lui-même (voir baisserQualite).
+    renderer.shadowMap.enabled = true;
+    jour.castShadow = true;
+    ambiance.intensity = 1.4;
     // ENTRÉE DU DONJON : à REFAIRE avec Blender (Patrick 22/08). L'ancien modèle
     // (arches fantômes) et mon arche en formes de base (squelette d'araignée) sont
     // tous deux ratés. On ne pose rien tant qu'on n'a pas un vrai modèle Blender.
