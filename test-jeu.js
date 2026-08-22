@@ -107,6 +107,8 @@ v('trainee de lame (effet anime au coup)', /trainee/.test(script));
 v('auto-baisse de qualite si ca rame (autoFps)', /autoFps/.test(script) && /baisserQualite\(\)/.test(script));
 v('combos epee et poings (touche X)', /attaquesEpee/.test(script) && /attaquesPoings/.test(script) && /KeyX/.test(script));
 v('projectiles elementaires (feu/eau/vent)', /function lancerProjectile/.test(script) && /'feu'|feu:/.test(script));
+v('traduction du chat branchée (TranslationService)', /traduireLeChat/.test(script) && /chat-traduction\.js/.test(html));
+v('ligne de traduction japonaise présente', /id="traduction"/.test(html) && /🇯🇵/.test(script));
 v('menu pause present', /id="menu-pause"/.test(html));
 v('creation de skills (localStorage par joueur)', /kotoage-skills-/.test(script) && /function ouvrirPause/.test(script));
 v('incantation feu branchee', /includes\('feu'\)|includes\("feu"\)/.test(script));

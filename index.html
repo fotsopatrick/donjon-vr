@@ -97,6 +97,10 @@
   #entendu{font-size:26px;letter-spacing:.03em;color:#cfe6ff;min-height:34px;
     text-shadow:0 0 26px rgba(90,160,255,.55), 0 2px 16px #000}
   #entendu.provisoire{opacity:.45;font-style:italic}
+  #traduction{font-size:17px;letter-spacing:.03em;color:#ffd9b8;margin-top:4px;
+    min-height:0;opacity:0;transition:opacity .4s;
+    text-shadow:0 1px 12px #000, 0 0 30px rgba(255,180,110,.25)}
+  #traduction.on{opacity:1}
   #repond{margin-top:14px;font-size:18px;line-height:1.6;color:#e8dcc0;
     text-shadow:0 2px 18px #000, 0 0 44px rgba(0,0,0,.9)}
 
@@ -180,7 +184,7 @@
   <div id="hint-examiner"></div>
 </div>
 
-<div id="esprit"><div id="entendu"></div><div id="repond"></div></div>
+<div id="esprit"><div id="entendu"></div><div id="traduction"></div><div id="repond"></div></div>
 <div id="ecoute"><span class="pastille"></span><span>le donjon écoute</span></div>
 <div id="saisie"><input id="saisie-txt" placeholder="parle à l'esprit du donjon…" autocomplete="off"></div>
 <div id="pouvoirs"></div>
@@ -3490,6 +3494,7 @@ document.getElementById('rejouer').onclick = ()=>{ entrerPleinEcran(); commencer
 
 const elEsprit  = document.getElementById('esprit');
 const elEntendu = document.getElementById('entendu');
+const elTraduction = document.getElementById('traduction');
 const elRepond  = document.getElementById('repond');
 const elEcoute  = document.getElementById('ecoute');
 const elSaisie  = document.getElementById('saisie');
@@ -3535,6 +3540,8 @@ if(window.speechSynthesis){
 }
 function esprit(m, muet=false){
   elRepond.textContent = m;
+  elTraduction.textContent = '';          // chaque réponse efface la traduction précédente
+  elTraduction.classList.remove('on');
   elEsprit.classList.add('on');
   espritT = 5.5;
   if(!muet && window.speechSynthesis){
@@ -3747,8 +3754,24 @@ function parlerJoueur(texte){
   if(typeof voixDuMonde==='function') voixDuMonde(texte, false);   // panneau devant le joueur : il "parle"
   const cle = DLG_PAROLE[normaliser(texte)];                        // si une réplique connue existe, on la joue
   if(cle) direVoix(cle);
+  traduireLeChat(texte.trim());                                     // 🇯🇵 en arrière-plan, jamais bloquant
 }
 const DLG_PAROLE = {};   // rempli plus bas avec les dialogues pré-générés
+
+/* ── la traduction du chat (feature 22/08) ──
+   Le français reste affiché tel quel ; la traduction japonaise s'ajoute en
+   dessous quand elle est prête. Panne/timeout/serveur absent → on garde le
+   français, le chat ne casse jamais. */
+function traduireLeChat(texte){
+  elTraduction.textContent = '';
+  elTraduction.classList.remove('on');
+  if(!window.Traduction || !texte) return;
+  window.Traduction.translate(texte, 'fr', 'ja').then(ja=>{
+    if(!ja) return;                       // pas de traduction : français conservé
+    elTraduction.textContent = '🇯🇵 ' + ja;
+    elTraduction.classList.add('on');
+  }).catch(()=>{ /* jamais de plantage du chat */ });
+}
 
 /* ── LA COLONNE DE FEU : l'attaque suprême ──
    Un cercle magique rouge et or s'allume au sol autour de la cible verrouillée,
@@ -6501,5 +6524,6 @@ window.KOTOAGE = {
 <canvas id="radar" width="164" height="164"></canvas>
 <script type="module" src="world-builder.js"></script>
 <script type="module" src="world-builder-ui.js"></script>
+<script type="module" src="chat-traduction.js"></script>
 </body>
 </html>
