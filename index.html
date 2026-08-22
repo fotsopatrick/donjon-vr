@@ -1665,7 +1665,8 @@ function batir(){
   const th = etageCourant().theme || { sol:0x7d8798, plaf:0x3a4356, sky:0x6a5a44, gnd:0x201a12, int:0.95, fog:0x161208, fogD:0.020 };
   HT = th.haut || 20.0;                                                                  // hauteur du plafond PROPRE à l'étage
   hemi.color.setHex(th.sky); hemi.groundColor.setHex(th.gnd); hemi.intensity = th.int;   // ambiance PROPRE à l'étage
-  jour.castShadow = true;      // DONJON : petits espaces -> les ombres portées marchent
+  renderer.shadowMap.enabled = true;   // DONJON : on rallume les ombres (coupées dehors)
+  jour.castShadow = true;      // petits espaces -> les ombres portées marchent
   ambiance.intensity = 0.5;    // et on garde le relief (pas besoin de tout aplatir)
   scene.fog = new THREE.FogExp2(th.fog, th.fogD);                                          // brouillard coloré = chaque étage a son atmosphère
   // on vide l'étage précédent
@@ -3228,8 +3229,12 @@ function nouvelEtage(){
     // noire ou pixelisée, et sur le style manga une zone ombrée vire au NOIR DUR.
     // Sans ombres + lumière forte, tout est visible ET ça va plus vite (une passe
     // de rendu en moins). Les ombres restent dans le donjon (petits espaces).
+    // CONFIG PROUVÉE (22/08) qui supprime le noir dehors : on coupe TOUTE la passe
+    // d'ombre au niveau du MOTEUR (pas seulement la source) et on met une lumière
+    // ambiante FORTE. C'est exactement l'état qui a donné un village clair et net.
+    renderer.shadowMap.enabled = false;
     jour.castShadow = false;
-    ambiance.intensity = 0.55;
+    ambiance.intensity = 3.0;
     if(MODELES.entreeColisee && entree){          // le Colisée : bâtiment d'entrée du donjon, autour de l'escalier
       const col = MODELES.entreeColisee.clone(true);
       col.position.set(entree.x*T+T/2, 0, entree.y*T+T/2);
