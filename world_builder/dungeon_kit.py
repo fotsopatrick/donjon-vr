@@ -197,11 +197,12 @@ class DungeonChamber:
         self.mats[nom] = m
         return m
 
-    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True, blocs=False):
-        """Pierre texturée : variation de couleur (noise), microvariation de
-        rugosité, bump procédural, et optionnellement un motif de BLOCS de
-        pierre (Voronoi -> joints sombres). Rien à voir avec un gris de
-        primitive."""
+    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True,
+                    blocs=False, usure=False, echelle_blocks=5.0):
+        """Pierre texturée : dérive de couleur à grande échelle, MICROvariation,
+        bump, motif de BLOCS (Voronoi -> joints sombres + teinte PAR BLOC),
+        et optionnellement usure (dégradé sphérique : plus sombre vers le
+        centre du sol = zone piétinée)."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
@@ -211,54 +212,145 @@ class DungeonChamber:
         out = nodes.new("ShaderNodeOutputMaterial")
         bsdf = nodes.new("ShaderNodeBsdfPrincipled")
         coord = nodes.new("ShaderNodeTexCoord")
-        noise1 = nodes.new("ShaderNodeTexNoise")
-        noise1.inputs["Scale"].default_value = 42.0
-        ramp1 = nodes.new("ShaderNodeValToRGB")
-        e0 = ramp1.color_ramp.elements[0]
-        e1 = ramp1.color_ramp.elements[1]
-        e0.color = (base[0] * 0.68, base[1] * 0.68, base[2] * 0.68, 1)
-        e1.color = (min(1, base[0] * 1.22), min(1, base[1] * 1.22),
-                    min(1, base[2] * 1.22), 1)
-        noise2 = nodes.new("ShaderNodeTexNoise")
-        noise2.inputs["Scale"].default_value = 12.0
-        links.new(coord.outputs["Object"], noise1.inputs["Vector"])
-        links.new(noise1.outputs["Fac"], ramp1.inputs["Fac"])
-        couleur_finale = ramp1.outputs["Color"]
+
+        # --- dérive de couleur à grande échelle (variation entre zones) ---
+        noiseA = nodes.new("ShaderNodeTexNoise")
+        noiseA.inputs["Scale"].default_value = 7.0
+        rampA = nodes.new("ShaderNodeValToRGB")
+        e0 = rampA.color_ramp.elements[0]
+        e1 = rampA.color_ramp.elements[1]
+        e0.color = (base[0] * 0.82, base[1] * 0.82, base[2] * 0.82, 1)
+        e1.color = (min(1, base[0] * 1.18), min(1, base[1] * 1.18),
+                    min(1, base[2] * 1.18), 1)
+        links.new(coord.outputs["Object"], noiseA.inputs["Vector"])
+        links.new(noiseA.outputs["Fac"], rampA.inputs["Fac"])
+        couleur = rampA.outputs["Color"]
 
         if blocs:
-            # motif de blocs : Voronoi -> joints sombres entre les blocs
+            # motif de blocs : teinte PAR BLOC (couleur de cellule) + joints
             vor = nodes.new("ShaderNodeTexVoronoi")
             vor.feature = "F1"
-            vor.inputs["Scale"].default_value = 5.0
+            vor.inputs["Scale"].default_value = echelle_blocks
+            links.new(coord.outputs["Object"], vor.inputs["Vector"])
+            mixC = nodes.new("ShaderNodeMixRGB")
+            mixC.blend_type = "MIX"
+            mixC.inputs["Fac"].default_value = 0.22
+            links.new(couleur, mixC.inputs["Color1"])
+            links.new(vor.outputs["Color"], mixC.inputs["Color2"])
+            couleur = mixC.outputs["Color"]
+            # joints (mortier sombre) aux limites des blocs
             ramp_b = nodes.new("ShaderNodeValToRGB")
             be0 = ramp_b.color_ramp.elements[0]
             be1 = ramp_b.color_ramp.elements[1]
-            be0.color = (base[0] * 1.15, base[1] * 1.15, base[2] * 1.15, 1)
-            be1.color = (base[0] * 0.28, base[1] * 0.28, base[2] * 0.30, 1)
-            mix = nodes.new("ShaderNodeMixRGB")
-            mix.blend_type = "MIX"
-            mix.inputs["Fac"].default_value = 0.7
-            links.new(coord.outputs["Object"], vor.inputs["Vector"])
+            be0.color = (base[0] * 1.18, base[1] * 1.18, base[2] * 1.18, 1)
+            be1.color = (base[0] * 0.22, base[1] * 0.22, base[2] * 0.24, 1)
             links.new(vor.outputs["Distance"], ramp_b.inputs["Fac"])
-            links.new(couleur_finale, mix.inputs["Color1"])
-            links.new(ramp_b.outputs["Color"], mix.inputs["Color2"])
-            couleur_finale = mix.outputs["Color"]
-        links.new(couleur_finale, bsdf.inputs["Base Color"])
+            mixJ = nodes.new("ShaderNodeMixRGB")
+            mixJ.inputs["Fac"].default_value = 0.85
+            links.new(couleur, mixJ.inputs["Color1"])
+            links.new(ramp_b.outputs["Color"], mixJ.inputs["Color2"])
+            couleur = mixJ.outputs["Color"]
 
-        # rugosité : microvariation
+        if usure:
+            # dégradé sphérique : sombre vers le centre (sol piétiné)
+            grad = nodes.new("ShaderNodeTexGradient")
+            grad.gradient_type = "SPHERICAL"
+            rampU = nodes.new("ShaderNodeValToRGB")
+            u0 = rampU.color_ramp.elements[0]
+            u1 = rampU.color_ramp.elements[1]
+            u0.color = (0.55, 0.55, 0.55, 1)
+            u1.color = (1.0, 1.0, 1.0, 1)
+            links.new(coord.outputs["Object"], grad.inputs["Vector"])
+            links.new(grad.outputs["Fac"], rampU.inputs["Fac"])
+            mixU = nodes.new("ShaderNodeMixRGB")
+            mixU.inputs["Fac"].default_value = 0.75
+            links.new(couleur, mixU.inputs["Color1"])
+            links.new(rampU.outputs["Color"], mixU.inputs["Color2"])
+            couleur = mixU.outputs["Color"]
+
+        links.new(couleur, bsdf.inputs["Base Color"])
+
+        # --- rugosité : base + microvariation ---
         bsdf.inputs["Roughness"].default_value = rough
-        links.new(coord.outputs["Object"], noise2.inputs["Vector"])
+        noiseR = nodes.new("ShaderNodeTexNoise")
+        noiseR.inputs["Scale"].default_value = 15.0
+        links.new(coord.outputs["Object"], noiseR.inputs["Vector"])
         roug = nodes.new("ShaderNodeMapRange")
         roug.inputs["From Min"].default_value = 0.0
         roug.inputs["From Max"].default_value = 1.0
         roug.inputs["To Min"].default_value = rough - bruit
         roug.inputs["To Max"].default_value = rough + bruit
-        links.new(noise2.outputs["Fac"], roug.inputs["Value"])
+        links.new(noiseR.outputs["Fac"], roug.inputs["Value"])
         links.new(roug.outputs["Result"], bsdf.inputs["Roughness"])
+
         if bump:
             bump = nodes.new("ShaderNodeBump")
-            bump.inputs["Strength"].default_value = 0.35
-            links.new(noise1.outputs["Fac"], bump.inputs["Height"])
+            bump.inputs["Strength"].default_value = 0.4
+            links.new(noiseA.outputs["Fac"], bump.inputs["Height"])
+            links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
+        m.diffuse_color = (base[0], base[1], base[2], 1)
+        self.mats[nom] = m
+        return m
+
+    def _mat_metal(self, nom, base, rough=0.35, patine=True):
+        """Métal avec patine : léger voile verdâtre irrégulier (vieilli)."""
+        m = bpy.data.materials.new(nom)
+        m.use_nodes = True
+        nodes = m.node_tree.nodes
+        links = m.node_tree.links
+        for n in list(nodes):
+            nodes.remove(n)
+        out = nodes.new("ShaderNodeOutputMaterial")
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        coord = nodes.new("ShaderNodeTexCoord")
+        bsdf.inputs["Metallic"].default_value = 0.85
+        bsdf.inputs["Roughness"].default_value = rough
+        if patine:
+            col_base = nodes.new("ShaderNodeRGB")
+            col_base.outputs[0].default_value = (base[0], base[1], base[2], 1)
+            col_pat = nodes.new("ShaderNodeRGB")
+            col_pat.outputs[0].default_value = (
+                base[0] * 0.45, base[1] * 0.58, base[2] * 0.52, 1)
+            noise = nodes.new("ShaderNodeTexNoise")
+            noise.inputs["Scale"].default_value = 10.0
+            mix = nodes.new("ShaderNodeMixRGB")
+            mix.inputs["Fac"].default_value = 0.6
+            links.new(coord.outputs["Object"], noise.inputs["Vector"])
+            links.new(noise.outputs["Fac"], mix.inputs["Fac"])
+            links.new(col_base.outputs[0], mix.inputs["Color1"])
+            links.new(col_pat.outputs[0], mix.inputs["Color2"])
+            links.new(mix.outputs["Color"], bsdf.inputs["Base Color"])
+        else:
+            bsdf.inputs["Base Color"].default_value = (base[0], base[1], base[2], 1)
+        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
+        m.diffuse_color = (base[0], base[1], base[2], 1)
+        self.mats[nom] = m
+        return m
+
+    def _mat_eau(self, nom, base, emissive, force, ripple=0.12):
+        """Eau/énergie centrale : émission contrôlée + vaguelettes (bump)."""
+        m = bpy.data.materials.new(nom)
+        m.use_nodes = True
+        nodes = m.node_tree.nodes
+        links = m.node_tree.links
+        for n in list(nodes):
+            nodes.remove(n)
+        out = nodes.new("ShaderNodeOutputMaterial")
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        coord = nodes.new("ShaderNodeTexCoord")
+        bsdf.inputs["Base Color"].default_value = (base[0], base[1], base[2], 1)
+        bsdf.inputs["Roughness"].default_value = 0.15
+        bsdf.inputs["Metallic"].default_value = 0.1
+        bsdf.inputs["Emission Color"].default_value = (emissive[0], emissive[1], emissive[2], 1)
+        bsdf.inputs["Emission Strength"].default_value = force
+        if ripple > 0:
+            noise = nodes.new("ShaderNodeTexNoise")
+            noise.inputs["Scale"].default_value = 28.0
+            bump = nodes.new("ShaderNodeBump")
+            bump.inputs["Strength"].default_value = ripple
+            links.new(coord.outputs["Object"], noise.inputs["Vector"])
+            links.new(noise.outputs["Fac"], bump.inputs["Height"])
             links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
         links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
         m.diffuse_color = (base[0], base[1], base[2], 1)
@@ -268,33 +360,35 @@ class DungeonChamber:
     def _construire_materiaux(self):
         p = self.param
         atmos = " ".join(p["atmosphere"])
-        sombre = 0.10 if "dark" in atmos else 0.0
+        sombre = 0.08 if "dark" in atmos else 0.0
         f = 1 - sombre
 
-        # dark_stone : le mur — gris-bleu foncé, en BLOCS de pierre
+        # dark_stone : le mur — blocs de pierre, teinte par bloc, usé
         self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f),
-                         rough=0.95, bruit=0.09, blocs=True)
-        # stone_floor : plus clair, distinct des murs, usé (blocs larges)
+                         rough=0.95, bruit=0.08, blocs=True, echelle_blocks=5.0)
+        # stone_floor : plus clair, usé vers le centre, blocs larges
         self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f),
-                         rough=0.88, bruit=0.06, blocs=True)
+                         rough=0.88, bruit=0.06, blocs=True, usure=True,
+                         echelle_blocks=8.0)
         # stone_trim : parement clair pour bordures/marches/éléments
-        self._mat_pierre("stone_trim", (0.62 * f, 0.60 * f, 0.57 * f), rough=0.85, bruit=0.05, bump=False)
+        self._mat_pierre("stone_trim", (0.60 * f, 0.58 * f, 0.55 * f),
+                         rough=0.85, bruit=0.04, blocs=True, echelle_blocks=6.0)
         # pierre_gradins : ton intermédiaire
-        self._mat_pierre("pierre_gradins", (0.38 * f, 0.37 * f, 0.36 * f), rough=0.9, bruit=0.06)
+        self._mat_pierre("pierre_gradins", (0.38 * f, 0.37 * f, 0.36 * f),
+                         rough=0.9, bruit=0.06, blocs=True, echelle_blocks=6.0)
 
         couleur = p["arena"]["color"]
         if "cyan" in couleur or "bleu" in couleur:
-            eau = (0.10, 0.46, 0.58, 1)
-            eau_em = (0.15, 0.60, 0.90, 1)
+            eau = (0.08, 0.40, 0.52, 1)
+            eau_em = (0.20, 0.65, 0.95, 1)
         else:
             eau = (0.90, 0.34, 0.08, 1)
             eau_em = (1.0, 0.52, 0.20, 1)
-        self._mat_plat("central_water", eau, rough=0.25, metal=0.15,
-                       emissive=eau_em, force=6.0)
-        self._mat_plat("feu_orange", (1.0, 0.55, 0.15, 1), rough=0.6,
-                       emissive=(1.0, 0.55, 0.20, 1), force=4.0)
-        self._mat_plat("metal", (0.12, 0.12, 0.15, 1), rough=0.4, metal=0.85)
-        self._mat_plat("metal_bleu", (0.12, 0.16, 0.22, 1), rough=0.35, metal=0.9)
+        self._mat_eau("central_water", eau, eau_em, force=3.2, ripple=0.10)
+        self._mat_plat("feu_orange", (1.0, 0.45, 0.12, 1), rough=0.6,
+                       emissive=(1.0, 0.45, 0.15, 1), force=4.5)
+        self._mat_metal("metal", (0.15, 0.16, 0.19, 1), rough=0.35)
+        self._mat_metal("metal_bleu", (0.12, 0.16, 0.24, 1), rough=0.30)
 
     # ============================ HELPERS ================================
     def _ajouter(self, primitive, kwargs, mat, nom):
@@ -389,6 +483,12 @@ class DungeonChamber:
         eau = self._anneau(0, r * 0.94, 0.36, 0.10,
                            self.mats["central_water"], "eau_centrale")
         self._echelle_x(eau, k)
+        # anneaux émissifs internes (OPAQUES, pas de transparence : lourde en
+        # EEVEE sur CPU) : profondeur visuelle de l'énergie
+        for gi, fr in enumerate((0.55, 0.80)):
+            anneau_i = self._anneau(r * fr - 0.06, r * fr + 0.06, 0.425, 0.02,
+                                    self.mats["central_water"], "anneau_energie_%d" % gi)
+            self._echelle_x(anneau_i, k)
         # bordure en pierre claire (parement)
         bord = self._anneau(r, r * 1.08, 0.50, 0.14,
                             self.mats["stone_trim"], "bordure_arena")
@@ -429,6 +529,10 @@ class DungeonChamber:
                                     s["depth"] + 0.03, self.mats["stone_trim"],
                                     "parement_%d" % i)
             self._echelle_x(parement, k)
+            # NEZ DE MARCHE : finition claire sur le bord extérieur du giron
+            nez = self._anneau(r2 - 0.05, r2 + 0.05, z + 0.02, 0.07,
+                               self.mats["stone_trim"], "nez_%d" % i)
+            self._echelle_x(nez, k)
 
     def radial_stairs(self):
         st = self.param["stairs"]
@@ -464,35 +568,41 @@ class DungeonChamber:
             r_shaft = c["radius"] * fac
             h_shaft = c["height"] * (1.0 + self.rng.uniform(-0.02, 0.02))
             # base
-            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.7,
-                                       "depth": 0.30, "location": (x, y, 0.15)},
+            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.8,
+                                       "depth": 0.26, "location": (x, y, 0.13)},
                           self.mats["stone_trim"], "col_base_%d" % i)
-            # fût
+            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.5,
+                                       "depth": 0.16, "location": (x, y, 0.34)},
+                          self.mats["stone_trim"], "col_base2_%d" % i)
+            # fût (légèrement fuselé vers le haut = entasis)
+            f = self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
+                                           "depth": h_shaft,
+                                           "location": (x, y, 0.42 + h_shaft / 2)},
+                              self.mats["dark_stone"], "colonne_%d" % i)
+            bm = bmesh.new()
+            bm.from_mesh(f.data)
+            for v in bm.verts:
+                if v.co.z > h_shaft / 2 - 0.02:
+                    v.co.x *= 0.92
+                    v.co.y *= 0.92
+            bm.to_mesh(f.data)
+            bm.free()
             if c["style"] == "fluted":
-                f = self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
-                                               "depth": h_shaft,
-                                               "location": (x, y, 0.3 + h_shaft / 2)},
-                                  self.mats["dark_stone"], "colonne_%d" % i)
-                # cannelures : 8 rainures sombres
+                # cannelures : 8 rainures sombres verticales
                 for g in range(8):
                     ga = a + g / 8 * math.tau
                     gx, gy = math.cos(ga) * r_col * 0.999, math.sin(ga) * r_col * 0.999
-                    self._boite((gx, gy, 0.3 + h_shaft / 2),
-                                (0.10, 0.06, h_shaft * 0.9), ga,
+                    self._boite((gx, gy, 0.42 + h_shaft / 2),
+                                (0.10, 0.06, h_shaft * 0.88), ga,
                                 self.mats["metal_bleu"], "cannelure_%d_%d" % (i, g))
-            else:
-                self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
-                                           "depth": h_shaft,
-                                           "location": (x, y, 0.3 + h_shaft / 2)},
-                              self.mats["dark_stone"], "colonne_%d" % i)
             # chapiteau : tore + assiette
-            self._ajouter("torus", {"major_radius": r_shaft * 1.5,
+            self._ajouter("torus", {"major_radius": r_shaft * 1.55,
                                     "minor_radius": r_shaft * 0.5,
-                                    "location": (x, y, 0.3 + h_shaft + 0.16)},
+                                    "location": (x, y, 0.42 + h_shaft + 0.14)},
                           self.mats["stone_trim"], "col_tore_%d" % i)
-            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.6,
-                                       "depth": 0.20,
-                                       "location": (x, y, 0.3 + h_shaft + 0.32)},
+            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.7,
+                                       "depth": 0.18,
+                                       "location": (x, y, 0.42 + h_shaft + 0.32)},
                           self.mats["stone_trim"], "col_cap_%d" % i)
 
     def stone_arches(self):
@@ -533,6 +643,17 @@ class DungeonChamber:
             self._boite((mx, my, h_arch + r_arc * 0.5),
                         (0.20, 0.18, 0.30), aM, self.mats["stone_trim"],
                         "clef_%d" % i)
+            # VOUSSOIRS : blocs segmentés le long de l'arc (alternance tonale)
+            nv = 7
+            tx, ty = -math.sin(aM), math.cos(aM)
+            for vk in range(nv):
+                th = math.pi * (vk + 0.5) / nv
+                vx = mx + r_arc * math.cos(th) * tx
+                vy = my + r_arc * math.cos(th) * ty
+                vz = h_arch + r_arc * math.sin(th)
+                mat_v = self.mats["stone_trim"] if vk % 2 else self.mats["pierre_gradins"]
+                self._boite((vx, vy, vz), (0.34, 0.17, 0.17), aM, mat_v,
+                            "voussoir_%d_%d" % (i, vk))
 
     def curved_walls(self):
         w = self.param["walls"]
@@ -754,6 +875,15 @@ class DungeonChamber:
             b.scale = (self.rng.uniform(0.7, 1.4), self.rng.uniform(0.7, 1.4),
                        self.rng.uniform(0.5, 0.9))
             bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+            self._echelle_x(b, k)
+        # fissures légères du sol (boîtes fines et sombres, orientées au hasard)
+        for i in range(6):
+            ang = self.rng.uniform(0, math.tau)
+            r = self.rng.uniform(1.0, p["rayon"] * 0.85)
+            x, y = math.cos(ang) * r, math.sin(ang) * r
+            lon = self.rng.uniform(1.0, 2.6)
+            b = self._boite((x, y, 0.521), (lon, 0.05, 0.012), ang,
+                            self.mats["dark_stone"], "fissure_%d" % i)
             self._echelle_x(b, k)
 
     def emissive_center(self):
