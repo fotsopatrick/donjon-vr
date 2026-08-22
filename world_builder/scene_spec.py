@@ -170,13 +170,24 @@ def composer_scene(profil: dict) -> dict:
     ]).lower()
     palette_texte = " ".join(str(v) for v in (profil.get("color_palette") or {}).values()).lower()
     balayage = [cibles, [lum_texte], [palette_texte]]
-    for c in [x for sous in balayage for x in sous]:
-        s = " ".join(str(x).lower() for x in (c.values() if isinstance(c, dict) else [c]))
-        if any(m in s for m in ("lumineux", "lueur", "luisant", "éclat", "brillant", "glowing",
-                                "luminous", "light", "bleu", "cyan", "clair")):
-            centre_type = "luminous_area"
-            centre_couleur = "cyan_blue" if ("bleu" in s or "cyan" in s) else "warm"
-            break
+    tout_texte = " ".join(
+        " ".join(str(x).lower() for x in (c.values() if isinstance(c, dict) else [c]))
+        for sous in balayage for c in sous)
+    # 1) PREUVE BLEUE d'abord : si un élément bleu/cyan est observé (émissif,
+    #    lumière dominante, palette, sol...), le centre est cyan. Sans quoi un
+    #    « éclairé » banal (contient "clair") figerait le centre en warm avant
+    #    qu'on voie le bleu (leçon d'audit salledonjon).
+    if "cyan" in tout_texte or "bleu" in tout_texte:
+        centre_type, centre_couleur = "luminous_area", "cyan_blue"
+    else:
+        # 2) centre lumineux générique (sans "clair"/"éclairé", trop banal)
+        for c in [x for sous in balayage for x in sous]:
+            s = " ".join(str(x).lower() for x in (c.values() if isinstance(c, dict) else [c]))
+            if any(m in s for m in ("lumineux", "lueur", "luisant", "brillant",
+                                    "glowing", "luminous")):
+                centre_type = "luminous_area"
+                centre_couleur = "warm"
+                break
 
     colonnes = bool(arch.get("columns")) or "colonne" in obs
     arches = bool(arch.get("arches")) or "arches" in obs or "arc" in obs
