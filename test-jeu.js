@@ -80,6 +80,10 @@ v('plafond très haut (HT>=8)', (function(){
   return !!m && parseFloat(m[1]) >= 8;
 })());
 v('couloirs elargis (2 cases)', /grid\[y\+1\]\[x\]=FLOOR/.test(script) && /grid\[y\]\[x\+1\]=FLOOR/.test(script));
+// GARDE-FOU SALLE D'ENTRAÎNEMENT (Patrick 22/08 : « dégueulasse, trop sombre ») :
+// le plateau doit rester ÉCLAIRÉ — projecteur du ring + sol néon vif.
+v('salle d\'entrainement eclairee (projecteur du ring)', /projRing\s*=\s*new THREE\.PointLight/.test(script));
+v('sol de l\'arene qui brille (emissiveIntensity fort)', /emissiveMap:gt, emissiveIntensity:\s*(?:[2-9]|\d\d)/.test(script));
 // GARDE-FOU MUR AU SOL (Patrick 22/08 : « murs invisibles, déplacés vers le haut »).
 // La boîte du mur DOIT se refaire quand la hauteur HT change, sinon le mur monte
 // sans grandir et son bas décolle du sol → mur invisible en bas.

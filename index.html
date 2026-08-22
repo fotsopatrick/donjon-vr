@@ -3098,17 +3098,29 @@ function batirArene(){
   // -- nuit cyberpunk : ciel noir bleuté, brouillard néon --
   scene.background = new THREE.Color(0x060814);
   scene.fog = new THREE.FogExp2(0x0a0a1e, 0.019);
-  hemi.color.setHex(0x2a1a4a); hemi.groundColor.setHex(0x02030a); hemi.intensity = 0.55;
-  jour.intensity = 0.9; jour.color.setHex(0x6f7cff); renderer.toneMappingExposure = 1.15;
-  // -- le sol : plateau sombre + grille néon lumineuse (TRON) --
+  // Salle d'entraînement RELEVÉE (Patrick 22/08 : « dégueulasse, trouve une vraie
+  // salle »). On garde le cyberpunk néon validé, mais on l'ÉCLAIRE : le plateau
+  // était noir, on n'y voyait rien.
+  hemi.color.setHex(0x4a3a7a); hemi.groundColor.setHex(0x0a0c1a); hemi.intensity = 1.05;
+  jour.intensity = 1.25; jour.color.setHex(0x8f9cff); renderer.toneMappingExposure = 1.2;
+  // -- le sol : plateau qui BRILLE, grille néon lumineuse (TRON) --
   const gt = texGrilleNeon(); gt.repeat.set(W, H);
   const sol = new THREE.Mesh(new THREE.PlaneGeometry(W*T, H*T),
-    new THREE.MeshStandardMaterial({ color:0x090c18, roughness:0.35, metalness:0.7,
-      emissive:0x0a1830, emissiveMap:gt, emissiveIntensity:1.4, map:gt }));
+    new THREE.MeshStandardMaterial({ color:0x0e1428, roughness:0.28, metalness:0.75,
+      emissive:0x1a4a8a, emissiveMap:gt, emissiveIntensity:2.4, map:gt }));
   sol.rotation.x = -Math.PI/2; sol.position.set(cx, 0, cz); sol.receiveShadow = true; monde.add(sol);
+  // -- LA LUMIÈRE DU RING : un projecteur au-dessus du centre, comme un vrai ring --
+  const projRing = new THREE.PointLight(0x9fd8ff, 40, 46, 1.6);
+  projRing.position.set(cx, 13, cz); monde.add(projRing);
+  // -- deux cercles au sol qui marquent la zone d'entraînement (dojo futuriste) --
+  [ [3.5, 0x1cf0ff, 0.9], [7.2, 0xff2bd6, 0.55] ].forEach(([r, col, op])=>{
+    const c = new THREE.Mesh(new THREE.RingGeometry(r, r+0.28, 64),
+      new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:op, side:THREE.DoubleSide, depthWrite:false }));
+    c.rotation.x = -Math.PI/2; c.position.set(cx, 0.04, cz); monde.add(c);
+  });
   // -- anneau de combat néon au centre --
   const anneau = new THREE.Mesh(new THREE.RingGeometry(11.5, 12.3, 64),
-    new THREE.MeshBasicMaterial({ color:0x1cf0ff, transparent:true, opacity:0.9, side:THREE.DoubleSide, depthWrite:false }));
+    new THREE.MeshBasicMaterial({ color:0x1cf0ff, transparent:true, opacity:0.95, side:THREE.DoubleSide, depthWrite:false }));
   anneau.rotation.x = -Math.PI/2; anneau.position.set(cx, 0.05, cz); monde.add(anneau);
   const anneau2 = new THREE.Mesh(new THREE.RingGeometry(11.5, 12.3, 64),
     new THREE.MeshBasicMaterial({ color:0xff2bd6, transparent:true, opacity:0.5, side:THREE.DoubleSide, depthWrite:false }));
