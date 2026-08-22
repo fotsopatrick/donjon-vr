@@ -164,6 +164,110 @@
 
   #perf{position:fixed;right:8px;top:8px;z-index:30;font-size:11px;
     color:#4a4438;letter-spacing:.1em;font-family:monospace}
+
+  /* ═══════════════════════════════════════════════════════════════
+     UI SYSTEM — stylized realism / anime-inspired fantasy (22/08)
+     Panneaux sombres semi-transparents, accents or + bleu froid,
+     boutons à états, animations légères. S'applique au menu principal,
+     à la pause et au HUD principal. Rien de « dashboard web ».
+     ═══════════════════════════════════════════════════════════════ */
+  :root{
+    --or:#e8b661; --or2:#c89a4a;
+    --bleu:#8fb8e8; --bleuf:#4a7ab8;
+    --cuir:#1c1610; --pierre:#15130f; --metal:#20242c;
+  }
+  .ecran{
+    background:
+      radial-gradient(ellipse at 50% 34%, rgba(120,90,50,.14), transparent 58%),
+      radial-gradient(ellipse at 50% 46%, #17120d 0%, #0b0907 68%, #050406 100%);
+  }
+  .ecran::before{content:'';position:fixed;inset:16px;pointer-events:none;
+    border:1px solid rgba(232,182,97,.13);border-radius:4px}
+  .ecran h1{text-shadow:0 0 70px rgba(232,182,97,.4), 0 3px 0 rgba(0,0,0,.55)}
+  .ecran h1 span{color:#8a7c62}
+
+  /* boutons : pierre/bronze, états nets, lueur de passage */
+  .bouton{position:relative;border:1px solid #6a5730;color:var(--or);
+    background:linear-gradient(180deg,#241d13,#12100b);
+    box-shadow:inset 0 1px 0 rgba(255,220,150,.12), 0 6px 18px rgba(0,0,0,.45);
+    overflow:hidden}
+  .bouton::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(255,210,130,.16),transparent);
+    transform:translateX(-130%);transition:transform .5s}
+  .bouton:hover{border-color:#c8a04a;color:#ffe4ae;
+    background:linear-gradient(180deg,#2d2517,#161309);
+    box-shadow:inset 0 1px 0 rgba(255,220,150,.2), 0 0 34px rgba(232,182,97,.28)}
+  .bouton:hover::after{transform:translateX(130%)}
+  .bouton:active{box-shadow:inset 0 3px 10px rgba(0,0,0,.55)}
+  .bouton:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.5)}
+  .bouton.on,.pause-tab.on,.entree-tab.on,.classe-tab.on{
+    border-color:#e8b661;color:#ffe4ae;
+    box-shadow:0 0 0 1px rgba(232,182,97,.38), 0 0 26px rgba(232,182,97,.28),
+      inset 0 0 14px rgba(232,182,97,.07)}
+  .pause-tab,.entree-tab,.classe-tab{opacity:.5}
+  .pause-tab:hover,.entree-tab:hover,.classe-tab:hover{opacity:.85}
+
+  /* panneau générique : cuir/pierre sombre, double liseré doré */
+  .pause-panneau{position:relative;
+    background:linear-gradient(180deg,rgba(26,21,15,.94),rgba(12,10,8,.96));
+    border:1px solid rgba(180,140,80,.38);border-radius:4px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 22px 60px rgba(0,0,0,.6),
+      inset 0 0 70px rgba(0,0,0,.45);
+    padding:26px 30px;min-width:min(560px,88vw)}
+  .pause-panneau::before{content:'';position:absolute;inset:5px;pointer-events:none;
+    border:1px solid rgba(232,182,97,.12);border-radius:3px}
+  #titre details{background:rgba(14,12,9,.72);border:1px solid rgba(150,112,60,.35);
+    border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 0 40px rgba(0,0,0,.35)}
+  #titre details summary{color:var(--bleu)}
+
+  /* champs de saisie (skills) : même famille, or au focus */
+  #sk-nom,#sk-inc,#sk-effet,#sk-elem{border:1px solid #4a3f2a;border-radius:4px;
+    background:#120e0a;color:#e8dcc0;transition:border-color .25s, box-shadow .25s}
+  #sk-nom:focus,#sk-inc:focus,#sk-effet:focus,#sk-elem:focus{
+    border-color:#c8a04a;box-shadow:0 0 22px rgba(232,182,97,.18);outline:none}
+  #saisie input{border:1px solid #4a5f7a;background:rgba(10,12,16,.94);
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.5)}
+  #saisie input:focus{border-color:#7a9ec8;box-shadow:0 0 26px rgba(90,140,200,.25)}
+
+  /* ── HUD principal : plaques cuir/pierre, cohérentes avec le monde ── */
+  #ath{filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
+  #coeurs{left:18px;bottom:14px;padding:12px 14px 10px;min-width:216px;
+    background:linear-gradient(180deg,rgba(24,18,12,.82),rgba(10,8,6,.9));
+    border:1px solid rgba(196,148,80,.34);border-radius:3px;
+    box-shadow:0 4px 18px rgba(0,0,0,.5), inset 0 0 26px rgba(0,0,0,.4)}
+  #coeurs::before{content:'';position:absolute;inset:3px;pointer-events:none;
+    border:1px solid rgba(232,182,97,.12);border-radius:2px}
+  .hud-mana,.hud-vie{position:relative;height:13px;border-radius:2px;overflow:hidden;
+    background:#0a0c10;border:1px solid rgba(90,140,200,.35);margin-bottom:6px}
+  .hud-mana i{display:block;height:100%;width:0;
+    background:linear-gradient(90deg,#2f6bff,#48c6ff)}
+  .hud-vie{height:16px;border-color:rgba(150,60,50,.45);margin-bottom:0}
+  .hud-vie i{display:block;height:100%;width:0;
+    background:linear-gradient(90deg,#c8302a,#ff9a5a)}
+  .hud-mana span,.hud-vie span{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    font-size:9px;letter-spacing:.16em;color:#cfe0f0;text-shadow:0 1px 4px #000;
+    font-weight:400}
+  .hud-vie span{color:#f2c8c0}
+
+  #etage{right:18px;bottom:14px;padding:12px 18px;
+    background:linear-gradient(180deg,rgba(24,18,12,.82),rgba(10,8,6,.9));
+    border:1px solid rgba(196,148,80,.32);border-radius:3px;
+    box-shadow:0 4px 18px rgba(0,0,0,.5), inset 0 0 26px rgba(0,0,0,.4)}
+  #etage b{color:var(--or);text-shadow:0 0 26px rgba(232,182,97,.6)}
+
+  #cle{left:18px;top:14px;padding:9px 14px;
+    background:linear-gradient(180deg,rgba(22,17,12,.72),rgba(10,8,6,.82));
+    border:1px solid rgba(196,148,80,.28);border-radius:3px;
+    box-shadow:0 3px 14px rgba(0,0,0,.45)}
+  #radar{border:1px solid rgba(150,110,60,.42);border-radius:6px;
+    background:linear-gradient(180deg,rgba(15,13,10,.84),rgba(8,6,5,.92));
+    box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 6px 22px rgba(0,0,0,.5)}
+  #jauge-energie{border:1px solid rgba(232,182,97,.42)!important;background:#120e0a!important;
+    box-shadow:0 0 16px rgba(232,182,97,.16)!important}
+  #jauge-energie i{background:linear-gradient(90deg,#d0682a,#ffd23a)!important}
+  #hint-examiner{border-color:rgba(232,182,97,.5);background:rgba(14,11,7,.82);
+    box-shadow:0 0 22px rgba(232,182,97,.14)}
+  #ecoute{border-color:rgba(120,150,210,.4);background:rgba(10,14,22,.66)}
 </style>
 </head>
 <body>
@@ -2543,8 +2647,12 @@ function batirDehors(){
   if(boss){ scene.remove(boss.jauge.mesh); boss = null; }
   ondes = []; tranches = []; projectiles = []; flashs = []; zonesFeu = [];
 
-  /* --- le ciel : la photo si on l'a, sinon le dôme peint --- */
-  if(cielReel){
+  /* --- le ciel : GÉRÉ par sky-system.js (dôme + soleil + nuages persistants).
+       On ne reconstruit plus rien ici quand le système est présent : le ciel
+       est un objet du monde qui pilote la lumière, pas un décor par visite. --- */
+  if(window.SKY){
+    // le fond d'horizon (château jaugé) est posé par SKY.appliquer
+  } else if(cielReel){
     scene.background = new THREE.Color(0x0a1230);
   } else {
   const ciel = new THREE.Mesh(
@@ -2583,10 +2691,10 @@ function batirDehors(){
     new THREE.MeshBasicMaterial({ color:0xfff4c8, fog:false }));
   soleil.position.set(W*T/2 - 70, 55, H*T/2 - 95);
   soleil.lookAt(W*T/2, 12, H*T/2);
-  if(!cielReel) monde.add(soleil);
+  if(!window.SKY && !cielReel) monde.add(soleil);
 
-  /* --- des nuages peints, seulement si l'on n'a pas la photo --- */
-  if(!cielReel){
+  /* --- des nuages peints, seulement si l'on n'a pas la photo ni le système --- */
+  if(!window.SKY && !cielReel){
     const geo = new THREE.IcosahedronGeometry(1, 1);
     const mat = new THREE.MeshToonMaterial({ color:0xffffff, gradientMap:NUANCIER, fog:false });
     for(let i=0;i<6;i++){
@@ -2894,28 +3002,50 @@ function batirDehors(){
   }
 
   /* --- l'escalier qui descend au donjon --- */
+  // REFONTE 22/08 (zone pilote) : fini les boîtes simples. Une vraie porte de
+  // pierre — pilastres à chapiteaux, arc en plein cintre, clef de voûte,
+  // corniche — taillée avec le Design System (matPBR). Le rideau vert et sa
+  // lueur (le descent) restent intacts.
   porte = new THREE.Group();
   {
     const pierre = matPBR('mur-pierre', 1.5, 0.6);
+    const pierreClaire = matPBR('mur-pierre', 1.5, 0.6, 0xc9bfae, 0.82);
+    const large = T;                        // largeur de l'ouverture
+    const zArc = -T*0.5;
+    // les marches
     for(let i=0;i<7;i++){
       const m = new THREE.Mesh(new THREE.BoxGeometry(T*0.9, 0.18, T/7), pierre);
       m.position.set(0, -0.09 - i*0.2, -T*0.42 + i*(T*0.92/7));
       porte.add(m);
     }
+    // les deux joues de l'escalier
     for(const c of [-1, 1]){
       const joue = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.6, T*1.05), pierre);
       joue.position.set(c*T*0.52, -0.8, 0);
       porte.add(joue);
     }
-    // l'arche, pour qu'on la voie de loin
+    // les deux pilastres, avec leur chapiteau
     for(const c of [-1, 1]){
-      const mont = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.6, 0.3), pierre);
-      mont.position.set(c*T*0.52, 1.3, -T*0.5);
-      porte.add(mont);
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.42, 2.3, 0.42), pierre);
+      pil.position.set(c*large*0.62, 1.15, zArc);
+      porte.add(pil);
+      const chap = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.22, 0.58), pierreClaire);
+      chap.position.set(c*large*0.62, 2.35, zArc);
+      porte.add(chap);
     }
-    const linteau = new THREE.Mesh(new THREE.BoxGeometry(T*1.2, 0.34, 0.34), pierre);
-    linteau.position.set(0, 2.6, -T*0.5);
-    porte.add(linteau);
+    // l'arc en plein cintre + la clef de voûte
+    const R = large*0.56;
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(R, 0.17, 8, 22, Math.PI), pierre);
+    arc.rotation.set(0, 0, 0);               // l'arc se tient dans le plan vertical
+    arc.position.set(0, 2.35 + 0.1, zArc);
+    porte.add(arc);
+    const clef = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.34, 0.5), pierreClaire);
+    clef.position.set(0, 2.35 + R + 0.14, zArc);
+    porte.add(clef);
+    // la corniche au sommet
+    const corniche = new THREE.Mesh(new THREE.BoxGeometry(large*1.9, 0.18, 0.6), pierreClaire);
+    corniche.position.set(0, 2.35 + R + 0.34, zArc);
+    porte.add(corniche);
   }
   const rideau = new THREE.Mesh(
     new THREE.PlaneGeometry(T*0.85, 1.4),
@@ -2929,6 +3059,30 @@ function batirDehors(){
   porte.position.set(entree.x*T + T/2, 0, entree.y*T + T/2);
   porte.userData = { rideau, cadre:null, lum:lumPorte };
   monde.add(porte);
+
+  /* --- un panneau de bois au croisement, pour l'œil (set dressing L2) --- */
+  {
+    const ex = entree.x*T + T/2, ez = entree.y*T + T/2;
+    const px = ex - T*2.6, pz = ez - T*0.6;
+    if(!mur(px, pz)){
+      const pan = new THREE.Group();
+      const boisP = matPBR('bois', 0.6, 1.6, 0x8a6a44, 0.85);
+      const poteau = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 2.1, 7), boisP);
+      poteau.position.y = 1.05;
+      const traverse = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 0.08), boisP);
+      traverse.position.y = 1.75; traverse.rotation.y = -0.5;
+      const fer = new THREE.MeshStandardMaterial({ color:0x3a3d44, roughness:0.6, metalness:0.7 });
+      for(const c of [-1, 1]){
+        const clou = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), fer);
+        clou.position.set(c*0.62, 1.75, 0);
+        pan.add(clou);
+      }
+      pan.add(poteau, traverse);
+      pan.position.set(px, 0, pz);
+      pan.rotation.y = 0.4;
+      monde.add(pan);
+    }
+  }
 
   meshCle = new THREE.Group();          // pas de clé dehors, mais le code y touche
   meshCle.visible = false;
@@ -3239,14 +3393,13 @@ function dessinerCoeurs(perte=-1){
   const col = k>0.5 ? '#e02a2a' : (k>0.25 ? '#e0902a' : '#e02a2a');
   const m = Math.max(0, Math.min(1, joueur.mana/joueur.manaMax));
   elCoeurs.innerHTML =
-    // MANA (bleu) — au-dessus du sang
-    '<div style="width:210px;height:12px;background:#08122a;border:1px solid #2a4f92;border-radius:7px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5)">'
-    +'<i style="display:block;height:100%;width:'+(m*100).toFixed(1)+'%;background:linear-gradient(90deg,#2f6bff,#48c6ff);transition:width .18s"></i></div>'
-    +'<div style="font-size:10px;color:#8fbaff;margin:1px 0 3px;letter-spacing:1px">MANA '+Math.ceil(joueur.mana)+' / '+joueur.manaMax+'</div>'
+    // MANA (bleu froid) — au-dessus du sang
+    '<div class="hud-mana"><i style="width:'+(m*100).toFixed(1)+'%"></i>'
+    +'<span>'+Math.ceil(joueur.mana)+' / '+joueur.manaMax+'</span></div>'
     // SANG (rouge) — en dessous
-    +'<div style="width:210px;height:16px;background:#240b0b;border:1px solid #6a2626;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.55)">'
-    +'<i style="display:block;height:100%;width:'+(k*100).toFixed(1)+'%;background:linear-gradient(90deg,'+col+',#ff9a5a);transition:width .18s"></i></div>'
-    +'<div style="font-size:11px;color:#e6b8b8;margin-top:2px;letter-spacing:1px">'+Math.ceil(joueur.vie)+' / '+joueur.vieMax+'</div>';
+    +'<div class="hud-vie"><i style="width:'+(k*100).toFixed(1)+'%;'
+    +'background:linear-gradient(90deg,'+col+',#ff9a5a)"></i>'
+    +'<span>'+Math.ceil(joueur.vie)+' / '+joueur.vieMax+'</span></div>';
 }
 function dire(t, duree=3.4){ elMsg.textContent=t; elMsg.classList.add('on'); msgT=duree; }
 
@@ -3549,6 +3702,16 @@ function nouvelEtage(){
     renderer.shadowMap.enabled = true;
     jour.castShadow = true;
     ambiance.intensity = 1.4;
+    // LE CIEL PILOTE LA LUMIÈRE (22/08) : le système de ciel (sky-system.js)
+    // applique village_golden — dégradé, soleil, nuages, hémisphère, brouillard
+    // et exposition en une fois. Repli sur poserMomentDuJour s'il est absent.
+    if(window.SKY){
+      const PRESET_PAR_MOMENT = { midi:'village_day', dore:'village_golden',
+                                  matin:'village_day', crepuscule:'night_fantasy' };
+      window.SKY.appliquer(PRESET_PAR_MOMENT[MOMENT_DEHORS] || 'village_golden');
+    } else {
+      poserMomentDuJour(MOMENT_DEHORS);
+    }
     // ENTRÉE DU DONJON : à REFAIRE avec Blender (Patrick 22/08). L'ancien modèle
     // (arches fantômes) et mon arche en formes de base (squelette d'araignée) sont
     // tous deux ratés. On ne pose rien tant qu'on n'a pas un vrai modèle Blender.
@@ -6746,10 +6909,13 @@ tete.position.set(joueur.x, 1.62, joueur.z);
 
 // le monde-builder (world-builder.js) s'accroche ici : scène, groupe d'étage,
 // niveau courant. Deux lignes, aucune logique de jeu déplacée.
+// Le système de ciel (sky-system.js) lit aussi ici : les lumières et le fond.
 window.KOTOAGE = {
   scene, monde, camera, renderer,
+  jour, hemi, ambiance,
   get niveau(){ return niveau; },
   get estDehors(){ return estDehors(); },
+  photoFond: () => texPaysageGrade || texPaysage,   // le décor d'horizon (château jaugé)
 };
 </script>
 <div id="perf"></div>
@@ -6757,5 +6923,6 @@ window.KOTOAGE = {
 <script type="module" src="world-builder.js"></script>
 <script type="module" src="world-builder-ui.js"></script>
 <script type="module" src="chat-traduction.js"></script>
+<script type="module" src="sky-system.js"></script>
 </body>
 </html>
