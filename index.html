@@ -47,6 +47,14 @@
     opacity:0;transition:opacity .5s;max-width:70%;line-height:1.5}
   #msg.on{opacity:1}
 
+  /* ---- indice d'inspection (touche E, world builder) ---- */
+  #hint-examiner{position:absolute;left:50%;bottom:11%;transform:translateX(-50%);
+    font-size:14px;letter-spacing:.08em;color:var(--or);
+    background:rgba(10,8,5,.74);border:1px solid rgba(232,182,97,.42);border-radius:20px;
+    padding:7px 16px;opacity:0;transition:opacity .35s;pointer-events:none;
+    text-shadow:0 1px 8px #000;white-space:nowrap}
+  #hint-examiner.on{opacity:1}
+
   /* ---- écrans ---- */
   .ecran{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:26px;text-align:center;
@@ -169,6 +177,7 @@
   <div class="coin" id="coeurs"></div>
   <div class="coin" id="etage"><b>1</b>étage</div>
   <div id="msg"></div>
+  <div id="hint-examiner"></div>
 </div>
 
 <div id="esprit"><div id="entendu"></div><div id="repond"></div></div>
@@ -3583,11 +3592,14 @@ function ouvrirCoffre(){
 }
 function interagir(){
   if(etat !== 'jeu') return;
+  if(ficheObjetOuvert){ refermerFicheObjet(); return; }   // E referme une fiche d'objet
   if(coffre && !coffre.ouvert &&
      Math.hypot(coffre.obj.position.x-joueur.x, coffre.obj.position.z-joueur.z) < 1.5){ ouvrirCoffre(); return; }
   if(meshPortail && meshPortail.visible &&
      Math.hypot(meshPortail.position.x-joueur.x, meshPortail.position.z-joueur.z) < 1.4){ lancerTeleport(); return; }
-  dire('Rien à faire ici.', 1.2);
+  const o = objetProche();                 // un bâtiment du world builder à portée → sa fiche
+  if(o){ ouvrirFicheObjet(o); return; }
+  basculerStatut();                        // sinon : la fiche du joueur
 }
 function poserCoffre(tx, ty){
   const g = new THREE.Group();
@@ -4209,23 +4221,15 @@ function dessinerStatut(){
   g.strokeStyle = 'rgba(120,190,255,0.55)'; g.lineWidth = 2;
   g.beginPath(); g.moveTo(44, 84); g.lineTo(w-44, 84); g.stroke();
 
-  const ligne = (y, gauche, droite, couleur='#a8cdf0')=>{
-    g.font = '25px "Iowan Old Style", Georgia, serif';
-    g.fillStyle = couleur;      g.fillText(gauche, 44, y);
-    g.fillStyle = '#f2f8ff';
-    const l = g.measureText(droite).width;
-    g.fillText(droite, w-44-l, y);
-  };
-
-  ligne(112, 'Nom',      'Sans-Nom');
-  ligne(156, 'Étage',    String(niveau));
-  ligne(200, 'Cœurs',    joueur.vie + ' / ' + joueur.vieMax);
-  ligne(244, 'Clé',      joueur.cle ? 'obtenue' : '—');
-  ligne(288, 'Arme',     joueur.epee ? 'épée enchantée' : 'poings');
-  ligne(332, 'Jumeaux',  String(jumeaux.length));
-  ligne(354, 'Éclats',   String(eclats), '#8fd4ff');
+  lignePanneau(g, w, 112, 'Nom',      'Sans-Nom');
+  lignePanneau(g, w, 156, 'Étage',    String(niveau));
+  lignePanneau(g, w, 200, 'Cœurs',    joueur.vie + ' / ' + joueur.vieMax);
+  lignePanneau(g, w, 244, 'Clé',      joueur.cle ? 'obtenue' : '—');
+  lignePanneau(g, w, 288, 'Arme',     joueur.epee ? 'épée enchantée' : 'poings');
+  lignePanneau(g, w, 332, 'Jumeaux',  String(jumeaux.length));
+  lignePanneau(g, w, 354, 'Éclats',   String(eclats), '#8fd4ff');
   if(boss && boss.mort<=0)
-    ligne(376, 'Gardien', boss.vie + ' / ' + boss.vieMax, '#ff9a7a');
+    lignePanneau(g, w, 376, 'Gardien', boss.vie + ' / ' + boss.vieMax, '#ff9a7a');
 
   g.strokeStyle = 'rgba(120,190,255,0.35)';
   g.beginPath(); g.moveTo(44, 412); g.lineTo(w-44, 412); g.stroke();
@@ -4252,14 +4256,14 @@ function dessinerStatut(){
 }
 
 function basculerStatut(){
-  statutOuvert = !statutOuvert;
-  statut.mesh.visible = statutOuvert;
-  if(statutOuvert){
-    dessinerStatut();
-    // on la pose devant les yeux, là où le regard tombe
-    placerDevant(statut.mesh, 0.95, -0.06);
-    bip(880, 0.06, 'sine', 0.05); bip(1320, 0.09, 'sine', 0.04, 0.05);
-  }
+  if(statutOuvert){ statutOuvert = false; statut.mesh.visible = false; return; }
+  statutOuvert = true;
+  if(ficheObjetOuvert) refermerFicheObjet();   // une fiche à la fois
+  statut.mesh.visible = true;
+  dessinerStatut();
+  // on la pose devant les yeux, là où le regard tombe
+  placerDevant(statut.mesh, 0.95, -0.06);
+  bip(880, 0.06, 'sine', 0.05); bip(1320, 0.09, 'sine', 0.04, 0.05);
 }
 
 /* pose un panneau devant la tête, à `d` mètres, décalé de `bas` vers le bas */
@@ -4271,6 +4275,103 @@ function placerDevant(m, d, bas){
   const ba = new THREE.Vector3(0,1,0).applyQuaternion(_q);
   m.position.copy(_v).addScaledVector(av, d).addScaledVector(ba, bas);
   m.quaternion.copy(_q);
+}
+
+/* ---- l'inspection à la touche E (feature 22/08) ----
+   E, une seule logique centrale (interagir) : fiche du joueur, coffre, portail,
+   ou un objet du world builder proche. L'indicateur [E] Examiner apparaît
+   quand un objet est à portée. On réutilise fabriquerPanneau + fondIsekai :
+   pas de second système de fiches. */
+const lignePanneau = (g, w, y, gauche, droite, couleur='#a8cdf0')=>{
+  g.font = '25px "Iowan Old Style", Georgia, serif';
+  g.fillStyle = couleur;      g.fillText(gauche, 44, y);
+  g.fillStyle = '#f2f8ff';
+  const l = g.measureText(droite).width;
+  g.fillText(droite, w-44-l, y);
+};
+const STYLE_FR = { nordic:'nordique', generic:'classique', medieval:'médiéval' };
+const MATERIAUX_FR = { 'dark_wood':'bois sombre', 'wood':'bois', 'moss':'mousse', 'stone':'pierre',
+                       'aged_stone':'pierre ancienne', 'brick':'brique', 'clay':'terre cuite' };
+const DISTANCE_INSPECTION = 4.0;
+const INDICE_EXAMINER = document.getElementById('hint-examiner');
+const ficheObjet = fabriquerPanneau(900, 620, 0.78);
+let ficheObjetOuvert = false;
+let ficheObjetId = null;
+
+function nomObjet(e){
+  const meta = e.etat.meta || {};
+  const base = ((e.etat.slug || e.etat.id) || '').toString();
+  const nom = base ? base.charAt(0).toUpperCase() + base.slice(1) : e.etat.id;
+  const style = meta.style ? STYLE_FR[meta.style] || meta.style : '';
+  return style ? nom + ' ' + style : nom;
+}
+function matieresObjet(e){
+  const meta = e.etat.meta || {};
+  return (meta.materials || []).map(m => MATERIAUX_FR[m] || m).join(', ') || '—';
+}
+function objetProche(){
+  const wb = window.WB;
+  if(!wb || !wb.objets) return null;
+  let meilleur = null, meilleureD = DISTANCE_INSPECTION;
+  for(const e of wb.objets.values()){
+    if(e.etat.lieu !== niveau) continue;
+    const dx = e.etat.position.x - joueur.x, dz = e.etat.position.z - joueur.z;
+    const d = Math.hypot(dx, dz);
+    if(d < meilleureD){ meilleureD = d; meilleur = e; }
+  }
+  return meilleur;
+}
+function dessinerFicheObjet(e){
+  const { g, c, tex } = ficheObjet;
+  const w = c.width, h = c.height;
+  const meta = e.etat.meta || {};
+  const pos = e.etat.position || {};
+  fondIsekai(g, w, h, BLEU);
+  g.textBaseline = 'top';
+  g.fillStyle = '#dcefff';
+  g.font = '30px "Iowan Old Style", Georgia, serif';
+  g.fillText('EXAMINER', 44, 40);
+  g.strokeStyle = 'rgba(120,190,255,0.55)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(44, 84); g.lineTo(w-44, 84); g.stroke();
+  lignePanneau(g, w, 112, 'Nom',      nomObjet(e));
+  lignePanneau(g, w, 156, 'Type',     meta.type || '—');
+  lignePanneau(g, w, 200, 'Matériaux', matieresObjet(e));
+  lignePanneau(g, w, 244, 'Version',  'v' + e.etat.assetVersion);
+  lignePanneau(g, w, 288, 'Position', pos.x + ' , ' + pos.z);
+  if(meta.dimensions){
+    const dm = meta.dimensions;
+    lignePanneau(g, w, 332, 'Dimensions', dm.l + ' × ' + dm.p + ' × ' + dm.h + ' m');
+  }
+  lignePanneau(g, w, 400, 'ID', e.etat.id, '#8fb8dd');
+  g.font = '20px "Iowan Old Style", Georgia, serif';
+  g.fillStyle = '#8fb8dd';
+  g.fillText('Appuie sur E pour refermer.', 44, h-64);
+  tex.needsUpdate = true;
+}
+function ouvrirFicheObjet(e){
+  if(statutOuvert) basculerStatut();   // une fiche à la fois
+  ficheObjetId = e.etat.id;
+  ficheObjetOuvert = true;
+  dessinerFicheObjet(e);
+  ficheObjet.mesh.visible = true;
+  placerDevant(ficheObjet.mesh, 0.95, -0.06);
+}
+function refermerFicheObjet(){
+  ficheObjetOuvert = false;
+  ficheObjetId = null;
+  ficheObjet.mesh.visible = false;
+}
+function majIndiceExaminer(){
+  const possible = etat==='jeu'
+    && !(window.WBUI && window.WBUI.enModeConstructeur)   // le constructeur garde la main
+    && !ficheObjetOuvert && !!window.WB && window.WB.objets && window.WB.objets.size > 0;
+  const o = possible ? objetProche() : null;
+  if(o){
+    INDICE_EXAMINER.textContent = '[E] Examiner — ' + nomObjet(o);
+    INDICE_EXAMINER.classList.add('on');
+  } else {
+    INDICE_EXAMINER.classList.remove('on');
+  }
 }
 
 /* ---- LA VOIX DU MONDE ----
@@ -6177,6 +6278,16 @@ function boucle(){
       statut.mesh.position.lerp(cible, Math.min(1, dt*2.2));
       statut.mesh.quaternion.slerp(q, Math.min(1, dt*2.2));
     }
+    if(ficheObjetOuvert){
+      // la fiche d'objet se comporte exactement comme la fiche du joueur
+      const cible = new THREE.Vector3();
+      camera.getWorldPosition(cible);
+      const q = new THREE.Quaternion(); camera.getWorldQuaternion(q);
+      cible.addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(q), 0.95)
+           .addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(q), -0.06);
+      ficheObjet.mesh.position.lerp(cible, Math.min(1, dt*2.2));
+      ficheObjet.mesh.quaternion.slerp(q, Math.min(1, dt*2.2));
+    }
 
     /* -- les jumeaux te suivent -- */
     for(const j of jumeaux){
@@ -6241,6 +6352,9 @@ function boucle(){
       if(pres && !coffre.indice){ coffre.indice = true; dire('Appuie sur E pour ouvrir le coffre.', 2.4); }
       if(!pres) coffre.indice = false;
     }
+
+    /* -- l'inspection : l'indice [E] Examiner s'allume près d'un bâtiment du world builder -- */
+    majIndiceExaminer();
   }
 
   renderer.render(scene, camera);
@@ -6336,6 +6450,10 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              get grid(){ return grid; }, get ennemis(){ return ennemis; },
              get murIM(){ return murIM; }, get meshPortail(){ return meshPortail; }, get flammes(){ return flammes; },
              get etat(){ return etat; },
+             /* inspection (touche E) : pour tester l'indice et la fiche d'objet */
+             interagir, objetProche, nomObjet, ouvrirFicheObjet, refermerFicheObjet,
+             get ficheObjetOuvert(){ return ficheObjetOuvert; },
+             get statutOuvert(){ return statutOuvert; },
              /* régler l'épée en main à l'oeil : D.reglerEpee(rx, ry, rz, echelle) */
              sauver(){ sauvegarderPartie(); return 'partie sauvegardee'; },
              teinter(corps, tete){ const p = avatar.userData.persoFace; if(!p) return 'pas de perso';
