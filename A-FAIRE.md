@@ -1,5 +1,14 @@
 # La pile — ce que Patrick a demandé, dans l'ordre
 
+## EN PREMIER à la reprise (Patrick, 22/08)
+- [ ] **LE VOL N'EST PAS NATUREL** : le corps reste tout droit, debout dans les
+      airs, jambes qui pendent. Il doit PLANER : buste penché en avant, bras
+      ouverts en arrière, jambes tendues derrière (poserCorpsEnLAir existe mais
+      la pose ne s'applique pas visiblement en vol — vérifier pourquoi : le mixer
+      des vraies animations écrase peut-être la pose, ou avatar.rotation.x/tangage
+      n'est pas posé). Régler AVANT tout le reste.
+
+
 **Règle de tri**, du plus urgent au moins urgent :
 
 1. **Ça casse le jeu** — on ne peut plus jouer, ou on perd du travail.
