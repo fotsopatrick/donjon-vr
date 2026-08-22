@@ -117,6 +117,13 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
             "width": max(2.0, R * 0.16),
             "height": 0.45,
             "steps_per": 2 * niveau_steps,
+            # escalier MAJEUR (audit) : la référence a un grand escalier large
+            "main": bool((sc.get("stairs") or {}).get("main", False)),
+            "main_width": (sc.get("stairs") or {}).get("main_width") or max(4.0, R * 0.45),
+        },
+        "focal": {
+            "characters": int((sc.get("focal") or {}).get("characters", 0) or 0),
+            "position": (sc.get("focal") or {}).get("position", "center"),
         },
         "columns": {
             "count": n_col,
@@ -409,6 +416,52 @@ class DungeonChamber:
                                 a, self.mats["stone_trim"],
                                 "escalier_%d_%d" % (i, kk))
                 self._echelle_x(b, k)
+
+    def main_stair(self):
+        """ESCALIER MAJEUR (audit) : un seul escalier LARGE et central, qui
+        relie l'arène aux gradins — à la place des 4 petits escaliers radiaux
+        quand la référence en montre un grand."""
+        st = self.param["stairs"]
+        if not st.get("main"):
+            return
+        s = self.param["steps"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        r0 = s["inner_radius"] + 0.5
+        r1 = s["outer_radius"] - 0.3
+        n_steps = st["steps_per"]
+        larg = st["main_width"]
+        # orienté vers la porte principale si connue, sinon vers la caméra (-Y)
+        a = self.angles_portes[0] if self.angles_portes else -math.pi / 2
+        for kk in range(n_steps):
+            r_mid = r0 + (r1 - r0) * (kk + 0.5) / n_steps
+            z = 0.35 + kk * st["height"]
+            b = self._boite((math.cos(a) * r_mid, math.sin(a) * r_mid, z),
+                            ((r1 - r0) / n_steps, larg, st["height"]),
+                            a, self.mats["stone_trim"], "escalier_majeur_%d" % kk)
+            self._echelle_x(b, k)
+
+    def focal_characters(self):
+        """ÉLÉMENTS FOCAUX (audit) : silhouettes proxy des personnages au
+        centre — leur PRÉSENCE et leur RÔLE spatial ne sont plus perdus."""
+        f = self.param["focal"]
+        nb = int(f.get("characters", 0) or 0)
+        if nb <= 0:
+            return
+        a = self.param["arena"]
+        r = max(0.6, a["radius"] * 0.30)
+        z_sol = a.get("recessed", 0.9) * 0.9 - 0.15 + 0.9 if a.get("recessed") else 0.9
+        z_pieds = 0.42
+        for i in range(nb):
+            ang = -math.pi / 2 + (i - (nb - 1) / 2) * 0.9
+            x, y = math.cos(ang) * r, math.sin(ang) * r
+            # corps (tore/cylindre) + tête (sphère) = silhouette lisible
+            self._ajouter("cylinder", {"vertices": 12, "radius": 0.22, "depth": 1.15,
+                                       "location": (x, y, z_pieds + 0.55)},
+                          self.mats["dark_stone"], "perso_corps_%d" % i)
+            self._ajouter("uv_sphere", {"segments": 10, "ring_count": 5, "radius": 0.17,
+                                        "location": (x, y, z_pieds + 1.35)},
+                          self.mats["metal_bleu"], "perso_tete_%d" % i)
 
     def stone_columns(self):
         c = self.param["columns"]
@@ -883,7 +936,11 @@ class DungeonChamber:
             self.curved_walls()
         if q >= 2:                      # L2 structured
             self.doors()
-            self.radial_stairs()
+            if self.param["stairs"].get("main"):
+                self.main_stair()       # un grand escalier (au lieu des 4 radiaux)
+            else:
+                self.radial_stairs()
+            self.focal_characters()     # silhouettes proxy au centre
             self.stone_columns()
             self.stone_arches()
         if q >= 3:                      # L3 detailed (défaut)

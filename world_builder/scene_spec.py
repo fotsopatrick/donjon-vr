@@ -197,6 +197,29 @@ def composer_scene(profil: dict) -> dict:
     centre_cyan = ("cyan" in emis or "cyan" in obs or "bleu" in emis or "bleu" in obs
                    or "cyan" in lum_texte or "bleu" in lum_texte)
 
+    # --- éléments focaux : personnages/silhouettes au centre (PERTE auditée) ---
+    focal_txt = " ".join([
+        str((scene.get("focal_point") or {}).get("type", "")),
+        " ".join(str(x) for x in comp.get("center") or []),
+        " ".join(str(o.get("element", "")) for o in (profil.get("objects") or [])
+                 if isinstance(o, dict) and "center" in str(o.get("position", ""))),
+    ]).lower()
+    nb_perso = 0
+    if any(m in focal_txt for m in ("personnage", "figure", "silhouette", "debout",
+                                    "spectateur", "audience", "créature", "creature")):
+        m = __import__("re").search(
+            r"(deux|trois|quatre|5|4|3|2)\s*(?:petits?|petites?)?\s*(?:personnages|figures|silhouettes)",
+            focal_txt)
+        nb_perso = {"deux": 2, "trois": 3, "quatre": 4, "5": 5, "4": 4, "3": 3, "2": 2}.get(
+            m.group(1), 2) if m else 2
+    focal = ({"characters": nb_perso, "position": "center", "role": "ceremonial"}
+             if nb_perso else None)
+
+    # --- escalier MAJEUR vs gradins (PERTE auditée) ---
+    stairs_txt = " ".join(str(x) for x in (comp.get("stairs") or [])).lower() + " " + obs
+    main_stair = any(m in stairs_txt for m in ("escalier", "staircase", "grand escalier"))
+    bloc_escalier = {"radial": gradins, "main": main_stair, "main_width": None}
+
     primaire = "unknown"
     if "pierre sombre" in mats or "pierre_sombre" in mats or "dark stone" in mats:
         primaire = "dark_stone"
@@ -232,6 +255,8 @@ def composer_scene(profil: dict) -> dict:
             "cold_blue_center": centre_cyan,
         },
         "atmosphere": atmos[:6],
+        "focal": focal,
+        "stairs": bloc_escalier,
     }
 
 
