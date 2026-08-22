@@ -901,6 +901,16 @@ async function chargerModeles(){
         } else {                                            // --- glTF classique ---
           MODELES[nom] = gltf.scene;
           gltf.scene.userData.anims = gltf.animations || [];
+          // TOIT DU VILLAGE (vRoof) : les tuiles Quaternius sont un terracotta
+          // brûlant. On le mue À LA SOURCE (une seule fois, matériau partagé) :
+          // foncé et désaturé, pour que les toits cessent de dominer en orange.
+          if(nom === 'vRoof'){
+            gltf.scene.traverse(o=>{
+              if(!o.isMesh || !o.material) return;
+              const m = Array.isArray(o.material) ? o.material[0] : o.material;
+              if(m && m.color) m.color.multiplyScalar(0.68).offsetHSL(0.02, -0.18, -0.02);
+            });
+          }
           if(nom === 'perso') ANIM_PERSO = gltf.animations || [];
           if(nom === 'persoCustom') ANIM_PERSO_CUSTOM = gltf.animations || [];
           if(nom === 'animGeneralK' || nom === 'animMoveK' || nom === 'animSuper') ANIM_MAGE = ANIM_MAGE.concat(gltf.animations || []);
@@ -1235,6 +1245,31 @@ function poserLanterne(x, z, avecLumiere = false){
    - les matériaux très CLAIRS (façades crépies) : moins lumineux, fini le blanc brûlé ;
    - le reste : léger adoucissement vers une matière commune, désaturée.
    La géométrie, les textures et les props ne changent pas : seule la couleur parle. */
+/* la couleur MOYENNE d'une texture, mesurée une fois (cache) : les toits de
+   tuiles Quaternius sont orange dans la TEXTURE, pas dans le color du matériau.
+   Sans cette mesure, harmoniserPilot ne voyait que du blanc et laissait les
+   toits brûlants. */
+const _moyTex = new Map();
+function moyenneTexture(m){
+  if(!m.map || !m.map.image || !m.map.image.width) return null;
+  const img = m.map.image;
+  if(_moyTex.has(img)) return _moyTex.get(img);
+  let moy = null;
+  try{
+    const c = document.createElement('canvas');
+    const w = Math.min(32, img.width), h = Math.min(32, img.height);
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data;
+    let sr = 0, sg = 0, sb = 0, n = 0;
+    for(let i = 0; i < d.length; i += 4){ sr += d[i]; sg += d[i+1]; sb += d[i+2]; n++; }
+    if(n) moy = { r: sr/n/255, g: sg/n/255, b: sb/n/255 };
+  }catch(e){}
+  _moyTex.set(img, moy);
+  return moy;
+}
+
 function harmoniserPilot(racine, force = 1){
   racine.traverse(o=>{
     if(!o.isMesh || !o.material) return;
@@ -1243,21 +1278,30 @@ function harmoniserPilot(racine, force = 1){
     for(let i=0;i<mats.length;i++){
       const m = mats[i];
       if(!m || !m.color || m.isMeshToonMaterial) continue;
-      const r = m.color.r, g = m.color.g, b = m.color.b;
+      let r = m.color.r, g = m.color.g, b = m.color.b;
       const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
       const lum = (r + g + b) / 3;
       let sF = 0.85, bF = 1;
-      if(mx - mn > 0.18 && (r - g) > 0.22 && (r - b) > 0.36) { sF = 0.5; bF = 0.8; }  // toit orange
-      else if(lum > 0.86){ sF = 0.75; bF = 0.88; }                                   // façade très claire
+      const tTex = (m.map && moyenneTexture(m)) || null;
+      const estOrangeTex = !!(tTex && (tTex.r - tTex.g) > 0.22 && (tTex.r - tTex.b) > 0.36);
+      if(estOrangeTex){ sF = 0.45; bF = 0.78; }                                // toit de tuiles orange (dans la texture)
+      else if(mx - mn > 0.18 && (r - g) > 0.22 && (r - b) > 0.36) { sF = 0.5; bF = 0.8; }  // toit orange (dans la couleur)
+      else if(lum > 0.86){ sF = 0.75; bF = 0.88; }                            // façade très claire
       const mix = (1 - sF) * force;
       // ON CLONE AVANT DE MUTER : les matériaux Quaternius sont PARTAGÉS entre
       // toutes les copies (et le donjon). Sans clone, on les foncerait deux fois
       // à chaque rechargement et on gâcherait les props du donjon.
       const nv = m.clone();
-      nv.color.r = r + (lum - r) * mix;
-      nv.color.g = g + (lum - g) * mix;
-      nv.color.b = b + (lum - b) * mix;
-      nv.color.multiplyScalar(1 - (1 - bF) * force);
+      if(estOrangeTex){
+        // la teinte s'applique sur la TEXTURE (multipliée par le color) :
+        // un or maîtrisé à la place du terracotta brûlant.
+        nv.color.setHex(0xd8b890).multiplyScalar(0.95);
+      } else {
+        nv.color.r = r + (lum - r) * mix;
+        nv.color.g = g + (lum - g) * mix;
+        nv.color.b = b + (lum - b) * mix;
+        nv.color.multiplyScalar(1 - (1 - bF) * force);
+      }
       if(estTableau){ o.material[i] = nv; } else { o.material = nv; }
     }
   });
@@ -2945,7 +2989,7 @@ function batirDehors(){
       poserCloture(4.3*T, 6.3*T, Math.PI/2, T*2.6);
       poserCloture(7.7*T, 6.3*T, Math.PI/2, T*2.6);
       const meule = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.1, 9),
-        matPBR('toit-chaume', 1.4, 1.4));
+        matPBR('toit-chaume', 1.4, 1.4, 0xc9a86b, 0.9));
       meule.position.set(3.2*T, 0.55, 5.6*T);
       meule.castShadow = true; monde.add(meule);
     }
@@ -2957,7 +3001,7 @@ function batirDehors(){
       poserCloture(19.3*T, 6.3*T, Math.PI/2, T*2.6);
       poserCloture(22.7*T, 6.3*T, Math.PI/2, T*2.6);
       const meule = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.1, 9),
-        matPBR('toit-chaume', 1.4, 1.4));
+        matPBR('toit-chaume', 1.4, 1.4, 0xc9a86b, 0.9));
       meule.position.set(24.2*T, 0.55, 5.6*T);
       meule.castShadow = true; monde.add(meule);
     }
