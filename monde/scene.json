@@ -70,6 +70,41 @@
           "atmosphere": "fog moisture"
         }
       }
+    },
+    {
+      "id": "building_003",
+      "slug": "maison",
+      "assetFile": "modeles/generes/maison_003_v2.glb",
+      "assetVersion": 2,
+      "lieu": 0,
+      "position": {
+        "x": 10.0,
+        "z": 6.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.0,
+      "meta": {
+        "style": "generic",
+        "materials": [
+          "dark_wood"
+        ],
+        "features": [
+          "steep_roof"
+        ],
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
+      }
     }
   ]
 }

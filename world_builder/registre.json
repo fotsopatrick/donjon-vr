@@ -105,6 +105,62 @@
       },
       "creeLe": "2026-08-22T13:43:54",
       "modifieLe": "2026-08-22T13:43:54"
+    },
+    "building_003": {
+      "id": "building_003",
+      "slug": "maison",
+      "type": "building",
+      "versions": [
+        {
+          "version": 1,
+          "file": "modeles/generes/maison_003_v1.glb"
+        },
+        {
+          "version": 2,
+          "file": "modeles/generes/maison_003_v2.glb"
+        }
+      ],
+      "activeVersion": 2,
+      "meta": {
+        "style": "generic",
+        "materials": [
+          "dark_wood",
+          "moss"
+        ],
+        "features": [
+          "steep_roof",
+          "moss"
+        ],
+        "dimensions": {
+          "l": 4.0,
+          "p": 3.0,
+          "h": 3.2
+        },
+        "toit": {
+          "type": "pentu",
+          "pente": "forte"
+        },
+        "variation": {
+          "seed": 3,
+          "weathered": 0.7,
+          "moss": 0.6
+        },
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
+      },
+      "creeLe": "2026-08-22T14:01:02",
+      "modifieLe": "2026-08-22T14:01:08"
     }
   }
 }
