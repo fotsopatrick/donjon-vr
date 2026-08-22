@@ -1,6 +1,11 @@
 # La pile — ce que Patrick a demandé, dans l'ordre
 
 ## EN PREMIER à la reprise (Patrick, 22/08)
+- [ ] **DÉCOR PLACÉ AU HASARD = fouillis** (photo #14, étage 5 : meubles qui
+      flottent/traversent, tapis rouge, tout de travers). Patrick veut un SYSTÈME
+      de positionnement (une carte/plan des objets par étage, comme PLAN_ETAGE1)
+      QUE opencode puisse utiliser aussi — même technique que le plan étage 1, ou
+      mieux. Étendre PLAN_ETAGE à tous les étages + un format que opencode édite.
 - [ ] **Un étage de donjon SANS cercle de téléportation** (photo #12, étage
       sombre violet) : on ne peut pas descendre. Les étages 2-5 sont générés au
       hasard, le cercle (keyPos) peut être loin/introuvable. Le poser PRÈS du

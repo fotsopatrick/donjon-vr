@@ -1691,13 +1691,13 @@ function poserPortail(wx, wz){
   const anneau = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.05, 8, 40),
     new THREE.MeshStandardMaterial({ color:0x2fd0ff, emissive:0x2fd0ff, emissiveIntensity:1.6, roughness:0.3 }));
   anneau.rotation.x=-Math.PI/2; anneau.position.y=0.05;
-  const lum = new THREE.PointLight(0x2fd0ff, 8, 7, 1.6); lum.position.y=0.6;
+  const lum = new THREE.PointLight(0x2fd0ff, 22, 14, 1.5); lum.position.y=1.2;   // éclaire autour: on repère le cercle de loin
   meshPortail.add(spin, anneau, lum);
   meshPortail.userData={ spin, anneau };
   meshPortail.position.set(wx, 0, wz);
   monde.add(meshPortail);
   colonneTP = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,HT*2.2,24,1,true),
-    new THREE.MeshBasicMaterial({ color:0x69e0ff, transparent:true, opacity:0.0,
+    new THREE.MeshBasicMaterial({ color:0x69e0ff, transparent:true, opacity:0.16,
       blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
   colonneTP.position.set(wx, HT, wz); monde.add(colonneTP);
 }
@@ -1717,7 +1717,7 @@ function majPortail(dt, t){
       colonneTP.rotation.y += dt*4; colonneTP.scale.x=colonneTP.scale.z=1+(1-teleportT)*0.3; }
     if(teleportT<=0){ if(colonneTP) colonneTP.material.opacity=0; descendre(); return; }
   } else if(colonneTP && colonneTP.material.opacity>0){
-    colonneTP.material.opacity=Math.max(0, colonneTP.material.opacity-dt*2);
+    colonneTP.material.opacity=Math.max(0.16, colonneTP.material.opacity-dt*2);
   }
   if(teleportT<=0 && Math.hypot(meshPortail.position.x-joueur.x, meshPortail.position.z-joueur.z) < 1.0)
     lancerTeleport();
@@ -6333,7 +6333,7 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
              get pouvoirs(){ return pouvoirs; },
              get grid(){ return grid; }, get ennemis(){ return ennemis; },
-             get murIM(){ return murIM; }, get flammes(){ return flammes; },
+             get murIM(){ return murIM; }, get meshPortail(){ return meshPortail; }, get flammes(){ return flammes; },
              get etat(){ return etat; },
              /* régler l'épée en main à l'oeil : D.reglerEpee(rx, ry, rz, echelle) */
              sauver(){ sauvegarderPartie(); return 'partie sauvegardee'; },
