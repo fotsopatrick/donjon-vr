@@ -1447,6 +1447,15 @@
     "z": -90,
     "chemin": "window.D.joueur.x=90;window.D.joueur.z=-90"
    }
+  },
+  {
+   "id": "salle-mapping-v3",
+   "nom": "Salle mapping V3 — building_010",
+   "position": {
+    "x": 100,
+    "z": 30,
+    "chemin": "window.D.joueur.x=100;window.D.joueur.z=30"
+   }
   }
  ]
 }

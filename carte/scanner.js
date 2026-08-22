@@ -27,6 +27,9 @@ const LIEUX = [
   { id: 'salle-monumentale', nom: 'Salle monumentale — building_009',
     hash: '#village', niveau: 0,
     marqueur: { x: 90, z: -90, chemin: 'window.D.joueur.x=90;window.D.joueur.z=-90' } },
+  { id: 'salle-mapping-v3', nom: 'Salle mapping V3 — building_010',
+    hash: '#village', niveau: 0,
+    marqueur: { x: 100, z: 30, chemin: 'window.D.joueur.x=100;window.D.joueur.z=30' } },
 ];
 
 (async () => {

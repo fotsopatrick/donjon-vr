@@ -283,15 +283,29 @@ class DungeonChamber:
         """Construit une pièce de kit UNE FOIS : les primitives posées par
         ajouter_pieces() sont jointes en UN seul mesh partagé (la base).
         On la réinstancie ensuite partout -> mémoire réduite, scène propre,
-        modification centralisée (on change la base, tout suit)."""
-        debut = len(bpy.data.objects)
+        modification centralisée (on change la base, tout suit).
+        ATTENTION : on DÉSÉLECTIONNE d'abord — sinon le join ramasse les
+        objets encore sélectionnés des composants précédents et la base est
+        un disque déformé (bug instancing 22/08)."""
+        avant = {o.name for o in bpy.data.objects}
         ajouter_pieces()
-        pieces = list(bpy.data.objects)[debut:]
+        pieces = [o for o in bpy.data.objects if o.name not in avant]
         if not pieces:
             raise RuntimeError("kit: aucune pièce pour la base %s" % nom)
+        bpy.ops.object.select_all(action="DESELECT")
+        # CUIS toutes les transformations (position/rotation/échelle) de
+        # chaque pièce AVANT le join : sinon les pièces gardent une rotation
+        # ou un offset d'objet et le join produit un mesh déformé (bug
+        # instancing 22/08 : colonnes/braseros aplatis et enterrés).
+        for p in pieces:
+            p.select_set(True)
+            bpy.context.view_layer.objects.active = p
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            p.select_set(False)
+        bpy.ops.object.select_all(action="DESELECT")
+        for p in pieces:
+            p.select_set(True)
         if len(pieces) > 1:
-            for p in pieces:
-                p.select_set(True)
             bpy.context.view_layer.objects.active = pieces[0]
             bpy.ops.object.join()
         o = bpy.context.object
