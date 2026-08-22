@@ -48,10 +48,10 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
     if shape not in ("circular", "elliptical", "rectangular", "square", "irregular"):
         shape = "circular"
 
-    hauteur_mur = max(5.0, min(H, R * 0.75))
+    hauteur_mur = max(6.0, min(H, R * 0.85))
     r_pool = max(1.5, R * 0.20)
     r_col = R * 0.72
-    n_col = max(6, min(12, int(round(R / 2.5))))
+    n_col = max(6, min(14, int(round(R / 2.0))))
 
     centre_enabled = (centre.get("type") == "luminous_area") or bool(per.get("cold_center"))
     couleur_centre = (centre.get("color") or "cyan_blue").lower()
@@ -65,11 +65,11 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
 
     # intensités : dérivées du contraste (paramétrables ensuite)
     if contraste == "strong":
-        centre_int, perimetre_int = 2200.0, 6000.0
+        centre_int, perimetre_int = 3200.0, 9000.0
     elif contraste == "moderate":
-        centre_int, perimetre_int = 1600.0, 3200.0
+        centre_int, perimetre_int = 2200.0, 6000.0
     else:
-        centre_int, perimetre_int = 1200.0, 2200.0
+        centre_int, perimetre_int = 1600.0, 4200.0
 
     arena = {
         "enabled": centre_enabled,
@@ -108,8 +108,8 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
         },
         "columns": {
             "count": n_col,
-            "radius": R * 0.035,
-            "height": hauteur_mur * 1.12,
+            "radius": R * 0.045,
+            "height": hauteur_mur * 0.78,
             "ring_radius": r_col,
             "style": "fluted",
         },
@@ -197,9 +197,11 @@ class DungeonChamber:
         self.mats[nom] = m
         return m
 
-    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True):
+    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True, blocs=False):
         """Pierre texturée : variation de couleur (noise), microvariation de
-        rugosité, bump procédural. Rien à voir avec un gris de primitive."""
+        rugosité, bump procédural, et optionnellement un motif de BLOCS de
+        pierre (Voronoi -> joints sombres). Rien à voir avec un gris de
+        primitive."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
@@ -219,10 +221,30 @@ class DungeonChamber:
                     min(1, base[2] * 1.22), 1)
         noise2 = nodes.new("ShaderNodeTexNoise")
         noise2.inputs["Scale"].default_value = 12.0
-        # base color = ramp1(noise1)
         links.new(coord.outputs["Object"], noise1.inputs["Vector"])
         links.new(noise1.outputs["Fac"], ramp1.inputs["Fac"])
-        links.new(ramp1.outputs["Color"], bsdf.inputs["Base Color"])
+        couleur_finale = ramp1.outputs["Color"]
+
+        if blocs:
+            # motif de blocs : Voronoi -> joints sombres entre les blocs
+            vor = nodes.new("ShaderNodeTexVoronoi")
+            vor.feature = "F1"
+            vor.inputs["Scale"].default_value = 5.0
+            ramp_b = nodes.new("ShaderNodeValToRGB")
+            be0 = ramp_b.color_ramp.elements[0]
+            be1 = ramp_b.color_ramp.elements[1]
+            be0.color = (base[0] * 1.15, base[1] * 1.15, base[2] * 1.15, 1)
+            be1.color = (base[0] * 0.28, base[1] * 0.28, base[2] * 0.30, 1)
+            mix = nodes.new("ShaderNodeMixRGB")
+            mix.blend_type = "MIX"
+            mix.inputs["Fac"].default_value = 0.7
+            links.new(coord.outputs["Object"], vor.inputs["Vector"])
+            links.new(vor.outputs["Distance"], ramp_b.inputs["Fac"])
+            links.new(couleur_finale, mix.inputs["Color1"])
+            links.new(ramp_b.outputs["Color"], mix.inputs["Color2"])
+            couleur_finale = mix.outputs["Color"]
+        links.new(couleur_finale, bsdf.inputs["Base Color"])
+
         # rugosité : microvariation
         bsdf.inputs["Roughness"].default_value = rough
         links.new(coord.outputs["Object"], noise2.inputs["Vector"])
@@ -249,10 +271,12 @@ class DungeonChamber:
         sombre = 0.10 if "dark" in atmos else 0.0
         f = 1 - sombre
 
-        # dark_stone : le mur — gris-bleu foncé, pas un noir pur
-        self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f), rough=0.95, bruit=0.09)
-        # stone_floor : plus clair, distinct des murs
-        self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f), rough=0.88, bruit=0.06)
+        # dark_stone : le mur — gris-bleu foncé, en BLOCS de pierre
+        self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f),
+                         rough=0.95, bruit=0.09, blocs=True)
+        # stone_floor : plus clair, distinct des murs, usé (blocs larges)
+        self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f),
+                         rough=0.88, bruit=0.06, blocs=True)
         # stone_trim : parement clair pour bordures/marches/éléments
         self._mat_pierre("stone_trim", (0.62 * f, 0.60 * f, 0.57 * f), rough=0.85, bruit=0.05, bump=False)
         # pierre_gradins : ton intermédiaire
@@ -266,9 +290,9 @@ class DungeonChamber:
             eau = (0.90, 0.34, 0.08, 1)
             eau_em = (1.0, 0.52, 0.20, 1)
         self._mat_plat("central_water", eau, rough=0.25, metal=0.15,
-                       emissive=eau_em, force=2.2)
-        self._mat_plat("feu_orange", (0.90, 0.30, 0.08, 1), rough=0.6,
-                       emissive=(1.0, 0.52, 0.20, 1), force=5.0)
+                       emissive=eau_em, force=6.0)
+        self._mat_plat("feu_orange", (1.0, 0.55, 0.15, 1), rough=0.6,
+                       emissive=(1.0, 0.55, 0.20, 1), force=4.0)
         self._mat_plat("metal", (0.12, 0.12, 0.15, 1), rough=0.4, metal=0.85)
         self._mat_plat("metal_bleu", (0.12, 0.16, 0.22, 1), rough=0.35, metal=0.9)
 
@@ -374,6 +398,17 @@ class DungeonChamber:
                                         "minor_radius": 0.05, "location": (0, 0, 0.57)},
                               self.mats["metal"], "jante_arena")
         self._echelle_x(jante, k)
+        # rambarde basse autour du bord (chute protégée, détail métal)
+        r_rail = r * 1.10
+        rail = self._anneau(r_rail - 0.04, r_rail + 0.04, 0.72, 0.08,
+                            self.mats["metal"], "rambarde_arena")
+        self._echelle_x(rail, k)
+        for i in range(16):
+            a = i / 16 * math.tau
+            x, y = math.cos(a) * r_rail, math.sin(a) * r_rail
+            self._ajouter("cylinder", {"vertices": 6, "radius": 0.05, "depth": 0.5,
+                                       "location": (x, y, 0.50)},
+                          self.mats["metal_bleu"], "montant_rambarde_%d" % i)
 
     def concentric_steps(self):
         s = self.param["steps"]
@@ -684,19 +719,33 @@ class DungeonChamber:
                           self.mats["metal"], "vasque_%d" % i)
             fac = 1.0 + self.rng.uniform(-0.12, 0.12)
             self._ajouter("uv_sphere", {"segments": 12, "ring_count": 6,
-                                        "radius": 0.26 * fac, "location": (x, y, z + 0.32)},
+                                        "radius": 0.42 * fac, "location": (x, y, z + 0.42)},
                           self.mats["feu_orange"], "flamme_%d" % i)
 
     def decorative_elements(self):
         p = self.param["room"]
         k = p["k_elliptique"] if p["elliptique"] else 1.0
         w = self.param["walls"]
+        s = self.param["steps"]
+        a = self.param["arena"]
+        # motif de sol radial (rayons de parement autour de l'arène)
+        if a["enabled"]:
+            r0 = a["radius"] * 1.2
+            r1 = s["inner_radius"] - 0.3
+            nb = 24
+            for i in range(nb):
+                ang = i / nb * math.tau
+                r_mid = (r0 + r1) / 2
+                x, y = math.cos(ang) * r_mid, math.sin(ang) * r_mid
+                b = self._boite((x, y, 0.52), ((r1 - r0), 0.14, 0.02),
+                                ang, self.mats["stone_trim"], "rayon_sol_%d" % i)
+                self._echelle_x(b, k)
         # pierres éparses au pied du mur (organisation, pas chaos)
         nb = 10
         for i in range(nb):
-            a = self.rng.uniform(0, math.tau)
+            ang = self.rng.uniform(0, math.tau)
             r = w["radius"] - 0.8 + self.rng.uniform(-0.4, 0.4)
-            x, y = math.cos(a) * r, math.sin(a) * r
+            x, y = math.cos(ang) * r, math.sin(ang) * r
             taille = self.rng.uniform(0.15, 0.35)
             b = self._ajouter("ico_sphere", {"subdivisions": 1, "radius": taille,
                                              "location": (x, y, taille * 0.35)},

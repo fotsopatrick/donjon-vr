@@ -332,10 +332,11 @@ bpy.context.scene.collection.objects.link(cam)
 empty = bpy.data.objects.new("T", None)
 bpy.context.scene.collection.objects.link(empty)
 if est_interieur:
-    # vue 3/4 élevée et reculée : bassin au centre, anneaux, mur et
-    # braseros orange visibles dans le même cadre.
-    cam.location = (0, -R * 1.9, R * 1.6)
-    empty.location = (0, 0, R * 0.32)
+    # vue 3/4 cinéma : le bassin DOMINE et reste dégagé (caméra assez haute
+    # pour que les escaliers radiaux ne le masquent pas), profondeur lisible
+    # (premier plan = gradins, milieu = bassin, fond = colonnes/arches).
+    cam.location = (0, -R * 1.35, R * 1.8)
+    empty.location = (0, 0, R * 0.18)
 else:
     cam.location = (L * 0.9, -L * 1.05, H * 0.85)
     empty.location = (0, 0, H * 0.5)
@@ -353,13 +354,20 @@ if est_interieur:
     # EEVEE : rendu réel (matériaux + émissifs qui brillent + lampes).
     # La salle sombre : monde en nuit froide, la lumière vient des lampes.
     sc.render.engine = "BLENDER_EEVEE"
-    sc.world.color = (0.05, 0.06, 0.09)
+    sc.world.color = (0.06, 0.07, 0.10)
     try:
-        sc.view_settings.view_transform = "Standard"
         sc.eevee.use_bloom = True
-        sc.eevee.bloom_intensity = 0.7
+        sc.eevee.bloom_intensity = 0.8
     except Exception:
         pass
+    # lumière de remplissage douce (lune froide) : les murs restent lisibles,
+    # sans écraser le contraste bleu/orange
+    soleil = bpy.data.lights.new("Lum_ambiant", type="SUN")
+    soleil.color = (0.65, 0.72, 0.95)
+    soleil.energy = 0.6
+    so = bpy.data.objects.new("Lum_ambiant", soleil)
+    bpy.context.scene.collection.objects.link(so)
+    so.rotation_euler = (1.05, 0.0, 0.7)
 else:
     sc.render.engine = "BLENDER_WORKBENCH"
     sc.display.shading.light = "STUDIO"
