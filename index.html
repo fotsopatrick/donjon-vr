@@ -3303,20 +3303,12 @@ function nouvelEtage(){
     renderer.shadowMap.enabled = false;
     jour.castShadow = false;
     ambiance.intensity = 3.0;
-    // COLISÉE RETIRÉ (Patrick 22/08) : le modèle s'affichait sans ses murs, il ne
-    // restait que des arches en contour blanc, comme des fantômes. Moche. On ne le
-    // pose plus. L'escalier et le cercle restent pour descendre. À refaire propre
-    // (arche de pierre + colonnes) plus tard — voir A-FAIRE.md.
-    // if(MODELES.entreeColisee && entree){ ... }  // désactivé volontairement
-    if(MODELES.chevalier && entree){          // gardes immobiles en allée vers le Colisée
-      for(let i=0;i<3;i++) for(const cote of [-1,1]){
-        const c = MODELES.chevalier.clone(true);
-        c.position.set((entree.x+cote*2.4)*T+T/2, 0, (entree.y-4+i*1.6)*T+T/2);
-        c.scale.setScalar(0.9); c.rotation.y = cote>0 ? -Math.PI/2 : Math.PI/2;
-        c.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
-        monde.add(c);
-      }
-    }
+    // ENTRÉE DU DONJON : à REFAIRE avec Blender (Patrick 22/08). L'ancien modèle
+    // (arches fantômes) et mon arche en formes de base (squelette d'araignée) sont
+    // tous deux ratés. On ne pose rien tant qu'on n'a pas un vrai modèle Blender.
+    // Escalier + cercle restent pour descendre. Voir A-FAIRE.md.
+    // GARDES CHEVALIERS RETIRÉS (22/08) : le modèle chevalier.py rend un squelette
+    // de tiges blanches, pas un chevalier. À refaire avec Blender (voir A-FAIRE).
     return;
   }
   scene.fog = new THREE.FogExp2(0x16233c, 0.022);
