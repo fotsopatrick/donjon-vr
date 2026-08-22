@@ -296,6 +296,17 @@ window.addEventListener('unhandledrejection', e=>{
 // vieille copie chargée dans son onglet -> il doit rouvrir en fenêtre neuve.
 const VERSION_JEU = 'v22h-noir';
 
+// Mise à jour d'avatar PROTÉGÉE. Les cheveux/vêtements qui bougent (springbones)
+// d'un avatar cloné peuvent planter (offset undefined) et FIGER tout le jeu -
+// c'était la cause de l'écran noir + « je ne peux pas bouger » (22/08). Si un
+// avatar plante, on le note et on n'y retouche plus, mais le jeu continue.
+const _vrmCasses = new WeakSet();
+function majVrm(v, dt){
+  if(!v || _vrmCasses.has(v)) return;
+  try { v.update(dt); }
+  catch(e){ _vrmCasses.add(v); if(!window.__vrmErr){ window.__vrmErr=1; } }
+}
+
 /* ═══════════════ 1. LE PLAN — repris tel quel du jeu 2D ═══════════════ */
 let W = 28, H = 18;                   // la grille, en cases (le dehors l'allonge, voir genererDehors)
 const H_DONJON = 18;                  // hauteur d'un étage de donjon
@@ -5158,12 +5169,12 @@ function majGuerrier(dt){
   const G = guerrier; if(!G) return;
   G.mix.update(dt);
   // Pendant le choc d'épées, il ne décide plus rien : il pousse, c'est tout.
-  if(choc.actif){ if(G.vrm && G.vrmClips) G.vrm.update(dt); return; }
+  if(choc.actif){ if(G.vrm && G.vrmClips) majVrm(G.vrm, dt); return; }
   // Sonné après avoir perdu un choc : il encaisse, il ne se bat pas.
   if((G.sonne||0) > 0){
     G.sonne -= dt;
     G.mana = Math.min(G.manaMax || 20, (G.mana||0) + dt*4);   // il reprend son souffle
-    if(G.vrm && G.vrmClips) G.vrm.update(dt);
+    if(G.vrm && G.vrmClips) majVrm(G.vrm, dt);
     return;
   }
   G.mana = Math.min(G.manaMax || 20, (G.mana||0) + dt*2.2);   // sa réserve remonte doucement
@@ -5185,7 +5196,7 @@ function majGuerrier(dt){
   // il regarde le joueur — le VRoid regarde +Z (pas de demi-tour), l'ancien modèle regardait -Z (demi-tour)
   G.obj.rotation.y = Math.atan2(dx, dz) + (G.vrm ? 0 : Math.PI);
   if(G.vrm){
-    if(G.vrmClips){ G.vrm.update(dt); }                 // vraies animations recopiées : le VRM propage
+    if(G.vrmClips){ majVrm(G.vrm, dt); }                 // vraies animations recopiées : le VRM propage
     else {                                              // secours : os à la main
       const bouge = (G._lx!==undefined) && (Math.hypot(G.x-G._lx, G.z-G._lz) > 0.003);
       G._lx = G.x; G._lz = G.z;
@@ -5491,7 +5502,7 @@ function animerVRM(vrm, dt, t, marche, court, attaque, src){
     if(lUL) lUL.rotation.set(-0.35*k - 0.15, 0.1, 0);     // fente avant
   }
   if(head) head.rotation.set(-(src.tangage||0)*0.3, sw*amp*0.05, 0);
-  vrm.update(dt);                                         // springbones (cheveux, tenue) + expressions
+  majVrm(vrm, dt);                                        // springbones (cheveux, tenue) + expressions — PROTÉGÉ
 }
 
 function boucle(){
@@ -5719,7 +5730,7 @@ function boucle(){
           // bras et jambes PAR-DESSUS elle, AVANT que le VRM propage. Sans ça, on
           // vole raide comme un piquet (constaté en jeu par Patrick, 21/08).
           poserCorpsEnLAir(avatar.userData.vrm, t, joueur);
-          avatar.userData.vrm.update(dt);   // le VRM propage (cheveux, tenue)
+          majVrm(avatar.userData.vrm, dt);   // le VRM propage (cheveux, tenue) — PROTÉGÉ
         }
         else animerVRM(avatar.userData.vrm, dt, t, (av||la), court, joueur.atkCd>0);   // secours si la recopie a échoué
       }
