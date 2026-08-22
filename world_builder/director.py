@@ -140,7 +140,8 @@ class Director:
         return "deepseek" if self.client.disponible() else "regles_locales"
 
     def creer(self, demande: str, image: str | None = None,
-              pos: tuple | None = None, lieu: int = 0) -> dict:
+              pos: tuple | None = None, lieu: int = 0,
+              scene_spec: dict | None = None) -> dict:
         ref_faits = None
         if image:
             ref_faits = self.analyseur.analyser(image)
@@ -154,9 +155,13 @@ class Director:
         # Scene Specification : DÉTERMINISTE depuis le VisualProfile (OBSERVED).
         # C'est le canal qui préserve la composition spatiale — le spec-model
         # (texte seul, sans image) ne peut pas la porter fidèlement.
-        profil = (ref_faits or {}).get("visual_profile")
-        if isinstance(profil, dict):
-            spec["scene"] = composer_scene(profil)
+        # scene_spec explicite (benchmark kit) : on l'utilise tel quel.
+        if scene_spec is not None:
+            spec["scene"] = scene_spec
+        else:
+            profil = (ref_faits or {}).get("visual_profile")
+            if isinstance(profil, dict):
+                spec["scene"] = composer_scene(profil)
 
         profil_scene = _profil_de_scene(self.scene, lieu)
         if profil_scene and spec.get("style_profile") == _spec_profil_defaut():

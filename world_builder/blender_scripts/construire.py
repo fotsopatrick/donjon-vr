@@ -122,136 +122,26 @@ sc = spec.get("scene") or {}
 est_interieur = bool(sc and sc.get("layout", {}).get("shape") in
                ("circular", "elliptical", "rectangular", "square", "irregular"))
 if est_interieur:
-    # ============ SALLE INTÉRIEURE (benchmark vision 22/08) ============
-    # La SceneSpec est CONSOMMÉE, pas juste des booléens : centre lumineux,
-    # éclairage (contraste chaud/froid), atmosphère, focal_point. Les éléments
-    # restent des primitives paramétrées réutilisables (chambre circulaire).
-    R = max(L, P) * 0.5
-    sc_layout = sc.get("layout", {})
-    sc_per = sc.get("perimeter", {})
-    sc_centre = sc.get("center", {}) or {}
-    sc_lumiere = sc.get("lighting", {}) or {}
-    elliptique = (sc_layout.get("shape") == "elliptical")
+    # ============ SALLE INTÉRIEURE ============
+    # DungeonChamber : kit architectural procédural. La SceneSpec pilote
+    # room/arena/steps/columns/arches/wall/doorway/braseros/émissif central
+    # et les matériaux de pierre texturés. Aucun modèle spécifique à une photo.
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from dungeon_kit import DungeonChamber  # noqa: E402
 
-    MATS["pierre_sombre"] = mat("pierre_sombre", (0.19, 0.18, 0.17, 1), rough=0.95)
-    MATS["pierre_claire"] = mat("pierre_claire", (0.46, 0.44, 0.42, 1), rough=0.88)
-    MATS["eau_cyan"] = mat("eau_cyan", (0.08, 0.42, 0.55, 1), rough=0.25, metal=0.15,
-                           emissive=(0.12, 0.55, 0.85, 1), emissive_force=2.0)
-    MATS["feu_orange"] = mat("feu_orange", (0.85, 0.28, 0.08, 1), rough=0.6,
-                             emissive=(1.0, 0.5, 0.18, 1), emissive_force=3.0)
-    MATS["metal_sombre"] = mat("metal_sombre", (0.14, 0.14, 0.17, 1), rough=0.4, metal=0.8)
+    chambre = DungeonChamber(
+        sc,
+        {"l": L, "p": P, "h": H},
+        seed=spec.get("variation", {}).get("seed", 0))
+    info = chambre.build()
+    toit_obj = bpy.data.objects[info["objet"]]
+    R = info["rayon"]
+    H = info["hauteur"]
+    elliptique = info["elliptique"]
+    nb_colonnes = chambre.param["columns"]["count"]
+    r_col = chambre.param["columns"]["ring_radius"]
+    k_param = chambre.param
 
-    # atmosphère sombre -> pierre encore plus profonde (DA, pas gris plat)
-    atmos = " ".join(str(a).lower() for a in sc.get("atmosphere", []))
-    teinter(MATS["pierre_sombre"], 0.15 if "dark" in atmos else 0.0)
-
-    mat_murs = MATS["aged_stone"] if (sc.get("materials", {}).get("primary") == "stone") else MATS["pierre_sombre"]
-    mat_sol = MATS["pierre_claire"]
-
-    H_mur = max(4.0, R * 0.45)
-    H = H_mur
-    h_col = max(6.0, R * 0.7)
-    r_col = R * 0.72
-    r_pool = max(1.5, R * 0.20)
-    nb_colonnes = max(6, min(12, int(round(R / 2.5))))
-
-    # sol
-    ajouter("cylinder", {"vertices": 40, "radius": R, "depth": 0.5,
-                         "location": (0, 0, 0.25)}, mat_sol, "sol")
-
-    # bassin central : le point focal. Couleur LUE de la SceneSpec (cyan),
-    # pas codée en dur.
-    centre_type = (sc_centre.get("type") or "luminous_area")
-    centre_couleur = (sc_centre.get("color") or "cyan_blue")
-    if centre_type == "luminous_area":
-        if "cyan" in centre_couleur or "bleu" in centre_couleur:
-            mat_centre = MATS["eau_cyan"]
-        else:
-            mat_centre = MATS["feu_orange"]
-    else:
-        mat_centre = MATS["pierre_sombre"]
-    ajouter("cylinder", {"vertices": 40, "radius": r_pool, "depth": 0.9,
-                         "location": (0, 0, -0.05)}, mat_murs, "bassin")
-    ajouter("cylinder", {"vertices": 40, "radius": r_pool * 0.96, "depth": 0.08,
-                         "location": (0, 0, 0.40)}, mat_centre, "eau_lumineuse")
-    ajouter("torus", {"major_radius": r_pool, "minor_radius": 0.05,
-                      "location": (0, 0, 0.48)}, MATS["metal_sombre"], "bord_bassin")
-
-    # gradins concentriques : anneaux (tore aplati) autour du bassin.
-    # Le centre reste ouvert sur le point focal.
-    niveaux = sc.get("levels") or 0
-    niveaux = 2 if not niveaux else max(2, min(5, int(niveaux)))
-    r_grad_max = R * 0.55
-    for i in range(1, niveaux + 1):
-        r_int = r_pool + (r_grad_max - r_pool) * ((i - 1) / niveaux)
-        r_ext = r_pool + (r_grad_max - r_pool) * (i / niveaux)
-        h_i = 0.45 * i
-        g = ajouter("torus", {"major_radius": (r_int + r_ext) / 2,
-                              "minor_radius": (r_ext - r_int) / 2,
-                              "location": (0, 0, h_i + 0.17)},
-                    mat_sol if i % 2 else MATS["pierre_sombre"], "gradin_%d" % i)
-        g.scale = (1, 1, 0.35)
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
-    # anneau de colonnes en pierre
-    for i in range(nb_colonnes):
-        a = i / nb_colonnes * math.tau
-        x, y = math.cos(a) * r_col, math.sin(a) * r_col
-        ajouter("cylinder", {"vertices": 16, "radius": R * 0.055, "depth": 0.3,
-                             "location": (x, y, 0.15)}, mat_sol, "col_base_%d" % i)
-        ajouter("cylinder", {"vertices": 16, "radius": R * 0.035, "depth": h_col,
-                             "location": (x, y, 0.3 + h_col / 2)}, mat_murs, "colonne_%d" % i)
-        ajouter("cylinder", {"vertices": 16, "radius": R * 0.05, "depth": 0.22,
-                             "location": (x, y, 0.3 + h_col + 0.11)}, mat_sol, "col_cap_%d" % i)
-
-    # ARCHES en pierre entre colonnes : demi-tore vertical (vraies arches,
-    # pas des linteaux). Chaque arc a son axe radial.
-    h_arch = 0.3 + h_col + 0.22
-    for i in range(nb_colonnes):
-        a1 = i / nb_colonnes * math.tau
-        a2 = (i + 1) / nb_colonnes * math.tau
-        aM = (a1 + a2) / 2
-        mx, my = math.cos(aM) * r_col, math.sin(aM) * r_col
-        r_arch = r_col * math.sin((a2 - a1) / 2)
-        arc = ajouter("torus", {"major_radius": r_arch, "minor_radius": R * 0.028,
-                                "location": (mx, my, h_arch)}, mat_murs, "arc_%d" % i)
-        axis = mathutils.Vector((math.cos(aM), math.sin(aM), 0.0))
-        q = mathutils.Vector((0.0, 0.0, 1.0)).rotation_difference(axis)
-        arc.rotation_euler = q.to_euler("XYZ")
-        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
-        bm = bmesh.new()
-        bm.from_mesh(arc.data)
-        for f in list(bm.faces):
-            if all(v.co.z < h_arch - 0.001 for v in f.verts):
-                bm.faces.remove(f)
-        bm.to_mesh(arc.data)
-        bm.free()
-
-    # mur peripherique (cylindre, toit ouvert)
-    ajouter("cylinder", {"vertices": 48, "radius": R * 1.04, "depth": H_mur,
-                         "location": (0, 0, H_mur / 2)}, mat_murs, "mur_peripherique")
-
-    # contraste chaud/froid : intensite des emmissifs depuis la SceneSpec
-    contraste = (sc_lumiere.get("warm_cold_contrast") or "unknown").lower()
-    if contraste == "strong":
-        for nom, force in (("eau_cyan", 2.0), ("feu_orange", 1.5)):
-            bsdf = MATS[nom].node_tree.nodes.get("Principled BSDF")
-            bsdf.inputs["Emission Strength"].default_value = force
-
-    # lumieres chaudes orange : braseros au sommet du mur (visibles de partout)
-    if sc_per.get("warm_lights", True):
-        for i in range(nb_colonnes):
-            a = i / nb_colonnes * math.tau
-            x, y = math.cos(a) * R * 1.02, math.sin(a) * R * 1.02
-            ajouter("uv_sphere", {"segments": 12, "ring_count": 6, "radius": R * 0.04,
-                                  "location": (x, y, H_mur + 0.35)},
-                    MATS["feu_orange"], "feu_orange_%d" % i)
-
-    # fondation qui raccroche la salle au sol
-    ajouter("cylinder", {"vertices": 40, "radius": R * 1.12, "depth": 0.4,
-                         "location": (0, 0, -0.25)}, MATS["pierre_sombre"], "fondation")
-
-    toit_obj = bpy.data.objects["mur_peripherique"]
 else:
 
     # ---------- 4 murs minces (intérieur vide) ----------
@@ -419,10 +309,9 @@ bpy.ops.object.join()
 corps = bpy.context.object
 corps.name = spec.get("slug", "asset")
 
-# forme elliptique : on étire l'ensemble en X une fois joint
-if est_interieur and elliptique:
-    corps.scale = (1.25, 1.0, 1.0)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+# NOTE : la salle elliptique est gérée élément par élément par DungeonChamber
+# (chaque composant est étiré individuellement, colonnes et arches restent
+# circulaires). On n'étire PAS l'ensemble joint ici.
 
 # ---------- export GLB ----------
 os.makedirs(os.path.dirname(GLB), exist_ok=True)
@@ -445,8 +334,8 @@ bpy.context.scene.collection.objects.link(empty)
 if est_interieur:
     # vue 3/4 élevée et reculée : bassin au centre, anneaux, mur et
     # braseros orange visibles dans le même cadre.
-    cam.location = (0, -R * 1.9, R * 1.35)
-    empty.location = (0, 0, R * 0.3)
+    cam.location = (0, -R * 1.9, R * 1.6)
+    empty.location = (0, 0, R * 0.32)
 else:
     cam.location = (L * 0.9, -L * 1.05, H * 0.85)
     empty.location = (0, 0, H * 0.5)
@@ -464,11 +353,11 @@ if est_interieur:
     # EEVEE : rendu réel (matériaux + émissifs qui brillent + lampes).
     # La salle sombre : monde en nuit froide, la lumière vient des lampes.
     sc.render.engine = "BLENDER_EEVEE"
-    sc.world.color = (0.04, 0.05, 0.08)
+    sc.world.color = (0.05, 0.06, 0.09)
     try:
         sc.view_settings.view_transform = "Standard"
         sc.eevee.use_bloom = True
-        sc.eevee.bloom_intensity = 0.6
+        sc.eevee.bloom_intensity = 0.7
     except Exception:
         pass
 else:
@@ -482,14 +371,14 @@ else:
 if est_interieur:
     bpy.ops.object.select_all(action="DESELECT")
     lum = bpy.data.lights.new("Lum_centre", type="POINT")
-    lum.color = (0.30, 0.62, 1.0); lum.energy = 1200
+    lum.color = (0.30, 0.55, 1.0); lum.energy = 2600
     o = bpy.data.objects.new("Lum_centre", lum)
     bpy.context.scene.collection.objects.link(o)
     o.location = (0, 0, R * 0.5)
     for i in range(nb_colonnes):
         a = i / nb_colonnes * math.tau
         lum = bpy.data.lights.new("Lum_chaud_%d" % i, type="POINT")
-        lum.color = (1.0, 0.5, 0.22); lum.energy = 1500
+        lum.color = (1.0, 0.5, 0.22); lum.energy = 6000
         o = bpy.data.objects.new("Lum_chaud_%d" % i, lum)
         bpy.context.scene.collection.objects.link(o)
         o.location = (math.cos(a) * r_col, math.sin(a) * r_col, 2.5)

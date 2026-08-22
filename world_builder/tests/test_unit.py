@@ -142,6 +142,30 @@ def main():
     echecs += verifie("vision : wood seul n'est pas du bois_sombre",
                       "pierre_sombre" not in ded2 and "bois" not in ded2, str(ded2))
 
+    # 8. DungeonChamber : mapping SceneSpec -> paramètres du kit (sans Blender)
+    from world_builder.dungeon_kit import parametrer  # noqa: E402
+    sc = {"layout": {"shape": "elliptical", "symmetry": "radial", "focal_point": "center"},
+          "center": {"type": "luminous_area", "color": "cyan_blue"},
+          "perimeter": {"columns": True, "arches": True, "walls": True,
+                        "warm_lights": True, "cold_center": True},
+          "levels": 3,
+          "materials": {"primary": "stone"},
+          "lighting": {"warm_cold_contrast": "strong"},
+          "atmosphere": ["dark", "monumental"]}
+    p = parametrer(sc, {"l": 40, "p": 40, "h": 20})
+    echecs += verifie("kit : arène cyan activée",
+                      p["arena"]["enabled"] and p["arena"]["color"] == "cyan_blue", str(p["arena"]))
+    echecs += verifie("kit : 3 gradins (levels=3)",
+                      p["steps"]["count"] == 3, str(p["steps"]))
+    echecs += verifie("kit : salle elliptique avec étirement",
+                      p["room"]["elliptique"] and p["room"]["k_elliptique"] >= 1.0,
+                      str(p["room"]))
+    echecs += verifie("kit : braseros + contraste forts",
+                      p["lighting"]["warm_perimeter"] and p["lighting"]["contrast"] == "strong",
+                      str(p["lighting"]))
+    echecs += verifie("kit : mur + portes activés",
+                      p["wall"]["height"] >= 5 and p["doorway"]["enabled"], str(p["wall"]))
+
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
 
