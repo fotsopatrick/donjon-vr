@@ -2156,6 +2156,13 @@ function batir(){
   /* --- les habitants --- */
   for(const e of ennemis){
     let g;
+    // LES CRÉATURES passent par la bibliothèque réutilisable quand elles y sont
+    // (components/creatures.js) : rat, spectre. Les autres gardent leur fabrique
+    // interne — on migre progressivement, sans casser le gameplay.
+    const _comp = window.CREATURES && window.CREATURES.trouver(e.type);
+    if(_comp){
+      g = window.CREATURES.construire(_comp.componentId, { ph: e.ph, scale: _comp.scale });
+    } else
     if(e.type==='squelette'){
       // des os qui marchent : crâne, cage thoracique, deux bras ballants
       g = new THREE.Group();
@@ -2312,10 +2319,11 @@ function batir(){
     monde.add(g);
     e.obj = g; meshEnnemis.push(g);
     e.vieMax = e.vie;                                   // jauge de vie au-dessus du monstre
+    const yBarre = (_comp && _comp.hauteurBarre) || 2.05;   // chaque créature a SA hauteur de jauge
     const jaFond = new THREE.Sprite(new THREE.SpriteMaterial({ color:0x1a0606, transparent:true, opacity:0.75, depthWrite:false }));
-    jaFond.scale.set(0.92,0.13,1); jaFond.position.y=2.05; jaFond.renderOrder=18;
+    jaFond.scale.set(0.92,0.13,1); jaFond.position.y=yBarre; jaFond.renderOrder=18;
     const jaBar = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xff3333, depthWrite:false }));
-    jaBar.scale.set(0.86,0.08,1); jaBar.position.set(0,2.05,0.01); jaBar.renderOrder=19;
+    jaBar.scale.set(0.86,0.08,1); jaBar.position.set(0,yBarre,0.01); jaBar.renderOrder=19;
     g.add(jaFond, jaBar); e.barre = jaBar; e.barreFond = jaFond;
   }
 }
@@ -6648,6 +6656,7 @@ function boucle(){
       else if(e.type==='slime_rouge') yb = 0.5 + Math.abs(Math.sin(t*4.2+e.ph))*0.6;   // gros bond agressif
       else if(e.type==='squelette') yb = Math.abs(Math.sin(t*6.5+e.ph))*0.07;
       else if(e.type==='spectre')   yb = 0.35 + Math.sin(t*1.6+e.ph)*0.22;
+      else if(e.type==='rat')       yb = Math.abs(Math.sin(t*13+e.ph))*0.03;   // rat au ras du sol
       else                          yb = 0.22 + Math.abs(Math.sin(t*11+e.ph))*0.05;
       e.obj.position.set(e.x*T, yb, e.y*T);
       e.obj.rotation.y = Math.atan2(joueur.x - e.x*T, joueur.z - e.y*T);
@@ -6998,5 +7007,6 @@ window.KOTOAGE = {
 <script type="module" src="world-builder-ui.js"></script>
 <script type="module" src="chat-traduction.js"></script>
 <script type="module" src="sky-system.js"></script>
+<script type="module" src="components/creatures.js"></script>
 </body>
 </html>
