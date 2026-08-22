@@ -7,6 +7,11 @@
       la pose ne s'applique pas visiblement en vol — vérifier pourquoi : le mixer
       des vraies animations écrase peut-être la pose, ou avatar.rotation.x/tangage
       n'est pas posé). Régler AVANT tout le reste.
+      IDÉE DE PATRICK (meilleure piste) : des AILES D'ELFE qui se DÉPLOIENT
+      quand on décolle, avec une animation de battement. L'œil regarde les ailes,
+      plus la pose raide du corps. Chercher des ailes CC0 (domaine public) :
+      Quaternius, Sketchfab (filtre CC0), Poly Pizza. Les attacher au dos (os
+      upperChest/spine), cachées au sol, ouvertes en vol, qui battent doucement.
 
 
 **Règle de tri**, du plus urgent au moins urgent :
