@@ -14,7 +14,7 @@ sys.path.insert(0, PROJET)
 from world_builder.asset_registry import Registre
 from world_builder.director import _parse_transformations
 from world_builder.reference_analyzer import PaletteReferenceAnalyzer
-from world_builder.scene_spec import STYLE_PROFILE_DEFAUT, est_geometrique, valider
+from world_builder.scene_spec import STYLE_PROFILE_DEFAUT, est_geometrique, meta_spec, valider
 from world_builder.scene_store import SceneStore
 from world_builder.spec_generator import generer_locale
 
@@ -87,6 +87,17 @@ def main():
         s.mettre_a_jour(aid, {"position": {"x": -6.0, "z": -2.0}})
         echecs += verifie("scène : position à jour",
                           s.obtenir(aid)["position"]["z"] == -2.0)
+
+        # cohérence meta registre/scène (P0.5-16) : le chemin EXACT de
+        # director.modifier() — nouvelle_version + meta_spec dans la scène.
+        spec_v2 = dict(spec)
+        spec_v2["materials"] = ["dark_wood", "moss"]
+        r.nouvelle_version(aid, spec_v2, "maison_001_v2.glb")
+        s.mettre_a_jour(aid, {"assetVersion": 2, "meta": meta_spec(spec_v2)})
+        echecs += verifie("cohérence : meta registre == meta scène",
+                          r.obtenir(aid)["meta"] == s.obtenir(aid)["meta"],
+                          "registre %s != scène %s" % (r.obtenir(aid)["meta"],
+                                                       s.obtenir(aid)["meta"]))
 
     # 6. analyse de référence RÉELLE (PNG du projet, palette)
     apercu = os.path.join(PROJET, "blender", "apercu_tonneau.png")

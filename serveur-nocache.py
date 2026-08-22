@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # Sert le jeu SANS cache : Patrick voit toujours la dernière version (fini les vieux bugs revenus).
+# Multi-threadé : si un onglet meurt en plein transfert (Chrome tué pendant un test),
+# le serveur ne se fige PAS sur la connexion morte (leçon payée le 22/08 — mono-thread = flaky).
 import http.server, socketserver
 PORT = 8099
 class H(http.server.SimpleHTTPRequestHandler):
@@ -10,5 +12,5 @@ class H(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
     def log_message(self, *a): pass
 socketserver.TCPServer.allow_reuse_address = True
-print("Serveur no-cache sur http://127.0.0.1:%d" % PORT)
-socketserver.TCPServer(('', PORT), H).serve_forever()
+print("Serveur no-cache (multi-threadé) sur http://127.0.0.1:%d" % PORT)
+socketserver.ThreadingTCPServer(('', PORT), H).serve_forever()

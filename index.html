@@ -2862,10 +2862,11 @@ addEventListener('keyup',   e=>{ touches[e.code]=false; });
 
 let verrou = false;
 let tireDepart = {x:0, y:0};
-renderer.domElement.addEventListener('mousedown', e=>{ tireDepart = {x:e.clientX, y:e.clientY}; if(e.button===0) souris1Enfoncee = true; });
+renderer.domElement.addEventListener('mousedown', e=>{ tireDepart = {x:e.clientX, y:e.clientY}; if(e.button===0 && !(window.WBUI && window.WBUI.enModeConstructeur)) souris1Enfoncee = true; });
 addEventListener('mouseup', e=>{ if(e.button===0) souris1Enfoncee = false; });
 addEventListener('blur', ()=>{ souris1Enfoncee = false; });   // on quitte la fenêtre : on lâche
 renderer.domElement.addEventListener('click', e=>{
+  if(window.WBUI && window.WBUI.enModeConstructeur){ return; }   // le world builder gère le clic
   window.Sons?.demarrer();
   if(verrou){ frapper(); return; }
   // si la souris a bougé, c'était un pivot, pas un coup d'épée
@@ -6373,7 +6374,7 @@ tete.position.set(joueur.x, 1.62, joueur.z);
 // le monde-builder (world-builder.js) s'accroche ici : scène, groupe d'étage,
 // niveau courant. Deux lignes, aucune logique de jeu déplacée.
 window.KOTOAGE = {
-  scene, monde,
+  scene, monde, camera, renderer,
   get niveau(){ return niveau; },
   get estDehors(){ return estDehors(); },
 };
@@ -6381,5 +6382,6 @@ window.KOTOAGE = {
 <div id="perf"></div>
 <canvas id="radar" width="164" height="164"></canvas>
 <script type="module" src="world-builder.js"></script>
+<script type="module" src="world-builder-ui.js"></script>
 </body>
 </html>
