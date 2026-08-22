@@ -1,6 +1,13 @@
 # La pile — ce que Patrick a demandé, dans l'ordre
 
 ## EN PREMIER à la reprise (Patrick, 22/08)
+- [ ] **L'ENTRÉE DU DONJON EST RATÉE** (vue sur la photo du vol : grande forme
+      beige plate en haut à droite, comme un carton de travers, pas un bâtiment).
+      C'est le modèle entreeColisee, troué/incomplet. Deux voies :
+      1) le CACHER (ne pas le poser) — vite fait, l'escalier/cercle reste pour
+         descendre ; une entrée absente est moins laide qu'une entrée ratée.
+      2) le REFAIRE propre en pierre (arche + colonnes, sans trous) dans le jeu.
+      Demander à Patrick laquelle il veut.
 - [ ] **LE VOL N'EST PAS NATUREL** : le corps reste tout droit, debout dans les
       airs, jambes qui pendent. Il doit PLANER : buste penché en avant, bras
       ouverts en arrière, jambes tendues derrière (poserCorpsEnLAir existe mais
