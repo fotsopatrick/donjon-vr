@@ -182,6 +182,7 @@ class DungeonChamber:
         self.rng = random.Random(int(seed) or 0)
         self.objets = []
         self.ancre = None
+        self.bases = []              # bases de kit à supprimer après instancing
         self.angles_colonnes = []      # angles des colonnes (utile aux portes)
         self.angles_portes = []        # angles des portes (pour escaliers/lumières)
         self._construire_materiaux()
@@ -256,6 +257,39 @@ class DungeonChamber:
                                    "rotation": (0, 0, rotation_z)}, mat, nom)
         o.scale = (taille[0] * echelle_x, taille[1], taille[2])
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        return o
+
+    # ------------------------ KIT MODULAIRE / INSTANCING ----------------------
+    def _base_unique(self, nom, ajouter_pieces):
+        """Construit une pièce de kit UNE FOIS : les primitives posées par
+        ajouter_pieces() sont jointes en UN seul mesh partagé (la base).
+        On la réinstancie ensuite partout -> mémoire réduite, scène propre,
+        modification centralisée (on change la base, tout suit)."""
+        debut = len(bpy.data.objects)
+        ajouter_pieces()
+        pieces = list(bpy.data.objects)[debut:]
+        if not pieces:
+            raise RuntimeError("kit: aucune pièce pour la base %s" % nom)
+        if len(pieces) > 1:
+            for p in pieces:
+                p.select_set(True)
+            bpy.context.view_layer.objects.active = pieces[0]
+            bpy.ops.object.join()
+        o = bpy.context.object
+        o.name = nom
+        o.select_set(False)
+        self.bases.append(o)          # supprimée après instancing (mesh partagé conservé)
+        return o
+
+    def _instancier(self, base, nom, location, rotation_z=0.0, echelle=(1.0, 1.0, 1.0)):
+        """Instance partageant le mesh de la base, avec sa propre transform.
+        glTF exportera la géométrie une fois + N nœuds de transform."""
+        o = bpy.data.objects.new(nom, base.data)
+        bpy.context.scene.collection.objects.link(o)
+        o.location = location
+        o.rotation_euler = (0, 0, rotation_z)
+        o.scale = echelle
+        self.objets.append(nom)
         return o
 
     # ============================ COMPOSANTS =============================
@@ -367,50 +401,54 @@ class DungeonChamber:
     def stone_columns(self):
         c = self.param["columns"]
         r_col = c["ring_radius"]
+        r_shaft = c["radius"]
+        h_shaft = c["height"]
         self.angles_colonnes = [i / c["count"] * math.tau for i in range(c["count"])]
+        # KIT : une seule colonne construite (au centre), instanciée partout.
+        base = self._base_unique("kit_colonne", lambda: self._pieces_colonne(
+            r_shaft, h_shaft))
         for i, a in enumerate(self.angles_colonnes):
             x, y = math.cos(a) * r_col, math.sin(a) * r_col
-            # variation contrôlée (cohérence conservée, ±4%)
             fac = 1.0 + self.rng.uniform(-0.04, 0.04)
-            r_shaft = c["radius"] * fac
-            h_shaft = c["height"] * (1.0 + self.rng.uniform(-0.02, 0.02))
-            # base
-            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.8,
-                                       "depth": 0.26, "location": (x, y, 0.13)},
-                          self.mats["stone_trim"], "col_base_%d" % i)
-            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.5,
-                                       "depth": 0.16, "location": (x, y, 0.34)},
-                          self.mats["stone_trim"], "col_base2_%d" % i)
-            # fût (légèrement fuselé vers le haut = entasis)
-            f = self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
-                                           "depth": h_shaft,
-                                           "location": (x, y, 0.42 + h_shaft / 2)},
-                              self.mats["dark_stone"], "colonne_%d" % i)
-            bm = bmesh.new()
-            bm.from_mesh(f.data)
-            for v in bm.verts:
-                if v.co.z > h_shaft / 2 - 0.02:
-                    v.co.x *= 0.92
-                    v.co.y *= 0.92
-            bm.to_mesh(f.data)
-            bm.free()
-            if c["style"] == "fluted":
-                # cannelures : 8 rainures sombres verticales
-                for g in range(8):
-                    ga = a + g / 8 * math.tau
-                    gx, gy = math.cos(ga) * r_col * 0.999, math.sin(ga) * r_col * 0.999
-                    self._boite((gx, gy, 0.42 + h_shaft / 2),
-                                (0.10, 0.06, h_shaft * 0.88), ga,
-                                self.mats["metal_bleu"], "cannelure_%d_%d" % (i, g))
-            # chapiteau : tore + assiette
-            self._ajouter("torus", {"major_radius": r_shaft * 1.55,
-                                    "minor_radius": r_shaft * 0.5,
-                                    "location": (x, y, 0.42 + h_shaft + 0.14)},
-                          self.mats["stone_trim"], "col_tore_%d" % i)
-            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.7,
-                                       "depth": 0.18,
-                                       "location": (x, y, 0.42 + h_shaft + 0.32)},
-                          self.mats["stone_trim"], "col_cap_%d" % i)
+            hfac = 1.0 + self.rng.uniform(-0.02, 0.02)
+            self._instancier(base, "colonne_%d" % i, (x, y, 0.0),
+                             rotation_z=a, echelle=(fac, fac, hfac))
+
+    def _pieces_colonne(self, r_shaft, h_shaft):
+        """Les pièces d'UNE colonne, centrées à l'origine (kit asset)."""
+        self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.8,
+                                   "depth": 0.26, "location": (0, 0, 0.13)},
+                      self.mats["stone_trim"], "col_base")
+        self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.5,
+                                   "depth": 0.16, "location": (0, 0, 0.34)},
+                      self.mats["stone_trim"], "col_base2")
+        f = self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
+                                       "depth": h_shaft,
+                                       "location": (0, 0, 0.42 + h_shaft / 2)},
+                          self.mats["dark_stone"], "col_fut")
+        bm = bmesh.new()
+        bm.from_mesh(f.data)
+        for v in bm.verts:
+            if v.co.z > h_shaft / 2 - 0.02:
+                v.co.x *= 0.92
+                v.co.y *= 0.92
+        bm.to_mesh(f.data)
+        bm.free()
+        if self.param["columns"]["style"] == "fluted":
+            for g in range(8):
+                ga = g / 8 * math.tau
+                gx, gy = math.cos(ga) * r_shaft * 1.01, math.sin(ga) * r_shaft * 1.01
+                self._boite((gx, gy, 0.42 + h_shaft / 2),
+                            (0.10, 0.06, h_shaft * 0.88), ga,
+                            self.mats["metal_bleu"], "cannelure_%d" % g)
+        self._ajouter("torus", {"major_radius": r_shaft * 1.55,
+                                "minor_radius": r_shaft * 0.5,
+                                "location": (0, 0, 0.42 + h_shaft + 0.14)},
+                      self.mats["stone_trim"], "col_tore")
+        self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.7,
+                                   "depth": 0.18,
+                                   "location": (0, 0, 0.42 + h_shaft + 0.32)},
+                      self.mats["stone_trim"], "col_cap")
 
     def stone_arches(self):
         a = self.param["arches"]
@@ -614,15 +652,17 @@ class DungeonChamber:
         rail = self._anneau(r_rail - 0.06, r_rail + 0.06, z_rail, 0.10,
                             self.mats["metal"], "main_courante")
         self._echelle_x(rail, k)
-        # balustres
+        # balustres : une seule base, instanciée (kit modulaire)
+        base_bal = self._base_unique("kit_balustre", lambda: self._ajouter(
+            "cylinder", {"vertices": 6, "radius": 0.06, "depth": 0.7,
+                         "location": (0, 0, 0)}, self.mats["stone_trim"],
+            "balustre_base"))
         nb = max(12, int(r_rail * 1.2))
         for i in range(nb):
             a = i / nb * math.tau
             x, y = math.cos(a) * r_rail, math.sin(a) * r_rail
-            b = self._ajouter("cylinder", {"vertices": 6, "radius": 0.06,
-                                           "depth": 0.7,
-                                           "location": (x, y, z_rail - 0.35)},
-                              self.mats["stone_trim"], "balustre_%d" % i)
+            b = self._instancier(base_bal, "balustre_%d" % i,
+                                 (x, y, z_rail - 0.35), rotation_z=a)
             self._echelle_x(b, k)
 
     def warm_perimeter_lights(self):
@@ -636,19 +676,25 @@ class DungeonChamber:
         r = c["ring_radius"] * 0.96
         z = s["height"] * s["count"] + 0.55
         n = c["count"]
+        base_br = self._base_unique("kit_brasero", lambda: self._pieces_brasero(z))
         for i in range(n):
             a = i / n * math.tau + 0.02
             x, y = math.cos(a) * r, math.sin(a) * r
-            self._ajouter("cylinder", {"vertices": 8, "radius": 0.16, "depth": 0.45,
-                                       "location": (x, y, z - 0.22)},
-                          self.mats["metal"], "pied_brasero_%d" % i)
-            self._ajouter("cylinder", {"vertices": 8, "radius": 0.40, "depth": 0.12,
-                                       "location": (x, y, z + 0.06)},
-                          self.mats["metal"], "vasque_%d" % i)
-            fac = 1.0 + self.rng.uniform(-0.12, 0.12)
-            self._ajouter("uv_sphere", {"segments": 12, "ring_count": 6,
-                                        "radius": 0.42 * fac, "location": (x, y, z + 0.42)},
-                          self.mats["feu_orange"], "flamme_%d" % i)
+            fac = 1.0 + self.rng.uniform(-0.06, 0.06)
+            self._instancier(base_br, "brasero_%d" % i, (x, y, 0.0),
+                             rotation_z=a, echelle=(fac, fac, fac))
+
+    def _pieces_brasero(self, z):
+        """Pièces d'un brasero centré à l'origine (pied + vasque + flamme)."""
+        self._ajouter("cylinder", {"vertices": 8, "radius": 0.16, "depth": 0.45,
+                                   "location": (0, 0, z - 0.22)},
+                      self.mats["metal"], "pied_brasero")
+        self._ajouter("cylinder", {"vertices": 8, "radius": 0.40, "depth": 0.12,
+                                   "location": (0, 0, z + 0.06)},
+                      self.mats["metal"], "vasque")
+        self._ajouter("uv_sphere", {"segments": 12, "ring_count": 6,
+                                    "radius": 0.42, "location": (0, 0, z + 0.42)},
+                      self.mats["feu_orange"], "flamme")
 
     def decorative_elements(self):
         p = self.param["room"]
@@ -668,20 +714,21 @@ class DungeonChamber:
                 b = self._boite((x, y, 0.52), ((r1 - r0), 0.14, 0.02),
                                 ang, self.mats["stone_trim"], "rayon_sol_%d" % i)
                 self._echelle_x(b, k)
-        # pierres éparses au pied du mur (organisation, pas chaos)
+        # pierres éparses au pied du mur : 2 bases instanciées avec variations
+        base_p = self._base_unique("kit_pierre", lambda: self._ajouter(
+            "ico_sphere", {"subdivisions": 1, "radius": 0.25, "location": (0, 0, 0)},
+            self.mats["pierre_gradins"], "pierre_base"))
         nb = 10
         for i in range(nb):
             ang = self.rng.uniform(0, math.tau)
             r = w["radius"] - 0.8 + self.rng.uniform(-0.4, 0.4)
             x, y = math.cos(ang) * r, math.sin(ang) * r
-            taille = self.rng.uniform(0.15, 0.35)
-            b = self._ajouter("ico_sphere", {"subdivisions": 1, "radius": taille,
-                                             "location": (x, y, taille * 0.35)},
-                              self.mats["pierre_gradins"], "pierre_%d" % i)
-            b.rotation_euler.z = self.rng.uniform(0, math.tau)
-            b.scale = (self.rng.uniform(0.7, 1.4), self.rng.uniform(0.7, 1.4),
-                       self.rng.uniform(0.5, 0.9))
-            bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+            taille = self.rng.uniform(0.6, 1.4)
+            b = self._instancier(base_p, "pierre_%d" % i, (x, y, 0),
+                                 rotation_z=self.rng.uniform(0, math.tau),
+                                 echelle=(taille * self.rng.uniform(0.8, 1.3),
+                                          taille * self.rng.uniform(0.8, 1.3),
+                                          taille * self.rng.uniform(0.5, 0.9)))
             self._echelle_x(b, k)
         # fissures légères du sol (boîtes fines et sombres, orientées au hasard)
         for i in range(6):
@@ -836,6 +883,13 @@ class DungeonChamber:
         self.meurtrieres()
         self.porte_bois()
         self.flaques_torches()
+        # les bases de kit ne doivent pas entrer dans le join final : on les
+        # retire (leurs instances partagent le mesh, il reste référencé).
+        for b in self.bases:
+            try:
+                bpy.data.objects.remove(b, do_unlink=True)
+            except Exception:
+                pass
         return {
             "ancre": self.ancre,
             "objet": self.ancre,
