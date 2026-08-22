@@ -1,508 +1,591 @@
 {
-  "version": 1,
-  "objets": [
-    {
-      "id": "building_001",
-      "slug": "maison",
-      "assetFile": "modeles/generes/maison_001_v2.glb",
-      "assetVersion": 2,
-      "lieu": 0,
-      "position": {
-        "x": -6.0,
-        "z": 8.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.2,
-      "meta": {
-        "style": "nordic",
-        "materials": [
-          "dark_wood",
-          "moss"
-        ],
-        "features": [
-          "steep_roof",
-          "moss"
-        ],
-        "dimensions": {
-          "l": 3.0,
-          "p": 2.4,
-          "h": 2.6
-        },
-        "toit": {
-          "type": "pentu",
-          "pente": "forte"
-        },
-        "variation": {
-          "seed": 1,
-          "weathered": 0.7,
-          "moss": 0.6
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        }
-      }
+ "version": 1,
+ "objets": [
+  {
+   "id": "building_001",
+   "slug": "maison",
+   "assetFile": "modeles/generes/maison_001_v2.glb",
+   "assetVersion": 2,
+   "lieu": 0,
+   "position": {
+    "x": -6.0,
+    "z": 8.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.2,
+   "meta": {
+    "style": "nordic",
+    "materials": [
+     "dark_wood",
+     "moss"
+    ],
+    "features": [
+     "steep_roof",
+     "moss"
+    ],
+    "dimensions": {
+     "l": 3.0,
+     "p": 2.4,
+     "h": 2.6
     },
-    {
-      "id": "building_002",
-      "slug": "grange",
-      "assetFile": "modeles/generes/grange_002_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": 4.0,
-        "z": 6.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "generic",
-        "materials": [
-          "wood"
-        ],
-        "features": [
-          "steep_roof"
-        ],
-        "dimensions": {
-          "l": 4.0,
-          "p": 3.0,
-          "h": 3.2
-        },
-        "toit": {
-          "type": "pentu",
-          "pente": "forte"
-        },
-        "variation": {
-          "seed": 2,
-          "weathered": 0.0,
-          "moss": 0.0
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        }
-      }
+    "toit": {
+     "type": "pentu",
+     "pente": "forte"
     },
-    {
-      "id": "building_003",
-      "slug": "maison",
-      "assetFile": "modeles/generes/maison_003_v2.glb",
-      "assetVersion": 2,
-      "lieu": 0,
-      "position": {
-        "x": 10.0,
-        "z": 6.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "generic",
-        "materials": [
-          "dark_wood",
-          "moss"
-        ],
-        "features": [
-          "steep_roof",
-          "moss"
-        ],
-        "dimensions": {
-          "l": 4.0,
-          "p": 3.0,
-          "h": 3.2
-        },
-        "toit": {
-          "type": "pentu",
-          "pente": "forte"
-        },
-        "variation": {
-          "seed": 3,
-          "weathered": 0.7,
-          "moss": 0.6
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        }
-      }
+    "variation": {
+     "seed": 1,
+     "weathered": 0.7,
+     "moss": 0.6
     },
-    {
-      "id": "building_004",
-      "slug": "brown-block-building",
-      "assetFile": "modeles/generes/brown-block-building_004_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": 16.0,
-        "z": 6.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "generic",
-        "materials": [
-          "dark_wood"
-        ],
-        "features": [
-          "weathered_wood"
-        ],
-        "dimensions": {
-          "l": 10.0,
-          "p": 8.0,
-          "h": 9.0
-        },
-        "toit": {
-          "type": "plat",
-          "pente": "nulle",
-          "couleur": "gris"
-        },
-        "variation": {
-          "seed": 12345,
-          "weathered": 0.0,
-          "moss": 0.0
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        }
-      }
-    },
-    {
-      "id": "building_005",
-      "slug": "grande-salle-elliptique-verre",
-      "assetFile": "modeles/generes/grande-salle-elliptique-verre_005_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": -60.0,
-        "z": -60.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "generic",
-        "materials": [
-          "stone"
-        ],
-        "features": [
-          "dome"
-        ],
-        "dimensions": {
-          "l": 50.0,
-          "p": 40.0,
-          "h": 30.0
-        },
-        "toit": {
-          "type": "dôme",
-          "pente": "nulle",
-          "couleur": "bleu"
-        },
-        "variation": {
-          "seed": 42,
-          "weathered": 0.3,
-          "moss": 0.1
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        }
-      }
-    },
-    {
-      "id": "building_006",
-      "slug": "salle-circulaire-fantasy",
-      "assetFile": "modeles/generes/salle-circulaire-fantasy_006_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": -60.0,
-        "z": 40.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "medieval",
-        "materials": [
-          "aged_stone"
-        ],
-        "features": [
-          "dome"
-        ],
-        "dimensions": {
-          "l": 40.0,
-          "p": 40.0,
-          "h": 20.0
-        },
-        "toit": {
-          "type": "dôme",
-          "pente": "forte",
-          "couleur": "gris"
-        },
-        "variation": {
-          "seed": 42,
-          "weathered": 0.8,
-          "moss": 0.2
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        },
-        "scene": {
-          "layout": {
-            "shape": "elliptical",
-            "symmetry": "radial",
-            "focal_point": "center"
-          },
-          "center": {
-            "type": "luminous_area",
-            "color": "cyan_blue"
-          },
-          "perimeter": {
-            "stairs": false,
-            "columns": true,
-            "arches": true,
-            "walls": true,
-            "warm_lights": true,
-            "cold_center": true
-          },
-          "levels": 1,
-          "materials": {
-            "primary": "stone"
-          },
-          "lighting": {
-            "warm_cold_contrast": "strong",
-            "warm_orange": true,
-            "cold_blue_center": true
-          },
-          "atmosphere": [
-            "dark",
-            "mystical",
-            "ancient",
-            "monumental"
-          ]
-        }
-      }
-    },
-    {
-      "id": "building_007",
-      "slug": "grande-salle-circulaire",
-      "assetFile": "modeles/generes/grande-salle-circulaire_007_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": 90.0,
-        "z": 90.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "medieval",
-        "materials": [
-          "aged_stone"
-        ],
-        "features": [
-          "dome"
-        ],
-        "dimensions": {
-          "l": 40.0,
-          "p": 40.0,
-          "h": 20.0
-        },
-        "toit": {
-          "type": "dôme",
-          "pente": "forte",
-          "couleur": "gris"
-        },
-        "variation": {
-          "seed": 42,
-          "weathered": 0.8,
-          "moss": 0.2
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        },
-        "scene": {
-          "layout": {
-            "shape": "elliptical",
-            "symmetry": "radial",
-            "focal_point": "center"
-          },
-          "center": {
-            "type": "luminous_area",
-            "color": "cyan_blue"
-          },
-          "perimeter": {
-            "stairs": false,
-            "columns": true,
-            "arches": true,
-            "walls": true,
-            "warm_lights": true,
-            "cold_center": true
-          },
-          "levels": 1,
-          "materials": {
-            "primary": "stone"
-          },
-          "lighting": {
-            "warm_cold_contrast": "strong",
-            "warm_orange": true,
-            "cold_blue_center": true
-          },
-          "atmosphere": [
-            "dark",
-            "mystical",
-            "ancient",
-            "monumental"
-          ]
-        }
-      }
-    },
-    {
-      "id": "building_008",
-      "slug": "grande-salle-circulaire",
-      "assetFile": "modeles/generes/grande-salle-circulaire_008_v1.glb",
-      "assetVersion": 1,
-      "lieu": 0,
-      "position": {
-        "x": -100.0,
-        "z": 60.0
-      },
-      "rotationY": 0.0,
-      "echelle": 1.0,
-      "meta": {
-        "style": "medieval",
-        "materials": [
-          "aged_stone"
-        ],
-        "features": [
-          "dome"
-        ],
-        "dimensions": {
-          "l": 40.0,
-          "p": 40.0,
-          "h": 20.0
-        },
-        "toit": {
-          "type": "dôme",
-          "pente": "nulle",
-          "couleur": "gris"
-        },
-        "variation": {
-          "seed": 12345,
-          "weathered": 0.8,
-          "moss": 0.3
-        },
-        "style_profile": {
-          "architecture": "nordic medieval",
-          "materials": [
-            "dark_wood",
-            "aged_stone",
-            "moss"
-          ],
-          "terrain": "rocky wet",
-          "vegetation": "dense conifers",
-          "lighting": "night cold",
-          "accent": "warm interior lights",
-          "atmosphere": "fog moisture"
-        },
-        "scene": {
-          "layout": {
-            "shape": "elliptical",
-            "symmetry": "radial",
-            "focal_point": "center"
-          },
-          "center": {
-            "type": "luminous_area",
-            "color": "cyan_blue"
-          },
-          "perimeter": {
-            "stairs": false,
-            "columns": true,
-            "arches": true,
-            "walls": true,
-            "warm_lights": true,
-            "cold_center": true
-          },
-          "levels": 1,
-          "materials": {
-            "primary": "stone"
-          },
-          "lighting": {
-            "warm_cold_contrast": "strong",
-            "warm_orange": true,
-            "cold_blue_center": true
-          },
-          "atmosphere": [
-            "dark",
-            "mystical",
-            "ancient",
-            "monumental"
-          ]
-        }
-      }
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
     }
-  ]
+   }
+  },
+  {
+   "id": "building_002",
+   "slug": "grange",
+   "assetFile": "modeles/generes/grange_002_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": 4.0,
+    "z": 6.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "generic",
+    "materials": [
+     "wood"
+    ],
+    "features": [
+     "steep_roof"
+    ],
+    "dimensions": {
+     "l": 4.0,
+     "p": 3.0,
+     "h": 3.2
+    },
+    "toit": {
+     "type": "pentu",
+     "pente": "forte"
+    },
+    "variation": {
+     "seed": 2,
+     "weathered": 0.0,
+     "moss": 0.0
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    }
+   }
+  },
+  {
+   "id": "building_003",
+   "slug": "maison",
+   "assetFile": "modeles/generes/maison_003_v2.glb",
+   "assetVersion": 2,
+   "lieu": 0,
+   "position": {
+    "x": 10.0,
+    "z": 6.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "generic",
+    "materials": [
+     "dark_wood",
+     "moss"
+    ],
+    "features": [
+     "steep_roof",
+     "moss"
+    ],
+    "dimensions": {
+     "l": 4.0,
+     "p": 3.0,
+     "h": 3.2
+    },
+    "toit": {
+     "type": "pentu",
+     "pente": "forte"
+    },
+    "variation": {
+     "seed": 3,
+     "weathered": 0.7,
+     "moss": 0.6
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    }
+   }
+  },
+  {
+   "id": "building_004",
+   "slug": "brown-block-building",
+   "assetFile": "modeles/generes/brown-block-building_004_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": 16.0,
+    "z": 6.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "generic",
+    "materials": [
+     "dark_wood"
+    ],
+    "features": [
+     "weathered_wood"
+    ],
+    "dimensions": {
+     "l": 10.0,
+     "p": 8.0,
+     "h": 9.0
+    },
+    "toit": {
+     "type": "plat",
+     "pente": "nulle",
+     "couleur": "gris"
+    },
+    "variation": {
+     "seed": 12345,
+     "weathered": 0.0,
+     "moss": 0.0
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    }
+   }
+  },
+  {
+   "id": "building_005",
+   "slug": "grande-salle-elliptique-verre",
+   "assetFile": "modeles/generes/grande-salle-elliptique-verre_005_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": -60.0,
+    "z": -60.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "generic",
+    "materials": [
+     "stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 50.0,
+     "p": 40.0,
+     "h": 30.0
+    },
+    "toit": {
+     "type": "dôme",
+     "pente": "nulle",
+     "couleur": "bleu"
+    },
+    "variation": {
+     "seed": 42,
+     "weathered": 0.3,
+     "moss": 0.1
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    }
+   }
+  },
+  {
+   "id": "building_006",
+   "slug": "salle-circulaire-fantasy",
+   "assetFile": "modeles/generes/salle-circulaire-fantasy_006_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": -60.0,
+    "z": 40.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "medieval",
+    "materials": [
+     "aged_stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 40.0,
+     "p": 40.0,
+     "h": 20.0
+    },
+    "toit": {
+     "type": "dôme",
+     "pente": "forte",
+     "couleur": "gris"
+    },
+    "variation": {
+     "seed": 42,
+     "weathered": 0.8,
+     "moss": 0.2
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    },
+    "scene": {
+     "layout": {
+      "shape": "elliptical",
+      "symmetry": "radial",
+      "focal_point": "center"
+     },
+     "center": {
+      "type": "luminous_area",
+      "color": "cyan_blue"
+     },
+     "perimeter": {
+      "stairs": false,
+      "columns": true,
+      "arches": true,
+      "walls": true,
+      "warm_lights": true,
+      "cold_center": true
+     },
+     "levels": 1,
+     "materials": {
+      "primary": "stone"
+     },
+     "lighting": {
+      "warm_cold_contrast": "strong",
+      "warm_orange": true,
+      "cold_blue_center": true
+     },
+     "atmosphere": [
+      "dark",
+      "mystical",
+      "ancient",
+      "monumental"
+     ]
+    }
+   }
+  },
+  {
+   "id": "building_007",
+   "slug": "grande-salle-circulaire",
+   "assetFile": "modeles/generes/grande-salle-circulaire_007_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": 90.0,
+    "z": 90.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "medieval",
+    "materials": [
+     "aged_stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 40.0,
+     "p": 40.0,
+     "h": 20.0
+    },
+    "toit": {
+     "type": "dôme",
+     "pente": "forte",
+     "couleur": "gris"
+    },
+    "variation": {
+     "seed": 42,
+     "weathered": 0.8,
+     "moss": 0.2
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    },
+    "scene": {
+     "layout": {
+      "shape": "elliptical",
+      "symmetry": "radial",
+      "focal_point": "center"
+     },
+     "center": {
+      "type": "luminous_area",
+      "color": "cyan_blue"
+     },
+     "perimeter": {
+      "stairs": false,
+      "columns": true,
+      "arches": true,
+      "walls": true,
+      "warm_lights": true,
+      "cold_center": true
+     },
+     "levels": 1,
+     "materials": {
+      "primary": "stone"
+     },
+     "lighting": {
+      "warm_cold_contrast": "strong",
+      "warm_orange": true,
+      "cold_blue_center": true
+     },
+     "atmosphere": [
+      "dark",
+      "mystical",
+      "ancient",
+      "monumental"
+     ]
+    }
+   }
+  },
+  {
+   "id": "building_008",
+   "slug": "grande-salle-circulaire",
+   "assetFile": "modeles/generes/grande-salle-circulaire_008_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": -100.0,
+    "z": 60.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "medieval",
+    "materials": [
+     "aged_stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 40.0,
+     "p": 40.0,
+     "h": 20.0
+    },
+    "toit": {
+     "type": "dôme",
+     "pente": "nulle",
+     "couleur": "gris"
+    },
+    "variation": {
+     "seed": 12345,
+     "weathered": 0.8,
+     "moss": 0.3
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    },
+    "scene": {
+     "layout": {
+      "shape": "elliptical",
+      "symmetry": "radial",
+      "focal_point": "center"
+     },
+     "center": {
+      "type": "luminous_area",
+      "color": "cyan_blue"
+     },
+     "perimeter": {
+      "stairs": false,
+      "columns": true,
+      "arches": true,
+      "walls": true,
+      "warm_lights": true,
+      "cold_center": true
+     },
+     "levels": 1,
+     "materials": {
+      "primary": "stone"
+     },
+     "lighting": {
+      "warm_cold_contrast": "strong",
+      "warm_orange": true,
+      "cold_blue_center": true
+     },
+     "atmosphere": [
+      "dark",
+      "mystical",
+      "ancient",
+      "monumental"
+     ]
+    }
+   }
+  },
+  {
+   "id": "building_009",
+   "slug": "salle-monumentale",
+   "assetFile": "modeles/generes/test-iso-polished-v2_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": 90.0,
+    "z": -90.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "medieval",
+    "materials": [
+     "aged_stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 50.0,
+     "p": 50.0,
+     "h": 30.0
+    },
+    "toit": {
+     "type": "pentu",
+     "pente": "moyenne"
+    },
+    "variation": {
+     "seed": 2026,
+     "weathered": 0.4,
+     "moss": 0.2
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    },
+    "scene": {
+     "layout": {
+      "shape": "circular",
+      "symmetry": "radial",
+      "focal_point": "center"
+     },
+     "center": {
+      "type": "luminous_area",
+      "color": "cyan_blue"
+     },
+     "perimeter": {
+      "stairs": true,
+      "columns": true,
+      "arches": true,
+      "walls": true,
+      "warm_lights": true,
+      "cold_center": true
+     },
+     "levels": 4,
+     "materials": {
+      "primary": "stone"
+     },
+     "lighting": {
+      "warm_cold_contrast": "strong",
+      "warm_orange": true,
+      "cold_blue_center": true
+     },
+     "atmosphere": [
+      "dark",
+      "monumental",
+      "mystical",
+      "ancient"
+     ]
+    }
+   }
+  }
+ ]
 }
