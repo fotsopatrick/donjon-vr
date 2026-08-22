@@ -68,6 +68,14 @@ PRESETS = {
 }
 
 
+def _srgb(c):
+    """Encode une valeur linéaire en sRGB (pour une texture de base color).
+    CRUCIAL : EEVEE ET Three.js décodent les textures baseColor en sRGB ;
+    si on stocke du linéaire, la couleur rendue est fausse (cramée)."""
+    c = max(0.0, min(1.0, c))
+    return 12.92 * c if c <= 0.0031308 else 1.055 * (c ** (1 / 2.4)) - 0.055
+
+
 class MaterialLibrary:
     """Fabrique de matériaux nommés, réutilisables, exportables glTF."""
 
@@ -96,6 +104,13 @@ class MaterialLibrary:
         """VRAIE texture image (blocs / patine) exportable en glTF."""
         rnd = random.Random(self.seed ^ (hash(nom) & 0xffffff))
         img = bpy.data.images.new(nom + "_tex", width=taille, height=taille)
+        # CRUCIAL : l'espace colorimétrique doit être sRGB EXPLICITE, sinon
+        # Blender lit l'image sans décodage et le rendu est cramé. EEVEE et
+        # Three.js décodent alors la texture de la même façon.
+        try:
+            img.colorspace_settings.name = "sRGB"
+        except Exception:
+            pass
         px = [0.0] * (taille * taille * 4)
         cs = max(24, echelle)
         nb = taille // cs
@@ -118,7 +133,8 @@ class MaterialLibrary:
                     us = 1.0 - 0.35 * max(0.0, min(1.0, d))
                     v = [max(0.0, min(1.0, x * us)) for x in v]
                 o = (j * taille + i) * 4
-                px[o] = v[0]; px[o+1] = v[1]; px[o+2] = v[2]; px[o+3] = 1.0
+                px[o] = _srgb(v[0]); px[o+1] = _srgb(v[1]); px[o+2] = _srgb(v[2])
+                px[o+3] = 1.0
         img.pixels[:] = px
         img.pack()
         return img
@@ -174,29 +190,31 @@ class MaterialLibrary:
         return m
 
     def _eau(self, nom, base, emissive, force, ripple=0.10):
+        """Eau/énergie : arbre PAR DÉFAUT (ne pas vider/recréer : l'émission
+        ne rend plus dans EEVEE quand d'autres matériaux précèdent)."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
         links = m.node_tree.links
-        for n in list(nodes):
-            nodes.remove(n)
-        out = nodes.new("ShaderNodeOutputMaterial")
-        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-        coord = nodes.new("ShaderNodeTexCoord")
+        bsdf = nodes.get("Principled BSDF")
+        coord = nodes.get("Texture Coordinate")
+        if coord is None:
+            coord = nodes.new("ShaderNodeTexCoord")
         bsdf.inputs["Base Color"].default_value = (base[0], base[1], base[2], 1)
         bsdf.inputs["Roughness"].default_value = 0.15
         bsdf.inputs["Metallic"].default_value = 0.1
         bsdf.inputs["Emission Color"].default_value = (emissive[0], emissive[1], emissive[2], 1)
         bsdf.inputs["Emission Strength"].default_value = force
         if ripple > 0:
-            noise = nodes.new("ShaderNodeTexNoise")
+            noise = nodes.get("Ripple_%s" % nom) or nodes.new("ShaderNodeTexNoise")
+            noise.name = "Ripple_%s" % nom
             noise.inputs["Scale"].default_value = 28.0
-            bump = nodes.new("ShaderNodeBump")
+            bump = nodes.get("Bump_%s" % nom) or nodes.new("ShaderNodeBump")
+            bump.name = "Bump_%s" % nom
             bump.inputs["Strength"].default_value = ripple
             links.new(coord.outputs["Object"], noise.inputs["Vector"])
             links.new(noise.outputs["Fac"], bump.inputs["Height"])
             links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
-        links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
         m.diffuse_color = (base[0], base[1], base[2], 1)
         self.mats[nom] = m
         return m

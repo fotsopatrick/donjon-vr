@@ -19,6 +19,9 @@ import mathutils
 import os
 import random
 import sys
+import time as _time
+
+T_DEBUT = _time.time()
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 SPEC, GLB, APERCU, BLEND = argv[:4]
@@ -398,7 +401,9 @@ if est_interieur:
         o.location = (math.cos(a) * r_col, math.sin(a) * r_col, 2.5)
 
 sc.render.filepath = APERCU
+_t_avant_rendu = _time.time()
 bpy.ops.render.render(write_still=True)
+_t_fin = _time.time()
 
 print("RAPPORT: " + json.dumps({
     "triangles": triangles,
@@ -406,4 +411,6 @@ print("RAPPORT: " + json.dumps({
     "dimensions": [round(L, 2), round(P, 2), round(H, 2)],
     "materiaux": list(spec.get("materials", [])),
     "apercu": os.path.exists(APERCU),
+    "temps_total_s": round(_t_fin - T_DEBUT, 1),
+    "temps_rendu_s": round(_t_fin - _t_avant_rendu, 1),
 }))
