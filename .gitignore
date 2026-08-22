@@ -6,3 +6,7 @@ assets/mvmk/
 tests/captures/
 .veille/
 assets/importes/
+
+# aperçus générés par Blender pour validation (comme tests/captures/)
+world_builder/apercus/
+__pycache__/
