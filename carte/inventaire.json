@@ -1,1443 +1,1452 @@
 {
-  "releve_le": "2026-08-21T16:31:51.087Z",
-  "lieux": [
+ "releve_le": "2026-08-21T16:31:51.087Z",
+ "lieux": [
+  {
+   "id": "village",
+   "nom": "Le hameau et la route",
+   "personnages": [
     {
-      "id": "village",
-      "nom": "Le hameau et la route",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 36,
-        "ConeGeometry": 30,
-        "CylinderGeometry": 11,
-        "SphereGeometry": 8,
-        "BufferGeometry": 1965,
-        "PlaneGeometry": 6,
-        "CircleGeometry": 2
-      },
-      "cercles": [
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 0
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#ffe3c0",
-          "force": 3.2
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#ffcf88",
-          "force": 2.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 5.51
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 56,
-        "metres": [
-          73,
-          146
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "arene",
-      "nom": "L'arène d'entraînement",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "adversaire",
-          "nom": "guerrier",
-          "anime": true
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 92,
-        "ConeGeometry": 8,
-        "CylinderGeometry": 12,
-        "SphereGeometry": 8,
-        "PlaneGeometry": 3,
-        "RingGeometry": 2,
-        "CircleGeometry": 2,
-        "BufferGeometry": 31
-      },
-      "cercles": [
-        {
-          "forme": "BufferGeometry",
-          "x": 42,
-          "z": 23,
-          "taille": 0
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 43.65
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#2a1a4a",
-          "force": 0.55
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#6f7cff",
-          "force": 0.9
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#5aa8ff",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#1cf0ff",
-          "force": 10
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff2bd6",
-          "force": 10
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "donjon1",
-      "nom": "Donjon — les caves",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "monstre",
-          "nom": "slime",
-          "nombre": 3
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 65,
-        "ConeGeometry": 8,
-        "CylinderGeometry": 85,
-        "SphereGeometry": 29,
-        "PlaneGeometry": 24,
-        "OctahedronGeometry": 43,
-        "TorusGeometry": 6,
-        "CircleGeometry": 2,
-        "BufferGeometry": 59,
-        "IcosahedronGeometry": 3
-      },
-      "cercles": [
-        {
-          "forme": "BoxGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 2.6
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 12,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 17,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 38,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 56,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 66,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 4,
-          "z": 14,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 30,
-          "z": 15,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 40,
-          "z": 14,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 43,
-          "z": 15,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 41,
-          "z": 20,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 32,
-          "z": 22,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 4,
-          "z": 25,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 25,
-          "z": 27,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 49,
-          "z": 30,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 33,
-          "z": 33,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 68,
-          "z": 33,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 7,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "CircleGeometry",
-          "x": 35,
-          "z": 22,
-          "taille": 1.15
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 40.18
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#6a5a44",
-          "force": 0.95
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#fff2d8",
-          "force": 2.2
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 48.64
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 57.88
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 52.93
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 65.38
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 48.44
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 52.29
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffb84d",
-          "force": 14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#2fd0ff",
-          "force": 8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 7.31
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "donjon2",
-      "nom": "Donjon — l'ossuaire",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "monstre",
-          "nom": "paysan",
-          "nombre": 6
-        },
-        {
-          "type": "monstre",
-          "nom": "squelette",
-          "nombre": 1
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 87,
-        "ConeGeometry": 34,
-        "CylinderGeometry": 79,
-        "SphereGeometry": 35,
-        "PlaneGeometry": 22,
-        "OctahedronGeometry": 18,
-        "TorusGeometry": 16,
-        "CircleGeometry": 14,
-        "BufferGeometry": 55
-      },
-      "cercles": [
-        {
-          "forme": "BoxGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 2.6
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 43,
-          "z": 19,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 46,
-          "z": 28,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 61,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "CircleGeometry",
-          "x": 51,
-          "z": 25,
-          "taille": 1.15
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 41.36
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#6274a0",
-          "force": 0.9
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#fff2d8",
-          "force": 2.2
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#9d7bff",
-          "force": 54.38
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#9d7bff",
-          "force": 61.38
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#9d7bff",
-          "force": 57.19
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffb84d",
-          "force": 14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#2fd0ff",
-          "force": 8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 11.97
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "donjon3",
-      "nom": "Donjon — la clairière",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "monstre",
-          "nom": "rat",
-          "nombre": 3
-        },
-        {
-          "type": "monstre",
-          "nom": "squelette",
-          "nombre": 3
-        },
-        {
-          "type": "monstre",
-          "nom": "slime_rouge",
-          "nombre": 3
-        },
-        {
-          "type": "monstre",
-          "nom": "paysan",
-          "nombre": 1
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 86,
-        "ConeGeometry": 14,
-        "CylinderGeometry": 78,
-        "SphereGeometry": 44,
-        "PlaneGeometry": 23,
-        "BufferGeometry": 1331,
-        "OctahedronGeometry": 15,
-        "TorusGeometry": 19,
-        "CircleGeometry": 14,
-        "IcosahedronGeometry": 3
-      },
-      "cercles": [
-        {
-          "forme": "BoxGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 2.6
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 25,
-          "z": 19,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 9,
-          "z": 23,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 63,
-          "z": 25,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 33,
-          "z": 37,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 59,
-          "z": 40,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 20,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "CircleGeometry",
-          "x": 22,
-          "z": 4,
-          "taille": 1.15
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 37.55
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#9fd6f0",
-          "force": 1.45
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#fff2d8",
-          "force": 2.2
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 46.23
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 63.8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 68.67
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 56.78
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 61.14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#36d6a8",
-          "force": 57.03
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffb84d",
-          "force": 14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#2fd0ff",
-          "force": 8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 11.8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8a2a",
-          "force": 1.6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "donjon4",
-      "nom": "Donjon — le voile",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "monstre",
-          "nom": "spectre",
-          "nombre": 7
-        },
-        {
-          "type": "monstre",
-          "nom": "squelette",
-          "nombre": 2
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 77,
-        "ConeGeometry": 17,
-        "CylinderGeometry": 100,
-        "SphereGeometry": 55,
-        "PlaneGeometry": 27,
-        "OctahedronGeometry": 19,
-        "TorusGeometry": 14,
-        "CircleGeometry": 14,
-        "BufferGeometry": 104
-      },
-      "cercles": [
-        {
-          "forme": "BoxGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 2.6
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 27,
-          "z": 4,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 56,
-          "z": 23,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 22,
-          "z": 25,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 46,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 48,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "CircleGeometry",
-          "x": 7,
-          "z": 4,
-          "taille": 1.15
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 43.01
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#8f68b4",
-          "force": 1.02
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#fff2d8",
-          "force": 2.2
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 41.95
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 56.33
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 44.52
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 62.31
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 44.76
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffa64a",
-          "force": 0
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffb84d",
-          "force": 14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#2fd0ff",
-          "force": 8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 6.85
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff8ad4",
-          "force": 6
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff5a2a",
-          "force": 3
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#c07aff",
-          "force": 5
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
-    },
-    {
-      "id": "donjon5",
-      "nom": "Donjon — le palier",
-      "personnages": [
-        {
-          "type": "joueur",
-          "nom": "toi",
-          "anime": true
-        },
-        {
-          "type": "monstre",
-          "nom": "rat",
-          "nombre": 2
-        },
-        {
-          "type": "monstre",
-          "nom": "slime",
-          "nombre": 6
-        },
-        {
-          "type": "monstre",
-          "nom": "slime_rouge",
-          "nombre": 3
-        }
-      ],
-      "decors": {
-        "BoxGeometry": 57,
-        "ConeGeometry": 8,
-        "CylinderGeometry": 95,
-        "SphereGeometry": 66,
-        "PlaneGeometry": 23,
-        "OctahedronGeometry": 27,
-        "TorusGeometry": 6,
-        "CircleGeometry": 2,
-        "BufferGeometry": 175,
-        "IcosahedronGeometry": 13
-      },
-      "cercles": [
-        {
-          "forme": "BoxGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 2.6
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 36,
-          "z": 23,
-          "taille": 72.8
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 7,
-          "z": 14,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 7,
-          "z": 20,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 35,
-          "z": 22,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 61,
-          "z": 22,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 7,
-          "z": 25,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 43,
-          "z": 25,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 17,
-          "z": 27,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 22,
-          "z": 27,
-          "taille": 2.1
-        },
-        {
-          "forme": "PlaneGeometry",
-          "x": 51,
-          "z": 42,
-          "taille": 2.1
-        },
-        {
-          "forme": "CircleGeometry",
-          "x": 35,
-          "z": 27,
-          "taille": 1.15
-        },
-        {
-          "forme": "BufferGeometry",
-          "x": 0,
-          "z": 0,
-          "taille": 0
-        }
-      ],
-      "lumieres": [
-        {
-          "genre": "PointLight",
-          "couleur": "#bfd8ff",
-          "force": 39.51
-        },
-        {
-          "genre": "HemisphereLight",
-          "couleur": "#b0563c",
-          "force": 1.06
-        },
-        {
-          "genre": "DirectionalLight",
-          "couleur": "#fff2d8",
-          "force": 2.2
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 55.25
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 59.31
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 55.07
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 61.72
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 71.02
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff6a48",
-          "force": 41.37
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ffb84d",
-          "force": 14
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#2fd0ff",
-          "force": 8
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#49d18a",
-          "force": 5.57
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a68",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#6fd0ff",
-          "force": 3.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#4fc8ff",
-          "force": 16.49
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#ff4a3a",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        },
-        {
-          "genre": "PointLight",
-          "couleur": "#39b6e6",
-          "force": 5.5
-        }
-      ],
-      "grille": {
-        "largeur": 28,
-        "hauteur": 18,
-        "metres": [
-          73,
-          47
-        ]
-      },
-      "sons": {
-        "voix_active": false,
-        "musique": 0
-      }
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
     }
-  ]
+   ],
+   "decors": {
+    "BoxGeometry": 36,
+    "ConeGeometry": 30,
+    "CylinderGeometry": 11,
+    "SphereGeometry": 8,
+    "BufferGeometry": 1965,
+    "PlaneGeometry": 6,
+    "CircleGeometry": 2
+   },
+   "cercles": [
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 0
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#ffe3c0",
+     "force": 3.2
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#ffcf88",
+     "force": 2.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 5.51
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 56,
+    "metres": [
+     73,
+     146
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "arene",
+   "nom": "L'arène d'entraînement",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "adversaire",
+     "nom": "guerrier",
+     "anime": true
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 92,
+    "ConeGeometry": 8,
+    "CylinderGeometry": 12,
+    "SphereGeometry": 8,
+    "PlaneGeometry": 3,
+    "RingGeometry": 2,
+    "CircleGeometry": 2,
+    "BufferGeometry": 31
+   },
+   "cercles": [
+    {
+     "forme": "BufferGeometry",
+     "x": 42,
+     "z": 23,
+     "taille": 0
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 43.65
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#2a1a4a",
+     "force": 0.55
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#6f7cff",
+     "force": 0.9
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#5aa8ff",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#1cf0ff",
+     "force": 10
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff2bd6",
+     "force": 10
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "donjon1",
+   "nom": "Donjon — les caves",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "monstre",
+     "nom": "slime",
+     "nombre": 3
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 65,
+    "ConeGeometry": 8,
+    "CylinderGeometry": 85,
+    "SphereGeometry": 29,
+    "PlaneGeometry": 24,
+    "OctahedronGeometry": 43,
+    "TorusGeometry": 6,
+    "CircleGeometry": 2,
+    "BufferGeometry": 59,
+    "IcosahedronGeometry": 3
+   },
+   "cercles": [
+    {
+     "forme": "BoxGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 2.6
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 12,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 17,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 38,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 56,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 66,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 4,
+     "z": 14,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 30,
+     "z": 15,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 40,
+     "z": 14,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 43,
+     "z": 15,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 41,
+     "z": 20,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 32,
+     "z": 22,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 4,
+     "z": 25,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 25,
+     "z": 27,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 49,
+     "z": 30,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 33,
+     "z": 33,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 68,
+     "z": 33,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 7,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "CircleGeometry",
+     "x": 35,
+     "z": 22,
+     "taille": 1.15
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 40.18
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#6a5a44",
+     "force": 0.95
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#fff2d8",
+     "force": 2.2
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 48.64
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 57.88
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 52.93
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 65.38
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 48.44
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 52.29
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffb84d",
+     "force": 14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#2fd0ff",
+     "force": 8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 7.31
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "donjon2",
+   "nom": "Donjon — l'ossuaire",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "monstre",
+     "nom": "paysan",
+     "nombre": 6
+    },
+    {
+     "type": "monstre",
+     "nom": "squelette",
+     "nombre": 1
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 87,
+    "ConeGeometry": 34,
+    "CylinderGeometry": 79,
+    "SphereGeometry": 35,
+    "PlaneGeometry": 22,
+    "OctahedronGeometry": 18,
+    "TorusGeometry": 16,
+    "CircleGeometry": 14,
+    "BufferGeometry": 55
+   },
+   "cercles": [
+    {
+     "forme": "BoxGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 2.6
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 43,
+     "z": 19,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 46,
+     "z": 28,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 61,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "CircleGeometry",
+     "x": 51,
+     "z": 25,
+     "taille": 1.15
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 41.36
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#6274a0",
+     "force": 0.9
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#fff2d8",
+     "force": 2.2
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#9d7bff",
+     "force": 54.38
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#9d7bff",
+     "force": 61.38
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#9d7bff",
+     "force": 57.19
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffb84d",
+     "force": 14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#2fd0ff",
+     "force": 8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 11.97
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "donjon3",
+   "nom": "Donjon — la clairière",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "monstre",
+     "nom": "rat",
+     "nombre": 3
+    },
+    {
+     "type": "monstre",
+     "nom": "squelette",
+     "nombre": 3
+    },
+    {
+     "type": "monstre",
+     "nom": "slime_rouge",
+     "nombre": 3
+    },
+    {
+     "type": "monstre",
+     "nom": "paysan",
+     "nombre": 1
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 86,
+    "ConeGeometry": 14,
+    "CylinderGeometry": 78,
+    "SphereGeometry": 44,
+    "PlaneGeometry": 23,
+    "BufferGeometry": 1331,
+    "OctahedronGeometry": 15,
+    "TorusGeometry": 19,
+    "CircleGeometry": 14,
+    "IcosahedronGeometry": 3
+   },
+   "cercles": [
+    {
+     "forme": "BoxGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 2.6
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 25,
+     "z": 19,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 9,
+     "z": 23,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 63,
+     "z": 25,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 33,
+     "z": 37,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 59,
+     "z": 40,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 20,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "CircleGeometry",
+     "x": 22,
+     "z": 4,
+     "taille": 1.15
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 37.55
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#9fd6f0",
+     "force": 1.45
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#fff2d8",
+     "force": 2.2
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 46.23
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 63.8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 68.67
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 56.78
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 61.14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#36d6a8",
+     "force": 57.03
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffb84d",
+     "force": 14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#2fd0ff",
+     "force": 8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 11.8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8a2a",
+     "force": 1.6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "donjon4",
+   "nom": "Donjon — le voile",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "monstre",
+     "nom": "spectre",
+     "nombre": 7
+    },
+    {
+     "type": "monstre",
+     "nom": "squelette",
+     "nombre": 2
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 77,
+    "ConeGeometry": 17,
+    "CylinderGeometry": 100,
+    "SphereGeometry": 55,
+    "PlaneGeometry": 27,
+    "OctahedronGeometry": 19,
+    "TorusGeometry": 14,
+    "CircleGeometry": 14,
+    "BufferGeometry": 104
+   },
+   "cercles": [
+    {
+     "forme": "BoxGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 2.6
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 27,
+     "z": 4,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 56,
+     "z": 23,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 22,
+     "z": 25,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 46,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 48,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "CircleGeometry",
+     "x": 7,
+     "z": 4,
+     "taille": 1.15
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 43.01
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#8f68b4",
+     "force": 1.02
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#fff2d8",
+     "force": 2.2
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 41.95
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 56.33
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 44.52
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 62.31
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 44.76
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffa64a",
+     "force": 0
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffb84d",
+     "force": 14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#2fd0ff",
+     "force": 8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 6.85
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff8ad4",
+     "force": 6
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff5a2a",
+     "force": 3
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#c07aff",
+     "force": 5
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "donjon5",
+   "nom": "Donjon — le palier",
+   "personnages": [
+    {
+     "type": "joueur",
+     "nom": "toi",
+     "anime": true
+    },
+    {
+     "type": "monstre",
+     "nom": "rat",
+     "nombre": 2
+    },
+    {
+     "type": "monstre",
+     "nom": "slime",
+     "nombre": 6
+    },
+    {
+     "type": "monstre",
+     "nom": "slime_rouge",
+     "nombre": 3
+    }
+   ],
+   "decors": {
+    "BoxGeometry": 57,
+    "ConeGeometry": 8,
+    "CylinderGeometry": 95,
+    "SphereGeometry": 66,
+    "PlaneGeometry": 23,
+    "OctahedronGeometry": 27,
+    "TorusGeometry": 6,
+    "CircleGeometry": 2,
+    "BufferGeometry": 175,
+    "IcosahedronGeometry": 13
+   },
+   "cercles": [
+    {
+     "forme": "BoxGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 2.6
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 36,
+     "z": 23,
+     "taille": 72.8
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 7,
+     "z": 14,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 7,
+     "z": 20,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 35,
+     "z": 22,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 61,
+     "z": 22,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 7,
+     "z": 25,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 43,
+     "z": 25,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 17,
+     "z": 27,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 22,
+     "z": 27,
+     "taille": 2.1
+    },
+    {
+     "forme": "PlaneGeometry",
+     "x": 51,
+     "z": 42,
+     "taille": 2.1
+    },
+    {
+     "forme": "CircleGeometry",
+     "x": 35,
+     "z": 27,
+     "taille": 1.15
+    },
+    {
+     "forme": "BufferGeometry",
+     "x": 0,
+     "z": 0,
+     "taille": 0
+    }
+   ],
+   "lumieres": [
+    {
+     "genre": "PointLight",
+     "couleur": "#bfd8ff",
+     "force": 39.51
+    },
+    {
+     "genre": "HemisphereLight",
+     "couleur": "#b0563c",
+     "force": 1.06
+    },
+    {
+     "genre": "DirectionalLight",
+     "couleur": "#fff2d8",
+     "force": 2.2
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 55.25
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 59.31
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 55.07
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 61.72
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 71.02
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff6a48",
+     "force": 41.37
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ffb84d",
+     "force": 14
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#2fd0ff",
+     "force": 8
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#49d18a",
+     "force": 5.57
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a68",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#6fd0ff",
+     "force": 3.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#4fc8ff",
+     "force": 16.49
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#ff4a3a",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    },
+    {
+     "genre": "PointLight",
+     "couleur": "#39b6e6",
+     "force": 5.5
+    }
+   ],
+   "grille": {
+    "largeur": 28,
+    "hauteur": 18,
+    "metres": [
+     73,
+     47
+    ]
+   },
+   "sons": {
+    "voix_active": false,
+    "musique": 0
+   }
+  },
+  {
+   "id": "salle-monumentale",
+   "nom": "Salle monumentale — building_009",
+   "position": {
+    "x": 90,
+    "z": -90,
+    "chemin": "window.D.joueur.x=90;window.D.joueur.z=-90"
+   }
+  }
+ ]
 }

@@ -197,12 +197,55 @@ class DungeonChamber:
         self.mats[nom] = m
         return m
 
+    def _generer_texture(self, nom, base, mode="stone", taille=512,
+                         usure=False, echelle=64, seed=0):
+        """Génère une VRAIE texture image (blocs de pierre / patine métal).
+
+        CRUCIAL : l'exporteur glTF ne peut PAS cuire les nœuds procéduraux
+        (noise/voronoi) -> baseColorFactor vide -> matériaux BLANCS dans
+        Three.js. Une texture image, elle, est exportée telle quelle et
+        survit jusqu'au jeu. La texture est déterministe (seed)."""
+        rnd = random.Random(int(seed) ^ (hash(nom) & 0xffffff))
+        img = bpy.data.images.new(nom + "_tex", width=taille, height=taille)
+        px = [0.0] * (taille * taille * 4)
+        cs = max(24, echelle)
+        nb = taille // cs
+        tons = {}
+        if mode == "metal":
+            tons = {(bi, bj): rnd.uniform(0.70, 1.05)
+                    for bi in range(nb) for bj in range(nb)}
+        else:
+            tons = {(bi, bj): rnd.uniform(0.68, 1.30)
+                    for bi in range(nb) for bj in range(nb)}
+        for j in range(taille):
+            dec = (cs // 2) if (j // cs) % 2 else 0
+            bj = j // cs
+            mj = j % cs
+            for i in range(taille):
+                bi = (i + dec) // cs
+                mi = (i + dec) % cs
+                tone = tons.get((bi, bj), 1.0)
+                mortier = 0.0
+                if mi < 2 or mj < 2 or mi > cs - 2 or mj > cs - 2:
+                    mortier = 0.38
+                bruit = rnd.uniform(-0.05, 0.05)
+                facteur = tone * (1.0 - mortier)
+                v = [max(0.0, min(1.0, base[c] * facteur + bruit))
+                     for c in range(3)]
+                if usure:
+                    d = math.hypot(i - taille / 2, j - taille / 2) / (taille / 2)
+                    us = 1.0 - 0.35 * max(0.0, min(1.0, d))
+                    v = [max(0.0, min(1.0, x * us)) for x in v]
+                o = (j * taille + i) * 4
+                px[o] = v[0]; px[o+1] = v[1]; px[o+2] = v[2]; px[o+3] = 1.0
+        img.pixels[:] = px
+        img.pack()
+        return img
+
     def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True,
-                    blocs=False, usure=False, echelle_blocks=5.0):
-        """Pierre texturée : dérive de couleur à grande échelle, MICROvariation,
-        bump, motif de BLOCS (Voronoi -> joints sombres + teinte PAR BLOC),
-        et optionnellement usure (dégradé sphérique : plus sombre vers le
-        centre du sol = zone piétinée)."""
+                    blocs=True, usure=False, echelle_blocks=5.0, seed=0):
+        """Pierre avec VRAIE texture (blocs/mortier/teinte par bloc) exportable
+        en glTF, + noise/bump pour la preview Blender."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
@@ -213,101 +256,32 @@ class DungeonChamber:
         bsdf = nodes.new("ShaderNodeBsdfPrincipled")
         coord = nodes.new("ShaderNodeTexCoord")
 
-        # --- dérive de couleur à grande échelle (variation entre zones) ---
-        noiseA = nodes.new("ShaderNodeTexNoise")
-        noiseA.inputs["Scale"].default_value = 7.0
-        rampA = nodes.new("ShaderNodeValToRGB")
-        e0 = rampA.color_ramp.elements[0]
-        e1 = rampA.color_ramp.elements[1]
-        e0.color = (base[0] * 0.82, base[1] * 0.82, base[2] * 0.82, 1)
-        e1.color = (min(1, base[0] * 1.18), min(1, base[1] * 1.18),
-                    min(1, base[2] * 1.18), 1)
-        links.new(coord.outputs["Object"], noiseA.inputs["Vector"])
-        links.new(noiseA.outputs["Fac"], rampA.inputs["Fac"])
-        couleur = rampA.outputs["Color"]
+        # VRAIE texture : exportable, visible dans le jeu
+        img = self._generer_texture(nom, base, usure=usure,
+                                    echelle=int(echelle_blocks * 45), seed=seed)
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.image = img
+        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
 
-        if blocs:
-            # motif de blocs : teinte PAR BLOC (couleur de cellule) + joints
-            vor = nodes.new("ShaderNodeTexVoronoi")
-            vor.feature = "F1"
-            vor.inputs["Scale"].default_value = echelle_blocks
-            links.new(coord.outputs["Object"], vor.inputs["Vector"])
-            mixC = nodes.new("ShaderNodeMixRGB")
-            mixC.blend_type = "MIX"
-            mixC.inputs["Fac"].default_value = 0.22
-            links.new(couleur, mixC.inputs["Color1"])
-            links.new(vor.outputs["Color"], mixC.inputs["Color2"])
-            couleur = mixC.outputs["Color"]
-            # joints (mortier sombre) aux limites des blocs
-            ramp_b = nodes.new("ShaderNodeValToRGB")
-            be0 = ramp_b.color_ramp.elements[0]
-            be1 = ramp_b.color_ramp.elements[1]
-            be0.color = (base[0] * 1.18, base[1] * 1.18, base[2] * 1.18, 1)
-            be1.color = (base[0] * 0.22, base[1] * 0.22, base[2] * 0.24, 1)
-            links.new(vor.outputs["Distance"], ramp_b.inputs["Fac"])
-            mixJ = nodes.new("ShaderNodeMixRGB")
-            mixJ.inputs["Fac"].default_value = 0.85
-            links.new(couleur, mixJ.inputs["Color1"])
-            links.new(ramp_b.outputs["Color"], mixJ.inputs["Color2"])
-            couleur = mixJ.outputs["Color"]
-
-        if usure:
-            # dégradé sphérique : sombre vers le centre (sol piétiné)
-            grad = nodes.new("ShaderNodeTexGradient")
-            grad.gradient_type = "SPHERICAL"
-            rampU = nodes.new("ShaderNodeValToRGB")
-            u0 = rampU.color_ramp.elements[0]
-            u1 = rampU.color_ramp.elements[1]
-            u0.color = (0.55, 0.55, 0.55, 1)
-            u1.color = (1.0, 1.0, 1.0, 1)
-            links.new(coord.outputs["Object"], grad.inputs["Vector"])
-            links.new(grad.outputs["Fac"], rampU.inputs["Fac"])
-            mixU = nodes.new("ShaderNodeMixRGB")
-            mixU.inputs["Fac"].default_value = 0.75
-            links.new(couleur, mixU.inputs["Color1"])
-            links.new(rampU.outputs["Color"], mixU.inputs["Color2"])
-            couleur = mixU.outputs["Color"]
-
-        links.new(couleur, bsdf.inputs["Base Color"])
-
-        # --- rugosité : base + microvariation ---
+        # rugosité constante (exportable)
         bsdf.inputs["Roughness"].default_value = rough
-        noiseR = nodes.new("ShaderNodeTexNoise")
-        noiseR.inputs["Scale"].default_value = 15.0
-        links.new(coord.outputs["Object"], noiseR.inputs["Vector"])
-        roug = nodes.new("ShaderNodeMapRange")
-        roug.inputs["From Min"].default_value = 0.0
-        roug.inputs["From Max"].default_value = 1.0
-        roug.inputs["To Min"].default_value = rough - bruit
-        roug.inputs["To Max"].default_value = rough + bruit
-        links.new(noiseR.outputs["Fac"], roug.inputs["Value"])
-        links.new(roug.outputs["Result"], bsdf.inputs["Roughness"])
-        if blocs:
-            # rugosité légèrement différente par bloc (joints plus mats)
-            rougB = nodes.new("ShaderNodeMapRange")
-            rougB.inputs["From Min"].default_value = 0.0
-            rougB.inputs["From Max"].default_value = 1.0
-            rougB.inputs["To Min"].default_value = -0.05
-            rougB.inputs["To Max"].default_value = 0.05
-            mathR = nodes.new("ShaderNodeMath")
-            mathR.operation = "ADD"
-            links.new(vor.outputs["Distance"], rougB.inputs["Value"])
-            links.new(roug.outputs["Result"], mathR.inputs[0])
-            links.new(rougB.outputs["Result"], mathR.inputs[1])
-            links.new(mathR.outputs[0], bsdf.inputs["Roughness"])
 
+        # bump preview (non exporté, mais enrichit le rendu Blender)
         if bump:
+            noiseN = nodes.new("ShaderNodeTexNoise")
+            noiseN.inputs["Scale"].default_value = 30.0
             bump = nodes.new("ShaderNodeBump")
-            bump.inputs["Strength"].default_value = 0.4
-            links.new(noiseA.outputs["Fac"], bump.inputs["Height"])
+            bump.inputs["Strength"].default_value = 0.35
+            links.new(coord.outputs["Object"], noiseN.inputs["Vector"])
+            links.new(noiseN.outputs["Fac"], bump.inputs["Height"])
             links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
         links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
         m.diffuse_color = (base[0], base[1], base[2], 1)
         self.mats[nom] = m
         return m
 
-    def _mat_metal(self, nom, base, rough=0.35, patine=True):
-        """Métal avec patine : léger voile verdâtre irrégulier (vieilli)."""
+    def _mat_metal(self, nom, base, rough=0.35, patine=True, seed=0):
+        """Métal avec patine exportable (texture image), metallic constant."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
@@ -316,26 +290,13 @@ class DungeonChamber:
             nodes.remove(n)
         out = nodes.new("ShaderNodeOutputMaterial")
         bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-        coord = nodes.new("ShaderNodeTexCoord")
         bsdf.inputs["Metallic"].default_value = 0.85
         bsdf.inputs["Roughness"].default_value = rough
-        if patine:
-            col_base = nodes.new("ShaderNodeRGB")
-            col_base.outputs[0].default_value = (base[0], base[1], base[2], 1)
-            col_pat = nodes.new("ShaderNodeRGB")
-            col_pat.outputs[0].default_value = (
-                base[0] * 0.45, base[1] * 0.58, base[2] * 0.52, 1)
-            noise = nodes.new("ShaderNodeTexNoise")
-            noise.inputs["Scale"].default_value = 10.0
-            mix = nodes.new("ShaderNodeMixRGB")
-            mix.inputs["Fac"].default_value = 0.6
-            links.new(coord.outputs["Object"], noise.inputs["Vector"])
-            links.new(noise.outputs["Fac"], mix.inputs["Fac"])
-            links.new(col_base.outputs[0], mix.inputs["Color1"])
-            links.new(col_pat.outputs[0], mix.inputs["Color2"])
-            links.new(mix.outputs["Color"], bsdf.inputs["Base Color"])
-        else:
-            bsdf.inputs["Base Color"].default_value = (base[0], base[1], base[2], 1)
+        img = self._generer_texture(nom, base, mode="metal",
+                                    echelle=110, seed=seed)
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.image = img
+        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
         links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
         m.diffuse_color = (base[0], base[1], base[2], 1)
         self.mats[nom] = m
@@ -375,20 +336,21 @@ class DungeonChamber:
         atmos = " ".join(p["atmosphere"])
         sombre = 0.08 if "dark" in atmos else 0.0
         f = 1 - sombre
+        seed0 = int(p["seed"])
 
         # dark_stone : le mur — blocs de pierre, teinte par bloc, usé
         self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f),
-                         rough=0.95, bruit=0.08, blocs=True, echelle_blocks=5.0)
+                         rough=0.95, blocs=True, echelle_blocks=5.0, seed=seed0)
         # stone_floor : plus clair, usé vers le centre, blocs larges
         self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f),
-                         rough=0.88, bruit=0.06, blocs=True, usure=True,
-                         echelle_blocks=8.0)
+                         rough=0.88, blocs=True, usure=True,
+                         echelle_blocks=8.0, seed=seed0 + 1)
         # stone_trim : parement clair pour bordures/marches/éléments
         self._mat_pierre("stone_trim", (0.60 * f, 0.58 * f, 0.55 * f),
-                         rough=0.85, bruit=0.04, blocs=True, echelle_blocks=6.0)
+                         rough=0.85, blocs=True, echelle_blocks=6.0, seed=seed0 + 2)
         # pierre_gradins : ton intermédiaire
         self._mat_pierre("pierre_gradins", (0.38 * f, 0.37 * f, 0.36 * f),
-                         rough=0.9, bruit=0.06, blocs=True, echelle_blocks=6.0)
+                         rough=0.9, blocs=True, echelle_blocks=6.0, seed=seed0 + 3)
 
         couleur = p["arena"]["color"]
         if "cyan" in couleur or "bleu" in couleur:
@@ -403,8 +365,8 @@ class DungeonChamber:
         # lueur au sol sous les torches (flaque de lumière chaude)
         self._mat_plat("feu_sol", (0.60, 0.32, 0.10, 1), rough=0.8,
                        emissive=(0.85, 0.40, 0.14, 1), force=1.2)
-        self._mat_metal("metal", (0.15, 0.16, 0.19, 1), rough=0.35)
-        self._mat_metal("metal_bleu", (0.12, 0.16, 0.24, 1), rough=0.30)
+        self._mat_metal("metal", (0.15, 0.16, 0.19, 1), rough=0.35, seed=seed0 + 4)
+        self._mat_metal("metal_bleu", (0.12, 0.16, 0.24, 1), rough=0.30, seed=seed0 + 5)
         # bois sombre : porte de la salle (storytelling)
         self._mat_plat("bois", (0.20, 0.13, 0.08, 1), rough=0.85)
 

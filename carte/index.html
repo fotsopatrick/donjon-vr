@@ -101,6 +101,14 @@ function rendrePanneau(){
   let html = '';
   if(l.erreur){
     html = '<div class="vide">Ce lieu n\'a pas pu être relevé : ' + l.erreur + '</div>';
+  } else if(l.position){
+    // marqueur posé (ex. salle monumentale) : position + chemin pour y aller
+    html = '<div class="panneau" style="padding:14px">' +
+      '<p><b>Position</b> : X ' + l.position.x + ' · Z ' + l.position.z +
+      '  (au nord-est du village, spawn ≈ 35, 27)</p>' +
+      '<p><b>Pour y aller</b> : dans le jeu, ouvre la console (F12) et colle :</p>' +
+      '<pre style="background:#0b1020;padding:10px;border-radius:8px;overflow-x:auto">' +
+      l.position.chemin + '</pre></div>';
   } else if(ongletActif === 'personnages'){
     html = tableau(['Type','Qui','Combien','Animé ?','Trajets fixes'],
       (l.personnages||[]).map(p => ligne([

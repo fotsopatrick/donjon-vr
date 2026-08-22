@@ -23,6 +23,10 @@ const LIEUX = [
   { id: 'donjon3',  nom: 'Donjon — la clairière',  hash: '#donjon',  niveau: 3 },
   { id: 'donjon4',  nom: 'Donjon — le voile',      hash: '#donjon',  niveau: 4 },
   { id: 'donjon5',  nom: 'Donjon — le palier',     hash: '#donjon',  niveau: 5 },
+  // marqueurs posés par opencode : lieux du monde (pas de scan, juste la position)
+  { id: 'salle-monumentale', nom: 'Salle monumentale — building_009',
+    hash: '#village', niveau: 0,
+    marqueur: { x: 90, z: -90, chemin: 'window.D.joueur.x=90;window.D.joueur.z=-90' } },
 ];
 
 (async () => {
@@ -40,6 +44,12 @@ const LIEUX = [
   const inventaire = { releve_le: new Date().toISOString(), lieux: [] };
 
   for (const lieu of LIEUX) {
+    if (lieu.marqueur) {
+      // marqueur posé : pas de scan, on garde la position et le chemin
+      inventaire.lieux.push({ id: lieu.id, nom: lieu.nom, position: lieu.marqueur });
+      console.log('marqueur ' + lieu.nom + ' (' + lieu.marqueur.x + ', ' + lieu.marqueur.z + ')');
+      continue;
+    }
     process.stdout.write('  ' + lieu.nom + ' … ');
     await envoyer('Page.navigate', { url: 'about:blank' }); await dodo(200);
     await envoyer('Page.navigate', { url: 'http://127.0.0.1:8099/index.html?t=' + Date.now() + lieu.hash });
