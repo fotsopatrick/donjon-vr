@@ -207,6 +207,20 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
         const r = JSON.parse(apres);
         assert(r.stun > 0 || r.sonne > 0, 'à la fin, le perdant doit être sonné (vu : ' + apres + ')');
       } },
+    { nom: 'pas_de_plantage', desc: 'GARDE-FOU écran noir : le village démarre sans erreur qui fige tout',
+      run: async () => {
+        // Bug du 22/08 : un springbone d'avatar cassé plantait vrm.update et FIGEAIT
+        // le jeu (écran noir, on ne peut plus bouger). majVrm() doit l'empêcher.
+        await load('#village'); await demarrer(); await sleep(6000);
+        assert(!(await ev('!!document.getElementById("boite-erreur")')),
+          'un bandeau d\'erreur s\'affiche : quelque chose plante au village');
+        // et le joueur doit pouvoir avancer (jeu pas figé)
+        const av = await ev('window.D.joueur.z');
+        await key('KeyW','keyDown'); await key('KeyZ','keyDown'); await sleep(1000);
+        await key('KeyW','keyUp'); await key('KeyZ','keyUp');
+        const ap = await ev('window.D.joueur.z');
+        assert(av !== ap, 'le joueur ne bouge pas : le jeu est figé (position ' + av + ')');
+      } },
     { nom: 'murs_au_sol', desc: 'GARDE-FOU murs : le bas des murs touche le SOL, même après un étage plus haut',
       run: async () => {
         // On descend à l'étage 1 (plafond à 30 m), PUIS on revient au village.
