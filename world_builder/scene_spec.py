@@ -91,6 +91,24 @@ def valider(spec: dict) -> dict:
     return spec
 
 
+def meta_spec(spec: dict) -> dict:
+    """Le meta d'un asset, dérivé UNIQUEMENT de la spec.
+
+    C'est LA source de vérité commune au registre et à la scène : les deux
+    écrivent la sortie de cette fonction, ils ne peuvent donc pas diverger
+    (règle P0.5-16). Le registre reste l'autorité pour l'identité et les
+    versions ; la scène copie ce meta quand la version active change."""
+    return {
+        "style": spec.get("style", "generic"),
+        "materials": list(spec.get("materials", [])),
+        "features": list(spec.get("features", [])),
+        "dimensions": dict(spec.get("dimensions", {})),
+        "toit": dict(spec.get("toit", {})),
+        "variation": dict(spec.get("variation", {})),
+        "style_profile": dict(spec.get("style_profile", {})),
+    }
+
+
 def est_geometrique(demande: str) -> bool:
     """La demande touche-t-elle la géométrie/matériau (Blender) ou seulement
     la transformation (Three.js) ? C'est le cœur du point 9 du P0.

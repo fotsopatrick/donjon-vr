@@ -15,6 +15,8 @@ import os
 import re
 from datetime import datetime
 
+from .scene_spec import meta_spec
+
 CHEMIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "registre.json")
 
 
@@ -57,15 +59,7 @@ class Registre:
             "type": spec["type"],
             "versions": [{"version": 1, "file": fichier}],
             "activeVersion": 1,
-            "meta": {
-                "style": spec.get("style", "generic"),
-                "materials": spec.get("materials", []),
-                "features": spec.get("features", []),
-                "dimensions": spec.get("dimensions", {}),
-                "toit": spec.get("toit", {}),
-                "variation": spec.get("variation", {}),
-                "style_profile": spec.get("style_profile", {}),
-            },
+            "meta": meta_spec(spec),
             "creeLe": _horodatage(),
             "modifieLe": _horodatage(),
         }
@@ -80,15 +74,7 @@ class Registre:
         num = entree["activeVersion"] + 1
         entree["versions"].append({"version": num, "file": fichier})
         entree["activeVersion"] = num
-        entree["meta"] = {
-            "style": spec.get("style", entree["meta"].get("style", "generic")),
-            "materials": spec.get("materials", entree["meta"].get("materials", [])),
-            "features": spec.get("features", entree["meta"].get("features", [])),
-            "dimensions": spec.get("dimensions", entree["meta"].get("dimensions", {})),
-            "toit": spec.get("toit", entree["meta"].get("toit", {})),
-            "variation": spec.get("variation", entree["meta"].get("variation", {})),
-            "style_profile": spec.get("style_profile", entree["meta"].get("style_profile", {})),
-        }
+        entree["meta"] = meta_spec(spec)
         entree["modifieLe"] = _horodatage()
         self._ecrire()
         return entree

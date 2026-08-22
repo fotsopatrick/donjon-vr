@@ -18,7 +18,7 @@ from .asset_registry import Registre
 from . import blender_controller
 from .deepseek_client import DeepSeekClient
 from .reference_analyzer import PaletteReferenceAnalyzer
-from .scene_spec import est_geometrique, STYLE_PROFILE_DEFAUT
+from .scene_spec import est_geometrique, meta_spec, STYLE_PROFILE_DEFAUT
 from .scene_store import SceneStore
 from .spec_generator import generer_locale, generer_modification_locale
 
@@ -161,12 +161,7 @@ class Director:
             "position": position,
             "rotationY": 0.0,
             "echelle": 1.0,
-            "meta": {
-                "style": spec.get("style", "generic"),
-                "materials": spec.get("materials", []),
-                "features": spec.get("features", []),
-                "style_profile": spec.get("style_profile", {}),
-            },
+            "meta": meta_spec(spec),
         }
         self.scene.ajouter(objet)
 
@@ -206,6 +201,7 @@ class Director:
             self.scene.mettre_a_jour(asset_id, {
                 "assetFile": glb_relatif,
                 "assetVersion": nouveau_num,
+                "meta": meta_spec(spec_cible),
             })
             rapport["spec_source"] = self._spec_source()
             rapport["spec"] = spec_cible

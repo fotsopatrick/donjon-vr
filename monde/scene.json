@@ -16,11 +16,27 @@
       "meta": {
         "style": "nordic",
         "materials": [
-          "dark_wood"
+          "dark_wood",
+          "moss"
         ],
         "features": [
-          "steep_roof"
+          "steep_roof",
+          "moss"
         ],
+        "dimensions": {
+          "l": 3.0,
+          "p": 2.4,
+          "h": 2.6
+        },
+        "toit": {
+          "type": "pentu",
+          "pente": "forte"
+        },
+        "variation": {
+          "seed": 1,
+          "weathered": 0.7,
+          "moss": 0.6
+        },
         "style_profile": {
           "architecture": "nordic medieval",
           "materials": [
@@ -56,6 +72,20 @@
         "features": [
           "steep_roof"
         ],
+        "dimensions": {
+          "l": 4.0,
+          "p": 3.0,
+          "h": 3.2
+        },
+        "toit": {
+          "type": "pentu",
+          "pente": "forte"
+        },
+        "variation": {
+          "seed": 2,
+          "weathered": 0.0,
+          "moss": 0.0
+        },
         "style_profile": {
           "architecture": "nordic medieval",
           "materials": [
@@ -86,11 +116,27 @@
       "meta": {
         "style": "generic",
         "materials": [
-          "dark_wood"
+          "dark_wood",
+          "moss"
         ],
         "features": [
-          "steep_roof"
+          "steep_roof",
+          "moss"
         ],
+        "dimensions": {
+          "l": 4.0,
+          "p": 3.0,
+          "h": 3.2
+        },
+        "toit": {
+          "type": "pentu",
+          "pente": "forte"
+        },
+        "variation": {
+          "seed": 3,
+          "weathered": 0.7,
+          "moss": 0.6
+        },
         "style_profile": {
           "architecture": "nordic medieval",
           "materials": [
