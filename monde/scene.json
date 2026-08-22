@@ -586,6 +586,99 @@
      ]
     }
    }
+  },
+  {
+   "id": "building_010",
+   "slug": "salle-mapping-v3",
+   "assetFile": "modeles/generes/test-iso-mapping-v3_v1.glb",
+   "assetVersion": 1,
+   "lieu": 0,
+   "position": {
+    "x": 100.0,
+    "z": 30.0
+   },
+   "rotationY": 0.0,
+   "echelle": 1.0,
+   "meta": {
+    "style": "medieval",
+    "materials": [
+     "aged_stone"
+    ],
+    "features": [
+     "dome"
+    ],
+    "dimensions": {
+     "l": 50.0,
+     "p": 50.0,
+     "h": 30.0
+    },
+    "toit": {
+     "type": "pentu",
+     "pente": "moyenne"
+    },
+    "variation": {
+     "seed": 2026,
+     "weathered": 0.4,
+     "moss": 0.2
+    },
+    "style_profile": {
+     "architecture": "nordic medieval",
+     "materials": [
+      "dark_wood",
+      "aged_stone",
+      "moss"
+     ],
+     "terrain": "rocky wet",
+     "vegetation": "dense conifers",
+     "lighting": "night cold",
+     "accent": "warm interior lights",
+     "atmosphere": "fog moisture"
+    },
+    "scene": {
+     "layout": {
+      "shape": "circular",
+      "symmetry": "radial",
+      "focal_point": "center"
+     },
+     "center": {
+      "type": "luminous_area",
+      "color": "cyan_blue"
+     },
+     "perimeter": {
+      "stairs": true,
+      "columns": true,
+      "arches": true,
+      "walls": true,
+      "warm_lights": true,
+      "cold_center": true
+     },
+     "levels": 2,
+     "materials": {
+      "primary": "dark_stone"
+     },
+     "lighting": {
+      "warm_cold_contrast": "strong",
+      "warm_orange": true,
+      "cold_blue_center": true
+     },
+     "atmosphere": [
+      "dark",
+      "mystical",
+      "ancient",
+      "monumental"
+     ],
+     "focal": {
+      "characters": 2,
+      "position": "center",
+      "role": "ceremonial"
+     },
+     "stairs": {
+      "radial": true,
+      "main": false,
+      "main_width": null
+     }
+    }
+   }
   }
  ]
 }
