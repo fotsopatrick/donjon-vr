@@ -178,6 +178,18 @@ def main():
                       parametres("overview", 25, 21, 50, 50)[0] !=
                       parametres("gameplay", 25, 21, 50, 50)[0])
 
+    # 10. lighting_lib : presets nommés + reproductibilité
+    from world_builder.lighting_lib import choisir_preset  # noqa: E402
+    echecs += verifie("lumière : contraste strong -> cinematic_contrast",
+                      choisir_preset({}, "strong")["preset"] == "cinematic_contrast",
+                      choisir_preset({}, "strong")["preset"])
+    echecs += verifie("lumière : preset explicite respecté",
+                      choisir_preset({"preset": "torchlight"}, "strong")["preset"] == "torchlight")
+    l1 = choisir_preset({"preset": "magical_blue"}, "strong")
+    l2 = choisir_preset({"preset": "magical_blue"}, "strong")
+    echecs += verifie("lumière : reproductible",
+                      l1 == l2, str((l1, l2)))
+
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
 

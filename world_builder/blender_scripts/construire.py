@@ -355,7 +355,7 @@ if est_interieur:
     # EEVEE : rendu réel (matériaux + émissifs qui brillent + lampes).
     # La salle sombre : monde en nuit froide, la lumière vient des lampes.
     sc.render.engine = "BLENDER_EEVEE"
-    sc.world.color = (0.05, 0.06, 0.09)
+    sc.world.color = k_param["lighting"]["world_color"]
     try:
         # AgX (défaut) désature tout (orange -> beige). Standard garde les
         # couleurs vives : indispensable au contraste cyan/orange.
@@ -366,8 +366,8 @@ if est_interieur:
     # lumière de remplissage douce (lune froide) : les murs restent lisibles,
     # sans écraser le contraste bleu/orange
     soleil = bpy.data.lights.new("Lum_ambiant", type="SUN")
-    soleil.color = (0.60, 0.68, 0.95)
-    soleil.energy = 0.4
+    soleil.color = k_param["lighting"]["sun_color"]
+    soleil.energy = k_param["lighting"]["sun_energy"]
     so = bpy.data.objects.new("Lum_ambiant", soleil)
     bpy.context.scene.collection.objects.link(so)
     so.rotation_euler = (1.05, 0.0, 0.7)

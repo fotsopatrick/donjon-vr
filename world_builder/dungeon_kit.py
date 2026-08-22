@@ -68,13 +68,20 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
 
     contraste = (lum.get("warm_cold_contrast") or "unknown").lower()
 
-    # intensités : dérivées du contraste (paramétrables ensuite)
-    if contraste == "strong":
-        centre_int, perimetre_int = 3600.0, 9500.0
-    elif contraste == "moderate":
-        centre_int, perimetre_int = 2400.0, 5200.0
-    else:
-        centre_int, perimetre_int = 1700.0, 3600.0
+    # éclairage : preset nommé (lighting.preset) via lighting_lib, sinon
+    # selon le contraste. Jamais codé en dur dans la scène.
+    try:
+        from lighting_lib import choisir_preset
+        lumiere = choisir_preset(lum, contraste)
+    except ImportError:
+        lumiere = {"center_color": (0.30, 0.55, 1.0),
+                   "perimeter_color": (1.0, 0.50, 0.22),
+                   "center_intensity": 3600.0, "perimeter_intensity": 9500.0,
+                   "sun_color": (0.60, 0.68, 0.95), "sun_energy": 0.4,
+                   "world_color": (0.05, 0.06, 0.09), "contrast": contraste}
+    lumiere["warm_perimeter"] = bool(per.get("warm_lights", True))
+    lumiere["blue_center"] = centre_enabled
+    lumiere["contrast"] = contraste
 
     arena = {
         "enabled": centre_enabled,
@@ -154,15 +161,7 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
             "center": "water",
             "primary": (sc.get("materials", {}) or {}).get("primary", "stone"),
         },
-        "lighting": {
-            "center_color": (0.30, 0.55, 1.0),
-            "perimeter_color": (1.0, 0.50, 0.22),
-            "center_intensity": centre_int,
-            "perimeter_intensity": perimetre_int,
-            "warm_perimeter": bool(per.get("warm_lights", True)),
-            "blue_center": centre_enabled,
-            "contrast": contraste,
-        },
+        "lighting": lumiere,
         "atmosphere": [str(a) for a in (sc.get("atmosphere") or [])],
         "camera": sc.get("camera") or "cinematic",
         "seed": int(seed),
