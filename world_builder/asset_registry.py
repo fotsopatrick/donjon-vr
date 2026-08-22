@@ -64,6 +64,7 @@ class Registre:
                 "dimensions": spec.get("dimensions", {}),
                 "toit": spec.get("toit", {}),
                 "variation": spec.get("variation", {}),
+                "style_profile": spec.get("style_profile", {}),
             },
             "creeLe": _horodatage(),
             "modifieLe": _horodatage(),
@@ -86,6 +87,7 @@ class Registre:
             "dimensions": spec.get("dimensions", entree["meta"].get("dimensions", {})),
             "toit": spec.get("toit", entree["meta"].get("toit", {})),
             "variation": spec.get("variation", entree["meta"].get("variation", {})),
+            "style_profile": spec.get("style_profile", entree["meta"].get("style_profile", {})),
         }
         entree["modifieLe"] = _horodatage()
         self._ecrire()

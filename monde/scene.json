@@ -9,7 +9,7 @@
       "lieu": 0,
       "position": {
         "x": -6.0,
-        "z": -2.0
+        "z": 8.0
       },
       "rotationY": 0.0,
       "echelle": 1.2,
@@ -20,7 +20,55 @@
         ],
         "features": [
           "steep_roof"
-        ]
+        ],
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
+      }
+    },
+    {
+      "id": "building_002",
+      "slug": "grange",
+      "assetFile": "modeles/generes/grange_002_v1.glb",
+      "assetVersion": 1,
+      "lieu": 0,
+      "position": {
+        "x": 4.0,
+        "z": 6.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.0,
+      "meta": {
+        "style": "generic",
+        "materials": [
+          "wood"
+        ],
+        "features": [
+          "steep_roof"
+        ],
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
       }
     }
   ]

@@ -16,6 +16,19 @@ MATERIAUX_CONNUS = ("dark_wood", "wood", "aged_stone", "stone", "plaster",
 TRAITS_CONNUS = ("steep_roof", "weathered_wood", "moss", "chimney",
                  "porch", "balcony")
 
+# Direction artistique par défaut : Dark Nordic Cinematic Fantasy (DA 22).
+# Persistant : un asset créé dans une scène reprend le profil de la scène
+# pour rester dans le même univers visuel (DA 17).
+STYLE_PROFILE_DEFAUT = {
+    "architecture": "nordic medieval",
+    "materials": ["dark_wood", "aged_stone", "moss"],
+    "terrain": "rocky wet",
+    "vegetation": "dense conifers",
+    "lighting": "overcast cold",
+    "accent": "warm interior lights",
+    "atmosphere": "fog moisture",
+}
+
 
 class ErreurSpec(Exception):
     """La spécification est invalide : on ne lance rien."""
@@ -32,6 +45,7 @@ def spec_vide() -> dict:
         "dimensions": {"l": 4.0, "p": 3.0, "h": 3.2},
         "toit": {"type": "pentu", "pente": "moyenne"},
         "variation": {"seed": 0, "weathered": 0.0, "moss": 0.0},
+        "style_profile": dict(STYLE_PROFILE_DEFAUT),
     }
 
 
@@ -68,6 +82,11 @@ def valider(spec: dict) -> dict:
         "weathered": round(min(max(float(var.get("weathered", 0) or 0), 0), 1), 2),
         "moss": round(min(max(float(var.get("moss", 0) or 0), 0), 1), 2),
     }
+    profil = spec.get("style_profile")
+    if not isinstance(profil, dict) or not profil:
+        profil = STYLE_PROFILE_DEFAUT
+    spec["style_profile"] = {k: profil.get(k, STYLE_PROFILE_DEFAUT[k])
+                             for k in STYLE_PROFILE_DEFAUT}
     return spec
 
 

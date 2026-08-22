@@ -105,6 +105,23 @@ def _appliquer_regles(spec: dict, t: str, ref_faits: dict | None) -> dict:
         if ref_faits.get("luminosite", 0.5) < 0.3:
             spec["variation"]["weathered"] = max(spec["variation"]["weathered"], 0.5)
 
+    profil = spec.get("style_profile") or {}
+    if spec.get("style") in ("nordic", "rustic", "medieval"):
+        profil["architecture"] = spec["style"] + " medieval"
+    if _contient(t, "cinématique", "cinematique", "atmospherique", "atmosphérique", "ambiance"):
+        profil["atmosphere"] = "fog moisture"
+    if "dark_wood" in spec.get("materials", []) and "aged_stone" not in spec.get("materials", []):
+        profil["materials"] = ["dark_wood", "aged_stone", "moss"]
+    if _contient(t, "nuit", "sombre", "noir"):
+        profil["lighting"] = "night cold"
+    if _contient(t, "clair", "jour", "ensoleillé", "ensoleille"):
+        profil["lighting"] = "clear soft"
+    if ref_faits and ref_faits.get("deductions", {}).get("vegetation"):
+        profil["vegetation"] = "dense mixed"
+    if spec.get("style") == "generic" and not profil.get("vegetation"):
+        profil["vegetation"] = "dense conifers"
+    spec["style_profile"] = profil
+
     return spec
 
 

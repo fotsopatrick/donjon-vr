@@ -32,13 +32,16 @@ for c in list(bpy.data.collections):
     bpy.data.collections.remove(c)
 
 
-def mat(nom, rgba, rough=0.85, metal=0.0):
+def mat(nom, rgba, rough=0.85, metal=0.0, emissive=None, emissive_force=0.0):
     m = bpy.data.materials.new(nom)
     m.use_nodes = True
     bsdf = m.node_tree.nodes.get("Principled BSDF")
     bsdf.inputs["Base Color"].default_value = rgba
     bsdf.inputs["Roughness"].default_value = rough
     bsdf.inputs["Metallic"].default_value = metal
+    if emissive:
+        bsdf.inputs["Emission Color"].default_value = emissive
+        bsdf.inputs["Emission Strength"].default_value = emissive_force
     m.diffuse_color = rgba
     return m
 
@@ -52,7 +55,10 @@ MATS = {
     "thatch": mat("thatch", (0.72, 0.62, 0.35, 1), rough=1.0),
     "moss": mat("moss", (0.28, 0.42, 0.22, 1), rough=1.0),
     "porte": mat("porte", (0.30, 0.17, 0.08, 1), rough=0.88),
-    "fenetre": mat("fenetre", (0.08, 0.10, 0.16, 1), rough=0.6),
+    "feuillage": mat("feuillage", (0.13, 0.21, 0.13, 1), rough=1.0),
+    # accent chaud (DA 10) : les fenêtres luisent ambre dans le monde froid
+    "fenetre": mat("fenetre", (0.22, 0.12, 0.06, 1), rough=0.6,
+                   emissive=(0.85, 0.42, 0.16, 1), emissive_force=1.6),
     "toit_rouge": mat("toit_rouge", (0.55, 0.18, 0.12, 1), rough=0.85),
     "toit_gris": mat("toit_gris", (0.40, 0.40, 0.42, 1), rough=0.85),
 }
@@ -180,6 +186,69 @@ for _ in range(nb_mousse):
                 MATS["moss"], "mousse")
     b.scale = (r, r * 0.7, r * 0.6)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+# ---------- environnement immédiat (DA 5-7) ----------
+profil = spec.get("style_profile", {}) or {}
+terrain = profil.get("terrain", "rocky wet")
+vegetation = profil.get("vegetation", "dense conifers")
+
+mat_fond = MATS["aged_stone"] if "aged_stone" in spec.get("materials", []) else MATS["stone"]
+mat_roc = MATS["stone"] if "stone" in spec.get("materials", []) else mat_fond
+
+# fondation : l'assise qui raccroche la maison au sol, jamais parfaitement droite
+fx, fz = rng.uniform(0.96, 1.04), rng.uniform(0.96, 1.04)
+f = ajouter("cube", {"size": 1, "location": (0, 0, 0.13)}, mat_fond, "fondation")
+f.scale = (L * 0.56 * fx, P * 0.56 * fz, 0.13)
+bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+# rochers : quelques blocs écrasés, irréguliers (DA 6)
+nb_rochers = 3 if "rocky" in terrain else 2
+emprise = max(L, P)
+for _ in range(nb_rochers):
+    a = rng.uniform(0, math.tau)
+    d = rng.uniform(0.85, 1.55) * emprise * 0.5
+    r = rng.uniform(0.20, 0.42)
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=r,
+                                          location=(math.cos(a) * d, math.sin(a) * d, r * 0.28))
+    roc = bpy.context.object
+    roc.name = "rocher"
+    roc.scale = (rng.uniform(0.8, 1.3), rng.uniform(0.8, 1.3), rng.uniform(0.45, 0.65))
+    roc.rotation_euler = (rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2), rng.uniform(0, math.tau))
+    roc.data.materials.append(mat_roc)
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+# végétation : sapins low-poly groupés en bouquets (DA 7), jamais en rang
+nb_arbres = 6 if "dense" in vegetation else 3
+mat_tronc = MATS["wood"] if "wood" in spec.get("materials", []) else MATS["dark_wood"]
+for i in range(nb_arbres):
+    a = rng.uniform(0, math.tau)
+    d = rng.uniform(0.9, 1.8) * emprise * 0.5
+    xa, za = math.cos(a) * d, math.sin(a) * d
+    ech = rng.uniform(0.7, 1.35)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=7, radius=0.07, depth=0.55,
+                                        location=(xa, za, 0.20 * ech))
+    tronc = bpy.context.object
+    tronc.name = "tronc"
+    tronc.data.materials.append(mat_tronc)
+    for k, (r, prof, yb) in enumerate(((0.36, 0.75, 0.55), (0.27, 0.6, 0.95))):
+        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=r, radius2=0.01,
+                                        depth=prof, location=(xa, za, yb * ech))
+        con = bpy.context.object
+        con.name = "cime"
+        con.scale = (ech, ech, ech)
+        con.data.materials.append(MATS["feuillage"])
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.select_by_type(type="MESH")
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in bpy.data.objects:
+        if o.name in ("cime", "tronc"):
+            o.select_set(True)
+    bpy.context.view_layer.objects.active = bpy.data.objects["tronc"]
+    bpy.ops.object.join()
+    arbre = bpy.context.object
+    arbre.name = "arbre_%d" % i
+    arbre.rotation_euler.z = rng.uniform(0, math.tau)
+    bpy.ops.object.select_all(action="DESELECT")
 
 # ---------- joindre ----------
 bpy.ops.object.select_all(action="SELECT")

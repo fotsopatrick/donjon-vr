@@ -18,9 +18,13 @@ from .asset_registry import Registre
 from . import blender_controller
 from .deepseek_client import DeepSeekClient
 from .reference_analyzer import PaletteReferenceAnalyzer
-from .scene_spec import est_geometrique
+from .scene_spec import est_geometrique, STYLE_PROFILE_DEFAUT
 from .scene_store import SceneStore
 from .spec_generator import generer_locale, generer_modification_locale
+
+
+def _spec_profil_defaut() -> dict:
+    return dict(STYLE_PROFILE_DEFAUT)
 
 PROJET = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 POSITION_PAR_DEFAUT = {"x": 0.0, "z": 4.0}
@@ -52,7 +56,18 @@ def _spec_depuis_entree(entree: dict) -> dict:
         "dimensions": dict(entree.get("meta", {}).get("dimensions", {})),
         "toit": dict(entree.get("meta", {}).get("toit", {"type": "pentu", "pente": "moyenne"})),
         "variation": dict(entree.get("meta", {}).get("variation", {})),
+        "style_profile": dict(entree.get("meta", {}).get("style_profile", {})),
     }
+
+
+def _profil_de_scene(scene: SceneStore, lieu: int) -> dict | None:
+    """Règle de cohérence (DA 17) : un nouvel asset dans une scène déjà
+    peuplée reprend le Style Profile du premier objet du même lieu, au lieu
+    de recommencer l'interprétation artistique à zéro."""
+    for o in scene.tout():
+        if o.get("lieu") == lieu and o.get("meta", {}).get("style_profile"):
+            return o["meta"]["style_profile"]
+    return None
 
 
 def _parse_transformations(demande: str) -> dict:
@@ -121,10 +136,16 @@ class Director:
         else:
             spec = generer_locale(demande, ref_faits, "create_asset")
 
+        profil_scene = _profil_de_scene(self.scene, lieu)
+        if profil_scene and spec.get("style_profile") == _spec_profil_defaut():
+            spec["style_profile"] = profil_scene
+
         prefixe = spec["type"] or "objet"
         asset_id = self.registre.prochain_id(prefixe)
         spec["_numero"] = _numero(asset_id)
         spec["_version"] = 1
+        if not spec["variation"]["seed"]:
+            spec["variation"]["seed"] = spec["_numero"]
 
         produit = self.blender(spec)
         glb_relatif = relatif(produit["glb"])
@@ -144,6 +165,7 @@ class Director:
                 "style": spec.get("style", "generic"),
                 "materials": spec.get("materials", []),
                 "features": spec.get("features", []),
+                "style_profile": spec.get("style_profile", {}),
             },
         }
         self.scene.ajouter(objet)
