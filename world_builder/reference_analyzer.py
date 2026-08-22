@@ -94,27 +94,36 @@ class VisionReferenceAnalyzer(ReferenceAnalyzer):
 
     @staticmethod
     def _deductions(profil: dict) -> dict:
-        """Traduit le VisualProfile en déductions étiquetées, sans en inventer.
-        Un matériau non vu n'est jamais déduit."""
+        """Traduit le VisualProfile scène en déductions étiquetées, sans en
+        inventer. Un élément non observé n'est jamais déduit."""
+        obs = " ".join(str(x).lower() for x in (profil.get("observed") or []))
+        mats = " ".join(str(m).lower() for m in (profil.get("materials_observed") or []))
+        lum = profil.get("lighting") or {}
+        emis = " ".join(str(x).lower() for x in (lum.get("emissive_elements") or []))
+        arch = (profil.get("architecture") or {}).get("columns") or []
+        arches = (profil.get("architecture") or {}).get("arches") or []
+        stairs = (profil.get("spatial_composition") or {}).get("stairs") or []
+
         ded = {}
-        mats = [str(m).lower() for m in (profil.get("materiaux_visibles") or [])]
-        traits = [str(t).lower() for t in (profil.get("traits_visibles") or [])]
-        if "dark_wood" in mats:
-            ded["bois_sombre"] = True
-        elif "wood" in mats:
-            ded["bois"] = True
-        if any(m in ("aged_stone", "stone") for m in mats):
+        if "sombre" in mats or "sombre" in obs or "dark" in obs:
+            ded["pierre_sombre"] = True
+        if "pierre" in mats or "stone" in mats or "pierre" in obs:
             ded["pierre"] = True
-        if "moss" in mats or "moss" in traits or "moussu" in str(profil.get("architecture", "")).lower():
-            ded["vegetation"] = True
-        style = (profil.get("style") or "").strip()
-        if style in ("nordic", "medieval", "rustic", "japonais", "tropical"):
-            ded["style"] = style
-        toit = profil.get("toit") or {}
-        if toit.get("type") == "pentu" and toit.get("pente"):
-            ded["toit_pentu"] = toit["pente"]
-        if toit.get("couleur"):
-            ded["toit_couleur"] = toit["couleur"]
+        if obs and any(m in obs for m in ("colonnes", "colonne", "colonnade", "colonnad", "columns", "column")) or arch:
+            ded["colonnes"] = True
+        if obs and ("arc" in obs or "arches" in obs) or arches:
+            ded["arches"] = True
+        if obs and any(m in obs for m in ("escalier", "escaliers", "gradins", "stairs")):
+            ded["gradins"] = True
+        if stairs:
+            ded["gradins"] = True
+        if ("bleu" in emis or "cyan" in emis or "bleu" in obs or "cyan" in obs):
+            ded["centre_cyan"] = True
+        if "orange" in emis or "orange" in obs:
+            ded["feux_orange"] = True
+        scene = profil.get("scene") or {}
+        if (scene.get("interior_or_exterior") or "").lower() == "interior":
+            ded["interieur"] = True
         if profil.get("incertitude") == "forte":
             ded["incertitude_forte"] = True
         return ded

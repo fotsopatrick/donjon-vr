@@ -124,17 +124,23 @@ def main():
         echecs += verifie("vision : refuse d'agir sans clé (pas de simulation)",
                           "simule" in msg or "clé" in msg, msg)
 
-    profil = {"materiaux_visibles": ["dark_wood", "aged_stone"], "style": "nordic",
-              "toit": {"type": "pentu", "pente": "forte"}, "incertitude": "faible"}
+    profil = {"materials_observed": ["pierre sombre", "stone"],
+              "observed": ["grande salle circulaire", "colonnade", "arches",
+                           "sol bleu lumineux", "anneau de lumières orange"],
+              "spatial_composition": {"stairs": ["gradins concentriques"]},
+              "lighting": {"emissive_elements": ["sol bleu lumineux",
+                                                 "points orange lumineux"]},
+              "scene": {"interior_or_exterior": "interior"},
+              "incertitude": "faible"}
     ded = VisionReferenceAnalyzer._deductions(profil)
     echecs += verifie("vision : déductions = lecture du profil",
-                      ded.get("bois_sombre") and ded.get("pierre") and ded.get("style") == "nordic"
-                      and ded.get("toit_pentu") == "forte", str(ded))
-    profil2 = {"materiaux_visibles": ["wood"], "incertitude": "forte"}
+                      ded.get("pierre_sombre") and ded.get("pierre") and ded.get("colonnes")
+                      and ded.get("arches") and ded.get("gradins") and ded.get("centre_cyan")
+                      and ded.get("feux_orange") and ded.get("interieur"), str(ded))
+    profil2 = {"materials_observed": ["wood"], "incertitude": "forte"}
     ded2 = VisionReferenceAnalyzer._deductions(profil2)
     echecs += verifie("vision : wood seul n'est pas du bois_sombre",
-                      "bois_sombre" not in ded2 and "bois" in ded2 and ded2.get("incertitude_forte"),
-                      str(ded2))
+                      "pierre_sombre" not in ded2 and "bois" not in ded2, str(ded2))
 
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0

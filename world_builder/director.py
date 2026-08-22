@@ -18,7 +18,8 @@ from .asset_registry import Registre
 from . import blender_controller
 from .deepseek_client import DeepSeekClient
 from .reference_analyzer import PaletteReferenceAnalyzer, VisionReferenceAnalyzer, ErreurReference
-from .scene_spec import est_geometrique, meta_spec, STYLE_PROFILE_DEFAUT
+from .scene_spec import (est_geometrique, meta_spec, composer_scene,
+                         STYLE_PROFILE_DEFAUT)
 from .scene_store import SceneStore
 from .spec_generator import generer_locale, generer_modification_locale
 
@@ -149,6 +150,13 @@ class Director:
             spec["operation"] = "create_asset"
         else:
             spec = generer_locale(demande, ref_faits, "create_asset")
+
+        # Scene Specification : DÉTERMINISTE depuis le VisualProfile (OBSERVED).
+        # C'est le canal qui préserve la composition spatiale — le spec-model
+        # (texte seul, sans image) ne peut pas la porter fidèlement.
+        profil = (ref_faits or {}).get("visual_profile")
+        if isinstance(profil, dict):
+            spec["scene"] = composer_scene(profil)
 
         profil_scene = _profil_de_scene(self.scene, lieu)
         if profil_scene and spec.get("style_profile") == _spec_profil_defaut():

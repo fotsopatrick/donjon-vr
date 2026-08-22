@@ -53,41 +53,76 @@ SCHEMA_SPEC = {
 
 
 # Le modèle vision ne reçoit QUE l'image et cette consigne. Aucun concept du
-# projet, aucun secret : il produit un VisualProfile (une LECTURE de l'image),
-# pas une mesure.
-# Leçon 22/08 : un prompt trop strict (« renvoie vide si incertain ») pousse le
-# modèle au tout-vide sur des photos réelles — il voit pourtant la structure,
-# les matériaux et la palette. On lui demande maintenant de décrire ce qu'il
-# voit RÉELLEMENT, sans inventer un élément absent, avec un niveau d'incertitude
-# honnête. Le vide n'est réservé qu'aux champs vraiment indéterminables.
+# projet, aucun secret : il produit un VisualProfile structuré (une LECTURE de
+# l'image), pas une mesure.
+#
+# Leçon 22/08 (benchmark sallededonjon) : la première grille était orientée
+# « building » (type_objet, toit, matériaux de bâtiment). Une salle INTÉRIEURE
+# de fantasy a été forcée dans ce moule : toit -> « dôme », matériaux ->
+# « metal/glass », ambiance -> « scientifique ». Trois erreurs nées de la grille,
+# pas de la vision. La nouvelle grille observe la SCÈNE (composition, centre,
+# périmètre, niveaux, lumière, palette, objets) et SÉPARE l'observé de l'inféré.
 PROMPT_VISION = (
-    "Tu examines une image de référence pour un outil de modélisation 3D. "
-    "Produis UNIQUEMENT un objet JSON, sans texte autour, au schéma exact "
-    "ci-dessous. Décris la structure dominante que tu vois réellement : son "
-    "architecture (si ce n'est pas un bâtiment classique, décris librement la "
-    "silhouette, les formes, les lignes), ses matériaux apparents, ses couleurs "
-    "dominantes, son toit (type, pente, couleur), les proportions RELATIVES "
-    "entre largeur/profondeur/hauteur (ratios, jamais des mètres), et son "
-    "ambiance (lumière, atmosphère).\n"
-    "Règle d'honnêteté : décris UNIQUEMENT ce que tu vois. N'invente jamais un "
-    "élément absent de l'image. Un champ totalement indéterminable = chaîne vide "
-    "ou liste vide. Un élément distingué avec un doute = décris-le et monte le "
-    "niveau d'incertitude. Le but : donner assez d'indices visuels (silhouette, "
-    "matériaux, palette, ambiance) pour que l'esprit général soit reproduit.\n"
-    "Schéma attendu :\n"
+    "Tu examines une image de référence pour un outil de modélisation 3D de "
+    "scènes et de bâtiments. Produis UNIQUEMENT un objet JSON, sans texte "
+    "autour, au schéma exact ci-dessous.\n"
+    "Règle 1 — OBSERVE avant d'interpréter : décris ce qui est RÉELLEMENT "
+    "visible. Ne déduis JAMAIS la fonction d'un lieu (« laboratoire », "
+    "« arène », « temple ») uniquement d'après sa forme ou ses couleurs. Si la "
+    "fonction est incertaine, écris « unknown » ou « possible : ... ».\n"
+    "Règle 2 — ne devine pas un élément absent de l'image. Une liste vide ou "
+    "« unknown » valent mieux qu'une invention. Les matériaux (pierre, bois, "
+    "métal, verre...) ne sont listés QUE s'ils sont réellement distinguables.\n"
+    "Règle 3 — la COMPOSITION est capitale : note où se trouve le point focal "
+    "(centre ? périphérie ?), ce qui entoure le centre, les niveaux visibles, "
+    "les escaliers, les colonnes, les arcs, les murs, les sources de lumière.\n"
+    "Règle 4 — lumière : décris la/les source(s) dominante(s), le contraste "
+    "chaud/froid (ex : bleu au centre, orange en périphérie), les éléments "
+    "émissifs (surfaces ou points qui luisent) et leur couleur.\n"
+    "Schéma attendu (liste = tableau JSON) :\n"
     "{\n"
-    '  "type_objet": "building | tour | salle | pavillon | ... ou court descriptif libre",\n'
-    '  "architecture": "description courte en français, 2 à 10 mots (ex : vaisseau à dôme elliptique de verre sur armature métallique)",\n'
-    '  "style": "nordic | medieval | rustic | japonais | tropical | futuriste | generic | ", \n'
-    '  "materiaux_visibles": liste prise dans ["dark_wood","wood","aged_stone","stone","plaster","moss","thatch","metal","glass","concrete"] — vide si incertain,\n'
-    '  "traits_visibles": liste prise dans ["steep_roof","weathered_wood","moss","chimney","porch","balcony","dome","arches","columns"] — vide si incertain,\n'
-    '  "couleurs": ["brun foncé","gris pierre","bleu","orange",...] — noms de couleurs réellement vus,\n'
-    '  "toit": {"type": "pentu | plat | dôme | ", "pente": "forte | moyenne | nulle | ", "couleur": "rouge | gris | bleu | chaume | "},\n'
-    '  "proportions": {"l": 0.0..1.0, "p": 0.0..1.0, "h": 0.0..1.0} — ratios RELATIFS de l\'objet vu (ex : l=1.0, p=0.8, h=0.9), JAMAIS des mètres,\n'
-    '  "ambiance": liste courte de mots ["nuit","brouillard","froid","humide","scientifique","mystérieuse","lumineuse","ensoleillé","chaleureux",...],\n'
+    '  "scene": {\n'
+    '    "interior_or_exterior": "interior | exterior | unknown",\n'
+    '    "location_type": "courte phrase | unknown",\n'
+    '    "architectural_scale": "intimate | human | monumental | colossal | unknown",\n'
+    '    "dominant_shape": "circular | elliptical | rectangular | square | irregular | unknown",\n'
+    '    "symmetry": "radial | bilateral | asymmetric | unknown",\n'
+    '    "focal_point": {"type": "courte phrase | unknown", "position": "center | offset | unknown"},\n'
+    '    "levels": 0,\n'
+    '    "enclosed": "open_air | covered | ceiling_visible | unknown"\n'
+    "  },\n"
+    '  "spatial_composition": {\n'
+    '    "center": ["éléments réellement vus au centre"],\n'
+    '    "perimeter": ["éléments réellement vus en périphérie"],\n'
+    '    "stairs": ["escaliers/gradins réellement vus"],\n'
+    '    "entrances": ["ouvertures/portes réellement vues | []"],\n'
+    '    "circulation": "courte phrase : comment on circule dans la scène | unknown",\n'
+    '    "camera_perspective": "courte phrase : point de vue (hauteur, angle)"\n'
+    "  },\n"
+    '  "architecture": {\n'
+    '    "walls": ["murs réellement vus"],\n'
+    '    "columns": ["colonnes réellement vues | []"],\n'
+    '    "arches": ["arcs réellement vus | []"],\n'
+    '    "ceiling": "unknown | courte description",\n'
+    '    "platforms": ["plates-formes/estrades réellement vues | []"],\n'
+    '    "structural": "courte description des éléments porteurs | unknown"\n'
+    "  },\n"
+    '  "materials_observed": ["pierre sombre", "pierre", ...] — UNIQUEMENT ce qui est vu,\n'
+    '  "lighting": {\n'
+    '    "dominant": "courte phrase : lumière dominante",\n'
+    '    "secondary": ["sources secondaires réellement vues"],\n'
+    '    "warm_cold_contrast": "strong | moderate | weak | none | unknown",\n'
+    '    "emissive_elements": ["surfaces/points lumineux avec leur couleur réelle"],\n'
+    '    "shadows": "courte phrase sur les ombres | unknown"\n'
+    "  },\n"
+    '  "color_palette": {"dominant": "couleur", "secondary": "couleur", "accent": "couleur"},\n'
+    '  "atmosphere": ["mots courts : dark, mystical, ancient, monumental, humid, ..."],\n'
+    '  "objects": [{"element": "nom", "color": "couleur | unknown", "position": "center | perimeter | level", "observed": true}],\n'
+    '  "observed": ["liste synthétique de ce qui est RÉELLEMENT visible"],\n'
+    '  "inferred": ["fonctions POSSIBLES, chacune précédée de possible : ..."],\n'
     '  "incertitude": "faible | moyenne | forte"\n'
     "}\n"
-    "Réponds strictement ce JSON."
+    "Réponds strictement ce JSON. Ne renvoie QUE le JSON."
 )
 
 

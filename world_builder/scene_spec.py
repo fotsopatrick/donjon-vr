@@ -129,6 +129,98 @@ def meta_spec(spec: dict) -> dict:
         "toit": dict(spec.get("toit", {})),
         "variation": dict(spec.get("variation", {})),
         "style_profile": dict(spec.get("style_profile", {})),
+        "scene": dict(spec.get("scene") or {}),
+    }
+
+
+def composer_scene(profil: dict) -> dict:
+    """Scene Specification DÉTERMINISTE depuis le VisualProfile (benchmark 22/08).
+
+    Seuls les éléments OBSERVED entrent dans la spec — aucune hallucination de
+    fonction, aucune inférence passée pour de l'observation. C'est LA source de
+    vérité que Blender utilise pour construire la scène intérieure."""
+    profil = profil or {}
+    scene = profil.get("scene") or {}
+    comp = profil.get("spatial_composition") or {}
+    arch = profil.get("architecture") or {}
+    lum = profil.get("lighting") or {}
+    mats = " ".join(str(m).lower() for m in (profil.get("materials_observed") or []))
+    obs = " ".join(str(x).lower() for x in (profil.get("observed") or []))
+    emis = " ".join(str(x).lower() for x in (lum.get("emissive_elements") or []))
+    atmos = [str(a) for a in (profil.get("atmosphere") or [])]
+
+    shape = (scene.get("dominant_shape") or "unknown").lower()
+    if shape not in ("circular", "elliptical", "rectangular", "square", "irregular"):
+        shape = "unknown"
+    sym = (scene.get("symmetry") or "unknown").lower()
+    if sym not in ("radial", "bilateral", "asymmetric"):
+        sym = "unknown"
+
+    centre_type, centre_couleur = "unknown", "unknown"
+    cibles = list(comp.get("center") or [])
+    for o in (profil.get("objects") or []):
+        if isinstance(o, dict):
+            cibles.append(o)
+    # L'élément central lumineux vit souvent dans lighting (émissif/dominant)
+    # et dans la palette, pas dans la liste "center". On balaie aussi là.
+    lum_texte = " ".join([
+        str(lum.get("dominant", "")),
+        " ".join(str(x) for x in (lum.get("secondary") or [])),
+        " ".join(str(x) for x in (lum.get("emissive_elements") or [])),
+    ]).lower()
+    palette_texte = " ".join(str(v) for v in (profil.get("color_palette") or {}).values()).lower()
+    balayage = [cibles, [lum_texte], [palette_texte]]
+    for c in [x for sous in balayage for x in sous]:
+        s = " ".join(str(x).lower() for x in (c.values() if isinstance(c, dict) else [c]))
+        if any(m in s for m in ("lumineux", "lueur", "luisant", "éclat", "brillant", "glowing",
+                                "luminous", "light", "bleu", "cyan", "clair")):
+            centre_type = "luminous_area"
+            centre_couleur = "cyan_blue" if ("bleu" in s or "cyan" in s) else "warm"
+            break
+
+    colonnes = bool(arch.get("columns")) or "colonne" in obs
+    arches = bool(arch.get("arches")) or "arches" in obs or "arc" in obs
+    gradins = bool(comp.get("stairs")) or "gradins" in obs or "escalier" in obs
+    murs = bool(arch.get("walls"))
+    feux_orange = "orange" in emis or "orange" in obs or "orange" in lum_texte or "orange" in palette_texte
+    centre_cyan = ("cyan" in emis or "cyan" in obs or "bleu" in emis or "bleu" in obs
+                   or "cyan" in lum_texte or "bleu" in lum_texte)
+
+    primaire = "unknown"
+    if "pierre sombre" in mats or "pierre_sombre" in mats or "dark stone" in mats:
+        primaire = "dark_stone"
+    elif "pierre" in mats or "stone" in mats:
+        primaire = "stone"
+    elif "bois" in mats or "wood" in mats:
+        primaire = "wood"
+    elif "metal" in mats or "métal" in mats:
+        primaire = "metal"
+
+    try:
+        niveaux = int(scene.get("levels") or 0)
+    except (TypeError, ValueError):
+        niveaux = 0
+
+    return {
+        "layout": {"shape": shape, "symmetry": sym,
+                   "focal_point": "center" if centre_type != "unknown" else "unknown"},
+        "center": {"type": centre_type, "color": centre_couleur},
+        "perimeter": {
+            "stairs": gradins,
+            "columns": colonnes,
+            "arches": arches,
+            "walls": murs,
+            "warm_lights": feux_orange,
+            "cold_center": centre_cyan,
+        },
+        "levels": niveaux,
+        "materials": {"primary": primaire},
+        "lighting": {
+            "warm_cold_contrast": (lum.get("warm_cold_contrast") or "unknown").lower(),
+            "warm_orange": feux_orange,
+            "cold_blue_center": centre_cyan,
+        },
+        "atmosphere": atmos[:6],
     }
 
 
