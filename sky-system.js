@@ -122,16 +122,31 @@ function construireToile(p){
   gr.addColorStop(0.5, milieu);
   gr.addColorStop(1, bas);
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  // le château : décor distant composé juste au-dessus de l'horizon
+  // le château : décor distant composé au-dessus de l'horizon, SANS couture.
+  // La bande est fondue en alpha (transparente en haut et en bas) pour ne
+  // laisser AUCUNE rupture horizontale entre le château et le dégradé.
   if(p.chateau && _chateauImg){
     const img = _chateauImg;
-    const hh = H * 0.34;                       // bande d'horizon
+    const hh = H * 0.34;                       // hauteur de la bande d'horizon
     const ratio = img.width / img.height;
     let dw = W, dh = dw / ratio;
     if(dh < hh){ dh = hh; dw = dh * ratio; }
-    const dy = H * 0.5 - hh * 0.55;            // posé juste sous la ligne d'horizon
-    g.globalAlpha = 0.9;
-    g.drawImage(img, (W - dw) / 2, dy, dw, dh);
+    // fondue verticale sur un canvas intermédiaire
+    const tmp = document.createElement('canvas');
+    tmp.width = W; tmp.height = hh;
+    const tg = tmp.getContext('2d');
+    tg.drawImage(img, (W - dw) / 2, (hh - dh) / 2, dw, dh);
+    const fade = tg.createLinearGradient(0, 0, 0, hh);
+    fade.addColorStop(0, 'rgba(0,0,0,0)');
+    fade.addColorStop(0.22, 'rgba(0,0,0,1)');
+    fade.addColorStop(0.78, 'rgba(0,0,0,1)');
+    fade.addColorStop(1, 'rgba(0,0,0,0)');
+    tg.globalCompositeOperation = 'destination-in';
+    tg.fillStyle = fade; tg.fillRect(0, 0, W, hh);
+    // posée juste sous la ligne d'horizon
+    const dy = H * 0.5 - hh * 0.42;
+    g.globalAlpha = 0.92;
+    g.drawImage(tmp, 0, dy);
     g.globalAlpha = 1;
   }
   _toileTex = new THREE.CanvasTexture(c);
