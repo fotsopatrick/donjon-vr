@@ -164,8 +164,19 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
         "lighting": lumiere,
         "atmosphere": [str(a) for a in (sc.get("atmosphere") or [])],
         "camera": sc.get("camera") or "cinematic",
+        "quality": niveau_qualite(sc.get("quality", "L3")),
         "seed": int(seed),
     }
+
+
+def niveau_qualite(v) -> int:
+    """Niveau de qualité L0..L5 depuis la SceneSpec (str 'L3' ou int 3)."""
+    if isinstance(v, int):
+        return max(0, min(5, v))
+    s = str(v or "").strip().upper()
+    if s.startswith("L") and s[1:].isdigit():
+        return max(0, min(5, int(s[1:])))
+    return 3   # L3 = détaillé, défaut
 
 
 # ---------------------------------------------------------------------------
@@ -179,6 +190,7 @@ class DungeonChamber:
         if bpy is None:
             raise RuntimeError("dungeon_kit : Blender (bpy) requis")
         self.param = parametrer(scene_spec or {}, dims, seed)
+        self.qualite = self.param["quality"]          # L0..L5
         self.rng = random.Random(int(seed) or 0)
         self.objets = []
         self.ancre = None
@@ -862,27 +874,36 @@ class DungeonChamber:
 
     # ============================ ORCHESTRATION ===========================
     def build(self) -> dict:
+        q = self.qualite
+        # MACRO : la salle et ses masses — toujours là (L0 = blockout pur)
         self.elliptical_room()
         self.central_pool()
-        self.concentric_steps()
-        self.doors()
-        self.radial_stairs()
-        self.stone_columns()
-        self.stone_arches()
-        self.curved_walls()
-        self.wall_niches()
-        self.railings()
-        self.warm_perimeter_lights()
-        self.emissive_center()
-        self.decorative_elements()
-        # passée direction artistique : densité + storytelling
-        self.plinthe_mur()
-        self.tourelles_bassin()
-        self.obelisque_centre()
-        self.traces_sol()
-        self.meurtrieres()
-        self.porte_bois()
-        self.flaques_torches()
+        if q >= 1:                      # L1 blockout : masses structurées
+            self.concentric_steps()
+            self.curved_walls()
+        if q >= 2:                      # L2 structured
+            self.doors()
+            self.radial_stairs()
+            self.stone_columns()
+            self.stone_arches()
+        if q >= 3:                      # L3 detailed (défaut)
+            self.wall_niches()
+            self.railings()
+            self.warm_perimeter_lights()
+            self.emissive_center()
+            self.decorative_elements()
+            # passée direction artistique : densité + storytelling
+            self.plinthe_mur()
+            self.tourelles_bassin()
+            self.obelisque_centre()
+            self.traces_sol()
+            self.meurtrieres()
+            self.porte_bois()
+            self.flaques_torches()
+        # L4 game-ready / L5 hero : mêmes composants détaillés pour l'instant
+        # (le niveau concentrera ensuite la qualité sur les hero assets).
+        if self.ancre is None:
+            self.ancre = "sol"          # L0 : la salle nue sert d'ancre au join
         # les bases de kit ne doivent pas entrer dans le join final : on les
         # retire (leurs instances partagent le mesh, il reste référencé).
         for b in self.bases:

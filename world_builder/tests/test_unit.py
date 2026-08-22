@@ -190,6 +190,21 @@ def main():
     echecs += verifie("lumière : reproductible",
                       l1 == l2, str((l1, l2)))
 
+    # 11. quality levels : L0-L5, blockout demandable
+    from world_builder.dungeon_kit import niveau_qualite  # noqa: E402
+    echecs += verifie("qualité : 'L1' -> 1",
+                      niveau_qualite("L1") == 1, niveau_qualite("L1"))
+    echecs += verifie("qualité : 5 -> 5",
+                      niveau_qualite(5) == 5, niveau_qualite(5))
+    echecs += verifie("qualité : défaut -> L3",
+                      niveau_qualite(None) == 3, niveau_qualite(None))
+    echecs += verifie("qualité : 'L9' borné à 5",
+                      niveau_qualite("L9") == 5, niveau_qualite("L9"))
+    from world_builder.dungeon_kit import parametrer as _param
+    pb = _param({"layout": {"shape": "circular"}, "quality": "L1"}, {"l": 40, "p": 40, "h": 20})
+    echecs += verifie("qualité : propagée dans les paramètres",
+                      pb["quality"] == 1, pb["quality"])
+
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
 
