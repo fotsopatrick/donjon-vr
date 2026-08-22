@@ -3303,13 +3303,11 @@ function nouvelEtage(){
     renderer.shadowMap.enabled = false;
     jour.castShadow = false;
     ambiance.intensity = 3.0;
-    if(MODELES.entreeColisee && entree){          // le Colisée : bâtiment d'entrée du donjon, autour de l'escalier
-      const col = MODELES.entreeColisee.clone(true);
-      col.position.set(entree.x*T+T/2, 0, entree.y*T+T/2);
-      col.scale.setScalar(0.62); col.rotation.y = Math.PI;
-      col.traverse(o=>{ if(o.isMesh) o.frustumCulled=false; });
-      monde.add(col);
-    }
+    // COLISÉE RETIRÉ (Patrick 22/08) : le modèle s'affichait sans ses murs, il ne
+    // restait que des arches en contour blanc, comme des fantômes. Moche. On ne le
+    // pose plus. L'escalier et le cercle restent pour descendre. À refaire propre
+    // (arche de pierre + colonnes) plus tard — voir A-FAIRE.md.
+    // if(MODELES.entreeColisee && entree){ ... }  // désactivé volontairement
     if(MODELES.chevalier && entree){          // gardes immobiles en allée vers le Colisée
       for(let i=0;i<3;i++) for(const cote of [-1,1]){
         const c = MODELES.chevalier.clone(true);

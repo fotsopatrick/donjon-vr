@@ -1,6 +1,15 @@
 # La pile — ce que Patrick a demandé, dans l'ordre
 
 ## EN PREMIER à la reprise (Patrick, 22/08)
+- [ ] **Un étage de donjon SANS cercle de téléportation** (photo #12, étage
+      sombre violet) : on ne peut pas descendre. Les étages 2-5 sont générés au
+      hasard, le cercle (keyPos) peut être loin/introuvable. Le poser PRÈS du
+      départ sur CHAQUE étage, comme l'étage 1. Bloquant.
+- [ ] **L'ombre noire dure** au sol (sous les PNJ/objets) : dehors les ombres
+      portées sont censées être coupées (renderer.shadowMap.enabled=false), mais
+      il en reste. Trouver la source (PNJ castShadow, ou faux plan d'ombre).
+- [ ] **Tester opencode** : vérifier qu'opencode peut travailler sur le jeu
+      (avec le garde ~/garde-opencode qui filtre ce qui part vers DeepSeek).
 - [ ] **L'ENTRÉE DU DONJON EST RATÉE** (vue sur la photo du vol : grande forme
       beige plate en haut à droite, comme un carton de travers, pas un bâtiment).
       C'est le modèle entreeColisee, troué/incomplet. Deux voies :
