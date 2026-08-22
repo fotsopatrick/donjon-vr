@@ -291,6 +291,11 @@ window.addEventListener('unhandledrejection', e=>{
   montrerErreur('promesse rejetée : ' + msg);
 });
 
+// Numéro de version, affiché à côté du compteur en haut à droite. Si Patrick
+// ne voit PAS ce numéro, ou en voit un plus ancien, c'est qu'il tourne sur une
+// vieille copie chargée dans son onglet -> il doit rouvrir en fenêtre neuve.
+const VERSION_JEU = 'v22h-noir';
+
 /* ═══════════════ 1. LE PLAN — repris tel quel du jeu 2D ═══════════════ */
 let W = 28, H = 18;                   // la grille, en cases (le dehors l'allonge, voir genererDehors)
 const H_DONJON = 18;                  // hauteur d'un étage de donjon
@@ -6222,7 +6227,7 @@ function boucle(){
   if(maintenant - tFps > 1000){
     const r = renderer.info.render;
     elPerf.textContent = Math.round(img*1000/(maintenant-tFps)) + ' i/s · '
-                       + r.calls + ' appels · ' + (r.triangles/1000).toFixed(0) + 'k tri';
+                       + r.calls + ' appels · ' + (r.triangles/1000).toFixed(0) + 'k tri · ' + VERSION_JEU;
     img = 0; tFps = maintenant;
   }
 }
