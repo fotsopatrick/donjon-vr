@@ -1031,6 +1031,8 @@ function poserMomentDuJour(nom){
   hemi.intensity = m.forceCiel;
   hemi.color.setHex(m.ciel);
   hemi.groundColor.setHex(m.sol);
+  // le plancher de lumière suit le moment : plus fort le jour, plus discret le soir
+  ambiance.intensity = (m.ambiance !== undefined) ? m.ambiance : 0.5;
   scene.fog = new THREE.FogExp2(m.brume, m.epaisseur);
   scene.background = texPaysage;
   renderer.toneMappingExposure = m.eclat;
@@ -1111,10 +1113,16 @@ function genererDehors(){
 
    Bonus : c'est moins cher qu'un rendu réaliste. */
 
-/* les paliers de lumière : quatre marches, sans lissage */
+/* les paliers de lumière : quatre marches, sans lissage.
+   PLANCHER (22/08) : la marche la plus sombre ne part PAS de 0. Avant, elle valait
+   0 = NOIR PUR : toute surface qu'aucune lumière n'atteignait franchement (sous un
+   auvent, un mur au nord) devenait noire d'un coup. C'était la vraie cause des
+   « zones noires » du village. Le plancher MIN garde le style manga (4 marches
+   nettes) mais la plus basse est un gris, jamais du noir. */
+const MIN_TOON = 0.40;
 function nuancierToon(marches = 4){
   const d = new Uint8Array(marches);
-  for(let i=0;i<marches;i++) d[i] = Math.round((i/(marches-1)) * 255);
+  for(let i=0;i<marches;i++) d[i] = Math.round((MIN_TOON + (1-MIN_TOON)*(i/(marches-1))) * 255);
   const t = new THREE.DataTexture(d, marches, 1, THREE.RedFormat);
   t.minFilter = t.magFilter = THREE.NearestFilter;   // surtout pas de lissage
   t.needsUpdate = true;
@@ -1222,6 +1230,10 @@ document.body.appendChild(renderer.domElement);
 
 // nuit froide + une braise chaude tenue à la main
 const hemi = new THREE.HemisphereLight(0x5b6ba8, 0x171d30, 1.05); scene.add(hemi);  // clair de lune bleuté
+// PLANCHER DE LUMIÈRE (22/08, Patrick : « c'est noir »). Le cel-shading fait tomber
+// au NOIR toute face que ni le soleil ni le ciel n'atteignent (sous un toit, un
+// auvent). Cette lumière ambiante éclaire un minimum PARTOUT : plus de noir pur.
+const ambiance = new THREE.AmbientLight(0xffffff, 0.5); scene.add(ambiance);
 // le cel-shading a besoin d'une direction franche, sinon tout est plat
 const jour = new THREE.DirectionalLight(0xfff2d8, 2.6);
 jour.position.set(0.5, 1, 0.35);
@@ -1231,11 +1243,14 @@ scene.add(jour);
    carré autour du joueur — on la déplace avec lui, sinon il faudrait couvrir
    toute la carte et chaque ombre serait floue. */
 jour.castShadow = true;
-jour.shadow.mapSize.set(768, 768);
+jour.shadow.mapSize.set(1024, 1024);
 jour.shadow.camera.near = 0.5;
-jour.shadow.camera.far = 60;
-jour.shadow.camera.left = -18; jour.shadow.camera.right = 18;
-jour.shadow.camera.top = 18;   jour.shadow.camera.bottom = -18;
+jour.shadow.camera.far = 130;
+// La zone d'ombre autour du joueur. Trop petite (±18), tout ce qui était plus
+// loin passait pour « dans l'ombre » = NOIR (village de 145 m, bug du 22/08).
+// ±48 couvre tout ce qu'on voit ; la carte d'ombre monte à 1024 pour rester nette.
+jour.shadow.camera.left = -48; jour.shadow.camera.right = 48;
+jour.shadow.camera.top = 48;   jour.shadow.camera.bottom = -48;
 jour.shadow.bias = -0.0012;
 jour.shadow.normalBias = 0.03;
 scene.add(jour.target);
@@ -1650,6 +1665,8 @@ function batir(){
   const th = etageCourant().theme || { sol:0x7d8798, plaf:0x3a4356, sky:0x6a5a44, gnd:0x201a12, int:0.95, fog:0x161208, fogD:0.020 };
   HT = th.haut || 20.0;                                                                  // hauteur du plafond PROPRE à l'étage
   hemi.color.setHex(th.sky); hemi.groundColor.setHex(th.gnd); hemi.intensity = th.int;   // ambiance PROPRE à l'étage
+  jour.castShadow = true;      // DONJON : petits espaces -> les ombres portées marchent
+  ambiance.intensity = 0.5;    // et on garde le relief (pas besoin de tout aplatir)
   scene.fog = new THREE.FogExp2(th.fog, th.fogD);                                          // brouillard coloré = chaque étage a son atmosphère
   // on vide l'étage précédent
   while(monde.children.length){
@@ -3206,6 +3223,13 @@ function nouvelEtage(){
     elEtage.textContent = '—';
     dessinerCoeurs();
     poserMomentDuJour(MOMENT_DEHORS);   // l'heure qu'il fait dehors — voir la table MOMENTS
+    // DEHORS : PAS d'ombres portées + lumière ambiante forte. Pourquoi (22/08) :
+    // le village fait 145 m, la carte d'ombre ne peut pas tout couvrir sans devenir
+    // noire ou pixelisée, et sur le style manga une zone ombrée vire au NOIR DUR.
+    // Sans ombres + lumière forte, tout est visible ET ça va plus vite (une passe
+    // de rendu en moins). Les ombres restent dans le donjon (petits espaces).
+    jour.castShadow = false;
+    ambiance.intensity = 0.55;
     if(MODELES.entreeColisee && entree){          // le Colisée : bâtiment d'entrée du donjon, autour de l'escalier
       const col = MODELES.entreeColisee.clone(true);
       col.position.set(entree.x*T+T/2, 0, entree.y*T+T/2);
@@ -5730,7 +5754,7 @@ function boucle(){
 
     /* -- le soleil suit le joueur : l'ombre reste nette là où on regarde -- */
     if(estDehors()){
-      jour.position.set(joueur.x + 17, 15, joueur.z + 11);
+      jour.position.set(joueur.x + 40, 55, joueur.z + 28);   // soleil haut : l'ombre couvre plus large
       jour.target.position.set(joueur.x, 0, joueur.z);
       jour.target.updateMatrixWorld();
     }
