@@ -164,6 +164,7 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
             "contrast": contraste,
         },
         "atmosphere": [str(a) for a in (sc.get("atmosphere") or [])],
+        "camera": sc.get("camera") or "cinematic",
         "seed": int(seed),
     }
 

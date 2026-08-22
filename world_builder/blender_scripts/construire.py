@@ -332,10 +332,12 @@ bpy.context.scene.collection.objects.link(cam)
 empty = bpy.data.objects.new("T", None)
 bpy.context.scene.collection.objects.link(empty)
 if est_interieur:
-    # vue 3/4 : bassin dominant et dégagé (angle qui le fait briller),
-    # arches visibles dans le haut du cadre, profondeur premier/milieu/fond.
-    cam.location = (0, -R * 1.15, R * 1.45)
-    empty.location = (0, 0, R * 0.22)
+    # caméra de validation : bibliothèque reproductible, pilotée par la
+    # SceneSpec (camera_lib : reference_match / cinematic / overview / gameplay)
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from camera_lib import mode_depuis_spec, regler as _regler_cam
+    _mode_cam, _spec_cam = mode_depuis_spec(sc)
+    _regler_cam(cam, empty, _mode_cam, R, H, L, P, _spec_cam)
 else:
     cam.location = (L * 0.9, -L * 1.05, H * 0.85)
     empty.location = (0, 0, H * 0.5)

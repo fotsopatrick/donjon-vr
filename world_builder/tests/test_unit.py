@@ -166,6 +166,18 @@ def main():
     echecs += verifie("kit : mur + portes activés",
                       p["walls"]["height"] >= 5 and p["doorway"]["enabled"], str(p["walls"]))
 
+    # 9. camera_lib : modes + reproductibilité (même spec -> même caméra)
+    from world_builder.camera_lib import parametres, mode_depuis_spec  # noqa: E402
+    c1 = parametres("cinematic", 25, 21, 50, 50)
+    c2 = parametres("cinematic", 25, 21, 50, 50)
+    echecs += verifie("caméra : cinematic reproductible",
+                      c1 == c2, str((c1, c2)))
+    echecs += verifie("caméra : dict spec -> reference_match",
+                      mode_depuis_spec({"camera": {"distance": 30, "fov": 35}})[0] == "reference_match")
+    echecs += verifie("caméra : modes distincts",
+                      parametres("overview", 25, 21, 50, 50)[0] !=
+                      parametres("gameplay", 25, 21, 50, 50)[0])
+
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
 
