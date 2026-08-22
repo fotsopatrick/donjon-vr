@@ -14,8 +14,8 @@ LUMIERE = {
     # benchmark (vient du warm_cold_contrast "strong" de la vision).
     "cinematic_contrast": dict(
         center_color=(0.30, 0.55, 1.0), perimeter_color=(1.0, 0.50, 0.22),
-        center_intensity=3600, perimeter_intensity=9500,
-        sun_color=(0.60, 0.68, 0.95), sun_energy=0.4,
+        center_intensity=600, perimeter_intensity=1200,
+        sun_color=(0.60, 0.68, 0.95), sun_energy=0.25,
         world_color=(0.05, 0.06, 0.09), contrast="strong"),
     "dark_fantasy": dict(
         center_color=(0.25, 0.45, 0.90), perimeter_color=(1.0, 0.45, 0.15),
@@ -58,12 +58,17 @@ PAR_CONTRASTE = {
 }
 
 
-def choisir_preset(lumiere_scene: dict, contraste: str = "strong") -> dict:
+def choisir_preset(lumiere_scene: dict, contraste: str = "strong",
+                   centre_color: str = "cyan_blue") -> dict:
     """Preset choisi par la SceneSpec (lighting.preset), sinon selon le
-    contraste. Retourne le preset COMPLET (fusionné avec le contraste)."""
+    contraste ET la couleur du centre (centre chaud -> torchlight).
+    Retourne le preset COMPLET (fusionné avec le contraste)."""
     nom = (lumiere_scene or {}).get("preset")
     if not isinstance(nom, str) or nom not in LUMIERE:
-        nom = PAR_CONTRASTE.get(contraste, "cinematic_contrast")
+        if "warm" in str(centre_color) or "orange" in str(centre_color):
+            nom = "torchlight"
+        else:
+            nom = PAR_CONTRASTE.get(contraste, "cinematic_contrast")
     preset = dict(LUMIERE[nom])
     # la SceneSpec peut surcharger des valeurs précises (température/intensité)
     for k in ("center_color", "perimeter_color", "center_intensity",

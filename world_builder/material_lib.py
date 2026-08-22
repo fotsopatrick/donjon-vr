@@ -26,10 +26,10 @@ import random
 
 PRESETS = {
     "pierre": {
-        "dark_stone": dict(base=(0.24, 0.24, 0.26), rough=0.95, echelle=5.0),
-        "stone_floor": dict(base=(0.46, 0.45, 0.44), rough=0.88, echelle=8.0, usure=True),
-        "stone_trim": dict(base=(0.60, 0.58, 0.55), rough=0.85, echelle=6.0),
-        "pierre_gradins": dict(base=(0.38, 0.37, 0.36), rough=0.90, echelle=6.0),
+        "dark_stone": dict(base=(0.16, 0.16, 0.18), rough=0.95, echelle=5.0),
+        "stone_floor": dict(base=(0.30, 0.29, 0.28), rough=0.88, echelle=8.0, usure=True),
+        "stone_trim": dict(base=(0.40, 0.38, 0.36), rough=0.85, echelle=6.0),
+        "pierre_gradins": dict(base=(0.26, 0.25, 0.24), rough=0.90, echelle=6.0),
         # futurs presets (réutilisation)
         "stone_old": dict(base=(0.34, 0.33, 0.32), rough=0.92, echelle=5.0, usure=True),
         "stone_wet": dict(base=(0.26, 0.27, 0.30), rough=0.55, echelle=5.0),
@@ -49,13 +49,13 @@ PRESETS = {
     },
     "eau": {
         "central_water": dict(base=(0.08, 0.40, 0.52), emissive=(0.20, 0.65, 0.95),
-                              force=3.2, ripple=0.10),
+                              force=3.2, ripple=0.0),
         "dark_water": dict(base=(0.05, 0.14, 0.20), emissive=(0.05, 0.25, 0.40),
                            force=0.6, ripple=0.08),
     },
     "energie": {
         "magical_cyan": dict(base=(0.10, 0.45, 0.55), emissive=(0.25, 0.70, 1.0),
-                             force=4.5, ripple=0.12),
+                             force=4.5, ripple=0.0),
         "feu_orange": dict(rgba=(1.0, 0.45, 0.12), rough=0.6,
                            emissive=(1.0, 0.45, 0.15), force=4.5),
         "feu_sol": dict(rgba=(0.60, 0.32, 0.10), rough=0.8,
@@ -248,12 +248,16 @@ class MaterialLibrary:
         elif nom in PRESETS["metal"]:
             self._metal(nom, p["base"], rough=p.get("rough", 0.35))
         elif nom in PRESETS["eau"]:
-            self._eau(nom, p["base"], p["emissive"], p["force"],
-                      ripple=p.get("ripple", 0.1))
+            # PLAT émissif (comme _mat_plat) : l'émission _eau ne rend pas en
+            # EEVEE preview dans la scène complète (bug d'ordre de shaders).
+            self._plat(nom, (p["base"][0], p["base"][1], p["base"][2]),
+                       rough=0.15, metal=0.1,
+                       emissive=p["emissive"], force=p["force"])
         elif nom in PRESETS["energie"]:
             if nom == "magical_cyan":
-                self._eau(nom, p["base"], p["emissive"], p["force"],
-                          ripple=p.get("ripple", 0.12))
+                self._plat(nom, (p["base"][0], p["base"][1], p["base"][2]),
+                           rough=0.15, metal=0.1,
+                           emissive=p["emissive"], force=p["force"])
             else:
                 self._plat(nom, p["rgba"], rough=p.get("rough", 0.8),
                            emissive=p.get("emissive"), force=p.get("force", 1.0))

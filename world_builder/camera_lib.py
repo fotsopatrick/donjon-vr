@@ -40,7 +40,8 @@ def parametres(mode, R, H, L, P, spec_cam=None):
         fov = float(spec_cam.get("fov", 45.0))
         return loc, tgt, fov
     if mode == "cinematic":
-        return (0.0, -R * 1.15, R * 1.45), (0.0, 0.0, R * 0.22), 45.0
+        # vue 3/4 assez haute : le bassin reste dégagé même avec des gradins
+        return (0.0, -R * 1.2, R * 1.7), (0.0, 0.0, R * 0.18), 45.0
     if mode == "overview":
         return (0.0, 0.0, R * 2.4), (0.0, 0.0, 0.0), 50.0
     if mode == "gameplay":

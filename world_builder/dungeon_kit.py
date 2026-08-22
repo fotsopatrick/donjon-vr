@@ -72,7 +72,7 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
     # selon le contraste. Jamais codé en dur dans la scène.
     try:
         from lighting_lib import choisir_preset
-        lumiere = choisir_preset(lum, contraste)
+        lumiere = choisir_preset(lum, contraste, centre_color=couleur_centre)
     except ImportError:
         lumiere = {"center_color": (0.30, 0.55, 1.0),
                    "perimeter_color": (1.0, 0.50, 0.22),

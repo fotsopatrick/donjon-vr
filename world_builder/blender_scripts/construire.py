@@ -305,12 +305,18 @@ else:
         bpy.ops.object.select_all(action="DESELECT")
 
 # ---------- joindre ----------
-bpy.ops.object.select_all(action="SELECT")
-bpy.ops.object.select_by_type(type="MESH")
-bpy.context.view_layer.objects.active = toit_obj
-bpy.ops.object.join()
-corps = bpy.context.object
-corps.name = spec.get("slug", "asset")
+if est_interieur:
+    # SALLE INTÉRIEURE : on NE JOIN PAS. Chaque objet garde son matériau
+    # (l'émission EEVEE ne rend pas sur un mesh multi-matériaux fondu) et la
+    # hiérarchie/instancing est préservée dans le GLB (environment state).
+    corps = None
+else:
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.object.select_by_type(type="MESH")
+    bpy.context.view_layer.objects.active = toit_obj
+    bpy.ops.object.join()
+    corps = bpy.context.object
+    corps.name = spec.get("slug", "asset")
 
 # NOTE : la salle elliptique est gérée élément par élément par DungeonChamber
 # (chaque composant est étiré individuellement, colonnes et arches restent
@@ -319,7 +325,12 @@ corps.name = spec.get("slug", "asset")
 # ---------- export GLB ----------
 os.makedirs(os.path.dirname(GLB), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB")
-triangles = sum(len(p.vertices) - 2 for p in corps.data.polygons)
+if corps is not None:
+    triangles = sum(len(p.vertices) - 2 for p in corps.data.polygons)
+else:
+    triangles = sum(len(p.vertices) - 2
+                    for o in bpy.data.objects if o.type == "MESH"
+                    for p in o.data.polygons)
 
 # ---------- source .blend de cette version ----------
 os.makedirs(os.path.dirname(BLEND), exist_ok=True)
