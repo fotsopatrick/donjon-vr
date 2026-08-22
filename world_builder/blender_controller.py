@@ -34,13 +34,15 @@ def construire(spec: dict, blender: str = "blender", temps_limite: int = 240) ->
     """Lance Blender sur la spec, produit le GLB + l'aperçu + le .blend source."""
     version = spec.get("_version", 1)
     slug = spec["slug"]
+    numero = spec.get("_numero")
     os.makedirs(GENERES, exist_ok=True)
     os.makedirs(SOURCES, exist_ok=True)
     os.makedirs(APERCUS, exist_ok=True)
 
-    glb = os.path.join(GENERES, "%s_v%d.glb" % (slug, version))
-    apercu = os.path.join(APERCUS, "%s_v%d.png" % (slug, version))
-    blend = os.path.join(SOURCES, "%s_v%d.blend" % (slug, version))
+    nom_base = "%s_%03d_v%d" % (slug, numero, version) if numero else "%s_v%d" % (slug, version)
+    glb = os.path.join(GENERES, nom_base + ".glb")
+    apercu = os.path.join(APERCUS, nom_base + ".png")
+    blend = os.path.join(SOURCES, nom_base + ".blend")
 
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
         json.dump(spec, f, ensure_ascii=False)

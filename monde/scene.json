@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "objets": [
+    {
+      "id": "building_001",
+      "slug": "maison",
+      "assetFile": "modeles/generes/maison_001_v2.glb",
+      "assetVersion": 2,
+      "lieu": 0,
+      "position": {
+        "x": -6.0,
+        "z": -2.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.2,
+      "meta": {
+        "style": "nordic",
+        "materials": [
+          "dark_wood"
+        ],
+        "features": [
+          "steep_roof"
+        ]
+      }
+    }
+  ]
+}

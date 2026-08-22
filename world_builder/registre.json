@@ -1,0 +1,45 @@
+{
+  "assets": {
+    "building_001": {
+      "id": "building_001",
+      "slug": "maison",
+      "type": "building",
+      "versions": [
+        {
+          "version": 1,
+          "file": "modeles/generes/maison_001_v1.glb"
+        },
+        {
+          "version": 2,
+          "file": "modeles/generes/maison_001_v2.glb"
+        }
+      ],
+      "activeVersion": 2,
+      "meta": {
+        "style": "nordic",
+        "materials": [
+          "dark_wood"
+        ],
+        "features": [
+          "steep_roof"
+        ],
+        "dimensions": {
+          "l": 3.0,
+          "p": 2.4,
+          "h": 2.6
+        },
+        "toit": {
+          "type": "pentu",
+          "pente": "forte"
+        },
+        "variation": {
+          "seed": 0,
+          "weathered": 0.7,
+          "moss": 0.0
+        }
+      },
+      "creeLe": "2026-08-22T13:41:15",
+      "modifieLe": "2026-08-22T13:41:21"
+    }
+  }
+}

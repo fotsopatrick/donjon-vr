@@ -62,6 +62,7 @@ class Registre:
                 "materials": spec.get("materials", []),
                 "features": spec.get("features", []),
                 "dimensions": spec.get("dimensions", {}),
+                "toit": spec.get("toit", {}),
                 "variation": spec.get("variation", {}),
             },
             "creeLe": _horodatage(),
@@ -83,6 +84,7 @@ class Registre:
             "materials": spec.get("materials", entree["meta"].get("materials", [])),
             "features": spec.get("features", entree["meta"].get("features", [])),
             "dimensions": spec.get("dimensions", entree["meta"].get("dimensions", {})),
+            "toit": spec.get("toit", entree["meta"].get("toit", {})),
             "variation": spec.get("variation", entree["meta"].get("variation", {})),
         }
         entree["modifieLe"] = _horodatage()
