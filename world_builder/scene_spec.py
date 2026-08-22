@@ -55,17 +55,24 @@ def valider(spec: dict) -> dict:
         raise ErreurSpec("spec doit être un objet")
     if spec.get("operation") not in ("create_asset", "modify_asset"):
         raise ErreurSpec("operation inconnue: %r" % spec.get("operation"))
-    if spec.get("type") not in TYPES_SUPPORTES:
-        raise ErreurSpec("type non supporté pour le P0: %r" % spec.get("type"))
+    typ = spec.get("type")
+    if isinstance(typ, (list, tuple)) and len(typ) == 1:
+        typ = typ[0]
+    if typ not in TYPES_SUPPORTES:
+        raise ErreurSpec("type non supporté pour le P0: %r" % typ)
+    spec["type"] = typ
     base = spec_vide()
     for k in ("materials", "features"):
         v = spec.get(k)
         if v is None:
             spec[k] = []
-        elif not isinstance(v, list):
-            raise ErreurSpec("%s doit être une liste" % k)
+        elif isinstance(v, str):
+            spec[k] = [v]
+        elif isinstance(v, (list, tuple)):
+            spec[k] = list(v)
         else:
-            spec[k] = [m for m in v if m]
+            raise ErreurSpec("%s doit être une liste" % k)
+        spec[k] = [m for m in spec[k] if m]
     dims = dict(base["dimensions"])
     if isinstance(spec.get("dimensions"), dict):
         for k, d in (("l", 4.0), ("p", 3.0), ("h", 3.2)):

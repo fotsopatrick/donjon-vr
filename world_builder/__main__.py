@@ -28,6 +28,20 @@ def _ligne(d) -> None:
     print(json.dumps(d, ensure_ascii=False, indent=2))
 
 
+def _directeur(args):
+    """Director avec ou sans vision réelle. --vision exige la clé : sans clé,
+    on refuse (ErreurReference) plutôt que de feindre d'avoir vu l'image."""
+    analyseur = None
+    if getattr(args, "vision", False):
+        from .reference_analyzer import VisionReferenceAnalyzer
+        analyseur = VisionReferenceAnalyzer()
+        if not analyseur.disponible():
+            raise RuntimeError(
+                "--vision exige une clé DEEPSEEK_API_KEY dans l'environnement. "
+                "On ne simule pas la vision.")
+    return Director(analyseur=analyseur)
+
+
 def main(argv: list | None = None) -> int:
     p = argparse.ArgumentParser(prog="world_builder",
                                 description="AI World Builder — P0")
@@ -36,6 +50,8 @@ def main(argv: list | None = None) -> int:
     c_create = sous.add_parser("create", help="créer un asset depuis une intention")
     c_create.add_argument("demande")
     c_create.add_argument("--image", help="image de référence (PNG)")
+    c_create.add_argument("--vision", action="store_true",
+                          help="analyser l'image avec le modèle vision RÉEL (clé DeepSeek requise)")
     c_create.add_argument("--pos", help="position x,z (sinon place par défaut)")
     c_create.add_argument("--lieu", type=int, default=0, help="niveau du monde (0=hameau)")
 
@@ -50,9 +66,11 @@ def main(argv: list | None = None) -> int:
     c_spec = sous.add_parser("spec", help="afficher la spec sans lancer Blender")
     c_spec.add_argument("demande")
     c_spec.add_argument("--image", help="image de référence (PNG)")
+    c_spec.add_argument("--vision", action="store_true",
+                        help="analyser l'image avec le modèle vision RÉEL (clé DeepSeek requise)")
 
     args = p.parse_args(argv)
-    d = Director()
+    d = _directeur(args)
 
     if args.commande == "create":
         pos = tuple(float(v) for v in args.pos.split(",")) if args.pos else None

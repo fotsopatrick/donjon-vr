@@ -33,6 +33,78 @@ class ReferenceAnalyzer:
         raise NotImplementedError
 
 
+class VisionReferenceAnalyzer(ReferenceAnalyzer):
+    """Analyse RÉELLE par modèle vision (DeepSeek V4 flash vision).
+
+    On garde la mesure réelle de palette comme base, puis un modèle vision lit
+    l'image pour de vrai et rend un VisualProfile. Le profil est une LECTURE,
+    toujours étiquetée comme telle ; les déductions restent des interprétations.
+    Sans clé : on REFUSE — on ne simule jamais la vision.
+    """
+
+    def __init__(self, client=None):
+        from .deepseek_client import DeepSeekClient, MODELE_VISION
+        self.client = client or DeepSeekClient()
+        self.modele_vision = MODELE_VISION
+        self.palette = PaletteReferenceAnalyzer()
+
+    def disponible(self) -> bool:
+        return self.client.disponible()
+
+    def analyser(self, chemin: str) -> dict:
+        if not os.path.exists(chemin):
+            raise ErreurReference("fichier de référence absent: %s" % chemin)
+        if not self.client.disponible():
+            raise ErreurReference(
+                "clé DEEPSEEK_API_KEY absente : vision réelle indisponible. "
+                "On ne simule pas la vision.")
+        base = self.palette.analyser(chemin)
+        profil = self.client.visual_profile(chemin)
+        return {
+            "source": chemin,
+            "taille": base["taille"],
+            "palette_dominante": base["palette_dominante"],
+            "luminosite": base["luminosite"],
+            "familles": base["familles"],
+            "usure_estimee": base["usure_estimee"],
+            "visual_profile": profil,
+            "deductions": self._deductions(profil),
+            "analysé_par": self.modele_vision,
+            "avertissement": ("Analyse réelle : faits mesurés (palette) + lecture "
+                              "par modèle vision (%s). Le profil visuel est une "
+                              "lecture, pas une mesure : les proportions sont des "
+                              "ratios relatifs et l'incertitude est rapportée."
+                              % self.modele_vision),
+        }
+
+    @staticmethod
+    def _deductions(profil: dict) -> dict:
+        """Traduit le VisualProfile en déductions étiquetées, sans en inventer.
+        Un matériau non vu n'est jamais déduit."""
+        ded = {}
+        mats = [str(m).lower() for m in (profil.get("materiaux_visibles") or [])]
+        traits = [str(t).lower() for t in (profil.get("traits_visibles") or [])]
+        if "dark_wood" in mats:
+            ded["bois_sombre"] = True
+        elif "wood" in mats:
+            ded["bois"] = True
+        if any(m in ("aged_stone", "stone") for m in mats):
+            ded["pierre"] = True
+        if "moss" in mats or "moss" in traits or "moussu" in str(profil.get("architecture", "")).lower():
+            ded["vegetation"] = True
+        style = (profil.get("style") or "").strip()
+        if style in ("nordic", "medieval", "rustic", "japonais", "tropical"):
+            ded["style"] = style
+        toit = profil.get("toit") or {}
+        if toit.get("type") == "pentu" and toit.get("pente"):
+            ded["toit_pentu"] = toit["pente"]
+        if toit.get("couleur"):
+            ded["toit_couleur"] = toit["couleur"]
+        if profil.get("incertitude") == "forte":
+            ded["incertitude_forte"] = True
+        return ded
+
+
 class PaletteReferenceAnalyzer(ReferenceAnalyzer):
     """Analyse réelle par palette de couleurs (PNG). Aucune prétention de
     vision : on rapporte des faits mesurés et des déductions étiquetées."""

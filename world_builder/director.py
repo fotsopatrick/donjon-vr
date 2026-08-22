@@ -17,10 +17,24 @@ import re
 from .asset_registry import Registre
 from . import blender_controller
 from .deepseek_client import DeepSeekClient
-from .reference_analyzer import PaletteReferenceAnalyzer
+from .reference_analyzer import PaletteReferenceAnalyzer, VisionReferenceAnalyzer, ErreurReference
 from .scene_spec import est_geometrique, meta_spec, STYLE_PROFILE_DEFAUT
 from .scene_store import SceneStore
 from .spec_generator import generer_locale, generer_modification_locale
+
+
+def _analyseur_par_defaut():
+    """Palette par défaut (chemin historique, zéro dépendance). Si WB_VISION=1,
+    on passe à la vision RÉELLE — et seulement si elle est disponible : sans
+    clé on REFUSE (un pipeline qui prétend « voir » sans modèle vision ment)."""
+    if os.environ.get("WB_VISION", "").strip().lower() in ("1", "true", "oui", "yes"):
+        a = VisionReferenceAnalyzer()
+        if not a.disponible():
+            raise ErreurReference(
+                "WB_VISION=1 mais aucune clé DEEPSEEK_API_KEY : la vision réelle "
+                "est impossible. Déposez la clé dans l'environnement ou retirez WB_VISION.")
+        return a
+    return PaletteReferenceAnalyzer()
 
 
 def _spec_profil_defaut() -> dict:
@@ -117,7 +131,7 @@ class Director:
                  client=None, blender=blender_controller.construire):
         self.registre = registre or Registre()
         self.scene = scene or SceneStore()
-        self.analyseur = analyseur or PaletteReferenceAnalyzer()
+        self.analyseur = analyseur if analyseur is not None else _analyseur_par_defaut()
         self.client = client or DeepSeekClient()
         self.blender = blender
 

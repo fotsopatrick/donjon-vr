@@ -151,6 +151,56 @@
           "atmosphere": "fog moisture"
         }
       }
+    },
+    {
+      "id": "building_004",
+      "slug": "brown-block-building",
+      "assetFile": "modeles/generes/brown-block-building_004_v1.glb",
+      "assetVersion": 1,
+      "lieu": 0,
+      "position": {
+        "x": 16.0,
+        "z": 6.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.0,
+      "meta": {
+        "style": "generic",
+        "materials": [
+          "dark_wood"
+        ],
+        "features": [
+          "weathered_wood"
+        ],
+        "dimensions": {
+          "l": 10.0,
+          "p": 8.0,
+          "h": 9.0
+        },
+        "toit": {
+          "type": "plat",
+          "pente": "nulle",
+          "couleur": "gris"
+        },
+        "variation": {
+          "seed": 12345,
+          "weathered": 0.0,
+          "moss": 0.0
+        },
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
+      }
     }
   ]
 }

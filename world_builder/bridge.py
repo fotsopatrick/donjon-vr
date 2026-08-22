@@ -256,13 +256,20 @@ def vision_pont() -> dict:
     RÉELLEMENT aujourd'hui. Un modèle qui ne voit pas ne s'appelle pas vision."""
     analyseur = _director().analyseur
     modele = getattr(analyseur, "modele_vision", None)
+    analyse = "palette_python_pur"
+    avertissement = ("L'image est analysée par palette de couleurs uniquement "
+                     "(pas de vision) : architecture et proportions non mesurées.")
+    if modele:
+        analyse = modele
+        avertissement = ("L'image est lue par un modèle vision RÉEL (%s). Le profil "
+                         "visuel est une lecture : proportions relatives, "
+                         "incertitude rapportée." % modele)
     return {
         "ok": True,
-        "analyse": "palette_python_pur",
+        "analyse": analyse,
         "vision_reelle": bool(modele),
         "modele": modele,
-        "avertissement": ("L'image est analysée par palette de couleurs uniquement "
-                          "(pas de vision) : architecture et proportions non mesurées."),
+        "avertissement": avertissement,
     }
 
 

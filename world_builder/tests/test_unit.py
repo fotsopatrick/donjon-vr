@@ -110,6 +110,32 @@ def main():
     else:
         echecs += verifie("analyse : PNG de référence absent", False, apercu)
 
+    # 7. vision RÉELLE : jamais de simulation, déductions issues du profil
+    from world_builder.reference_analyzer import VisionReferenceAnalyzer  # noqa: E402
+    from world_builder.deepseek_client import DeepSeekClient  # noqa: E402
+    vision_sans_cle = VisionReferenceAnalyzer(client=DeepSeekClient(cle=""))
+    echecs += verifie("vision : pas de clé → indisponible",
+                      vision_sans_cle.disponible() is False)
+    try:
+        vision_sans_cle.analyser(apercu)
+        echecs += verifie("vision : refuse d'agir sans clé (pas de simulation)", False)
+    except Exception as e:
+        msg = str(e)
+        echecs += verifie("vision : refuse d'agir sans clé (pas de simulation)",
+                          "simule" in msg or "clé" in msg, msg)
+
+    profil = {"materiaux_visibles": ["dark_wood", "aged_stone"], "style": "nordic",
+              "toit": {"type": "pentu", "pente": "forte"}, "incertitude": "faible"}
+    ded = VisionReferenceAnalyzer._deductions(profil)
+    echecs += verifie("vision : déductions = lecture du profil",
+                      ded.get("bois_sombre") and ded.get("pierre") and ded.get("style") == "nordic"
+                      and ded.get("toit_pentu") == "forte", str(ded))
+    profil2 = {"materiaux_visibles": ["wood"], "incertitude": "forte"}
+    ded2 = VisionReferenceAnalyzer._deductions(profil2)
+    echecs += verifie("vision : wood seul n'est pas du bois_sombre",
+                      "bois_sombre" not in ded2 and "bois" in ded2 and ded2.get("incertitude_forte"),
+                      str(ded2))
+
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
 
