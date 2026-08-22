@@ -15,6 +15,9 @@ PROF="/tmp/chrome-wb-$$"
 echo "== 1) tests unitaires =="
 python3 "$ICI/test_unit.py" || exit 1
 
+echo "== 1b) tests du pont HTTP (P0.5-A) =="
+python3 "$ICI/test_bridge.py" || exit 1
+
 echo "== 2) test E2E (Blender réel, sortie temporaire) =="
 python3 "$ICI/test_e2e.py" || exit 1
 
