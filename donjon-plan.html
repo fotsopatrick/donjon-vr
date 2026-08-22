@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poseur — cartes et joueur</title>
+<style>
+  :root{--fond:#0b1020;--carte:#131a2e;--bord:#243154;--texte:#e8edf7;--doux:#93a1c4;--accent:#5b8cff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{padding:11px 18px;border-bottom:1px solid var(--bord)}
+  h1{margin:0;font-size:18px}
+  .sous{color:var(--doux);font-size:12.5px}
+  .grandsonglets{display:flex;gap:8px;padding:11px 18px 0}
+  .go{padding:8px 16px;border:1px solid var(--bord);border-bottom:none;border-radius:9px 9px 0 0;cursor:pointer;background:#0e1426;font-size:14px}
+  .go.actif{border-color:var(--accent);background:var(--carte)}
+  main{display:flex;gap:16px;padding:16px;flex-wrap:wrap;align-items:flex-start}
+  .panneau{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:13px}
+  #grille{display:grid;gap:1px;background:var(--bord);border:1px solid var(--bord);user-select:none;touch-action:none}
+  .c{display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;line-height:1}
+  .c:hover{outline:2px solid var(--accent);outline-offset:-2px}
+  .palette{min-width:262px;max-width:262px}
+  .onglets{display:flex;gap:5px;margin-bottom:9px;flex-wrap:wrap}
+  .onglet{padding:5px 9px;border:1px solid var(--bord);border-radius:7px;cursor:pointer;font-size:12.5px;background:#0e1426}
+  .onglet.actif{border-color:var(--accent);background:#16203c}
+  .p{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;border:1px solid var(--bord);cursor:pointer;background:#0e1426;margin-bottom:5px}
+  .p.actif{border-color:var(--accent);background:#16203c}
+  .p .sym{width:25px;height:25px;display:flex;align-items:center;justify-content:center;border-radius:5px;font-size:15px;flex:0 0 auto}
+  .p .txt{font-size:12.5px}
+  .p .txt small{display:block;color:var(--doux);font-size:11px}
+  button,select,input{background:#1b2540;color:var(--texte);border:1px solid var(--bord);border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13.5px}
+  button:hover{border-color:var(--accent)}
+  input[type=number],input[type=text]{cursor:text}
+  .rangee{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;align-items:center}
+  textarea{width:100%;min-height:200px;background:#0a0f1e;color:#cfe0ff;border:1px solid var(--bord);border-radius:8px;padding:10px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace}
+  .verdict{margin-top:9px;font-size:12.5px}
+  .ok{color:#5ce39a}.ko{color:#ff7b7b}
+  .aide{color:var(--doux);font-size:12px;margin:6px 0 9px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--bord);padding:4px 6px;text-align:left}
+  th{color:var(--doux);font-weight:600;font-size:12px}
+  td input{width:100%;border:none;background:transparent;padding:3px}
+  .champ{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .champ label{min-width:168px;font-size:13.5px}
+  .champ small{color:var(--doux);font-size:11.5px}
+  fieldset{border:1px solid var(--bord);border-radius:9px;margin:0 0 12px;padding:11px}
+  legend{color:var(--doux);font-size:12.5px;padding:0 6px}
+  .cases{display:flex;gap:14px;flex-wrap:wrap}
+  .cases label{font-size:13px;display:flex;gap:5px;align-items:center;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>Poseur</h1>
+  <div class="sous">À gauche tu dessines la carte. Dans l’autre onglet tu règles le joueur. Les deux écrivent un fichier que le jeu sait lire.</div>
+</header>
+
+<div class="grandsonglets">
+  <div class="go actif" id="goCarte" onclick="vue('carte')">🗺️ La carte</div>
+  <div class="go" id="goJoueur" onclick="vue('joueur')">🧙 Le joueur</div>
+</div>
+
+<!-- ================== LA CARTE ================== -->
+<main id="vueCarte">
+  <div class="panneau">
+    <div class="rangee" style="margin:0 0 10px">
+      <span class="sous">Nom</span><input type="text" id="nom" value="etage1" style="width:120px">
+      <span class="sous">largeur</span><input type="number" id="lw" value="28" min="4" max="80" style="width:70px">
+      <span class="sous">hauteur</span><input type="number" id="lh" value="18" min="4" max="60" style="width:70px">
+      <button onclick="carteNeuve()">Carte neuve</button>
+      <select id="modele">
+        <option value="donjon">pleine de mur (donjon)</option>
+        <option value="village">pleine d'herbe (village)</option>
+        <option value="vide">pleine de sol nu</option>
+      </select>
+    </div>
+    <div id="grille"></div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <div class="panneau palette">
+    <div class="onglets" id="onglets"></div>
+    <div class="aide" id="aideCouche"></div>
+    <div id="palette"></div>
+  </div>
+
+  <div class="panneau" style="flex:1;min-width:340px">
+    <div class="rangee" style="margin:0 0 8px">
+      <b>Le fichier de la carte</b>
+      <select id="format" onchange="ecrire()">
+        <option value="json">JSON — pour toi et pour opencode</option>
+        <option value="py">Python — comme l'ancien plan</option>
+      </select>
+      <button onclick="copier('sortie')">Copier</button>
+      <button onclick="telecharger()">Enregistrer</button>
+    </div>
+    <textarea id="sortie" readonly></textarea>
+    <div class="rangee">
+      <button onclick="annuler()">Annuler le dernier geste</button>
+      <button onclick="chargerColle()">Charger un plan collé</button>
+      <button onclick="repartirDonjon()">Recharger l'étage 1</button>
+    </div>
+    <div class="aide">Ton travail est gardé tout seul dans le navigateur.</div>
+  </div>
+</main>
+
+<!-- ================== LE JOUEUR ================== -->
+<main id="vueJoueur" style="display:none">
+  <div class="panneau" style="min-width:420px;flex:1">
+    <fieldset><legend>Son corps et son visage</legend>
+      <div class="champ"><label>Le modèle 3D</label>
+        <select id="j_modele" onchange="ecrireJoueur()">
+          <option value="assets/perso-quaternius.glb">Quaternius — le personnage de base</option>
+          <option value="assets/ranger/Male_Ranger.gltf">Ranger (Modular Character Outfits) — validé</option>
+          <option value="assets/mage/Mage.glb">Mage</option>
+          <option value="assets/vrm/lepersonnagemageAQ.vrm">Mage VRoid (fichier .vrm)</option>
+          <option value="assets/perso.glb">perso.glb</option>
+        </select></div>
+      <div class="champ"><label>Le fichier des pas</label>
+        <select id="j_animMove" onchange="ecrireJoueur()">
+          <option value="assets/mage/anim_move.glb">anim_move.glb — marcher, courir</option>
+          <option value="">aucun</option>
+        </select></div>
+      <div class="champ"><label>Le fichier des gestes</label>
+        <select id="j_animGen" onchange="ecrireJoueur()">
+          <option value="assets/mage/anim_general.glb">anim_general.glb — frapper, ramasser</option>
+          <option value="">aucun</option>
+        </select></div>
+      <div class="champ"><label>Sa taille <small>en mètres</small></label>
+        <input type="number" id="j_taille" value="1.75" step="0.05" min="0.5" max="3" style="width:90px" oninput="ecrireJoueur()"></div>
+      <div class="champ"><label>Sa tenue <small>couleur principale</small></label>
+        <input type="color" id="j_couleur" value="#3d6b3a" style="width:60px;padding:2px" oninput="ecrireJoueur()"></div>
+    </fieldset>
+
+    <fieldset><legend>Sa vitesse</legend>
+      <div class="champ"><label>Marche <small>mètres par seconde</small></label>
+        <input type="number" id="j_marche" value="2.5" step="0.1" style="width:90px" oninput="ecrireJoueur()"></div>
+      <div class="champ"><label>Course <small>m/s</small></label>
+        <input type="number" id="j_course" value="6" step="0.1" style="width:90px" oninput="ecrireJoueur()"></div>
+      <div class="champ"><label>Saut <small>hauteur en mètres</small></label>
+        <input type="number" id="j_saut" value="1.2" step="0.1" style="width:90px" oninput="ecrireJoueur()"></div>
+      <div class="champ"><label>Demi-tour <small>degrés par seconde</small></label>
+        <input type="number" id="j_rot" value="540" step="10" style="width:90px" oninput="ecrireJoueur()"></div>
+    </fieldset>
+
+    <fieldset><legend>Ce qu’il sait faire</legend>
+      <div class="cases" id="j_mouvements"></div>
+    </fieldset>
+  </div>
+
+  <div class="panneau" style="min-width:430px;flex:1">
+    <fieldset><legend>Ses actions et leurs touches</legend>
+      <table id="t_actions"></table>
+      <div class="rangee"><button onclick="ajouter('actions')">+ une action</button></div>
+    </fieldset>
+
+    <fieldset><legend>Ses armes</legend>
+      <table id="t_armes"></table>
+      <div class="rangee"><button onclick="ajouter('armes')">+ une arme</button></div>
+    </fieldset>
+
+    <fieldset><legend>Ses compétences</legend>
+      <table id="t_skills"></table>
+      <div class="rangee"><button onclick="ajouter('skills')">+ une compétence</button></div>
+    </fieldset>
+  </div>
+
+  <div class="panneau" style="flex:1;min-width:340px">
+    <div class="rangee" style="margin:0 0 8px">
+      <b>Le fichier du joueur</b>
+      <button onclick="copier('sortieJoueur')">Copier</button>
+      <button onclick="telechargerJoueur()">Enregistrer</button>
+    </div>
+    <textarea id="sortieJoueur" readonly style="min-height:420px"></textarea>
+    <div class="aide">Enregistre-le sous le nom <b>joueur.json</b> dans le dossier du donjon. Le jeu et opencode savent le lire.</div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DEUX COUCHES sur la carte :
+   - le SOL : ce sur quoi on marche (ou le mur, qui bloque)
+   - les OBJETS : ce qui est POSE dessus
+   Un objet ne remplace jamais le sol.
+   ============================================================ */
+const SOLS = [
+ {s:'#', d:'🧱', n:'Mur',    e:'On ne passe pas.',         f:'#3a2f28'},
+ {s:'.', d:'',   n:'Sol nu', e:'Dalle ordinaire.',         f:'#0e1426'},
+ {s:'g', d:'',   n:'Herbe',  e:'Dehors, un village.',      f:'#1d3a22'},
+ {s:'s', d:'',   n:'Sable',  e:'Plage, désert.',           f:'#4a4224'},
+ {s:'r', d:'',   n:'Pierre', e:'Pavé, cour de château.',   f:'#2b3040'},
+ {s:'b', d:'',   n:'Bois',   e:'Plancher, pont.',          f:'#3a2a18'},
+ {s:'e', d:'',   n:'Eau',    e:'On ne marche pas dessus.', f:'#123048'},
+ {s:'l', d:'',   n:'Lave',   e:'Ça brûle.',                f:'#4a1c10'},
+ {s:'v', d:'',   n:'Vide',   e:'Le trou. On tombe.',       f:'#05070d'},
+ {s:'T', d:'⬛', n:'Trémie', e:'Le trou au-dessus d’un escalier. Rien ne se pose ici.', f:'#0a0a0a'},
+];
+const OBJETS = [
+ {s:'-', d:'',   n:'Rien',                 e:'Enlève ce qui est posé.'},
+ {s:'S', d:'🚪', n:'Entrée',               e:'Où le joueur arrive.'},
+ {s:'D', d:'🏁', n:'Sortie',               e:'Où on quitte la carte.'},
+ {s:'M', d:'🔼', n:'Escalier qui monte',   e:'Vers l’étage du dessus.'},
+ {s:'V', d:'🔽', n:'Escalier qui descend', e:'Vers l’étage du dessous.'},
+ {s:'P', d:'🟦', n:'Palier',               e:'Le repos au milieu d’une volée.'},
+ {s:'K', d:'🔑', n:'Clé',                  e:'Elle ouvre la suite.'},
+ {s:'C', d:'📦', n:'Coffre',               e:'Un trésor.'},
+ {s:'B', d:'👹', n:'Boss',                 e:'Le gros ennemi.'},
+ {s:'E', d:'⚔️', n:'Ennemi',               e:'Un garde ordinaire.'},
+ {s:'N', d:'🧑', n:'Villageois',           e:'Quelqu’un à qui parler.'},
+ {s:'H', d:'🏠', n:'Maison',               e:'Un bâtiment du village.'},
+ {s:'A', d:'🌳', n:'Arbre',                e:'Décor, il bloque.'},
+ {s:'F', d:'🔥', n:'Torche',               e:'Elle éclaire.'},
+ {s:'W', d:'⛲', n:'Puits',                e:'Le centre du village.'},
+ {s:'X', d:'🪤', n:'Piège',                e:'Ça fait mal.'},
+];
+const DONJON = [
+"############################","############################",
+"##...........D............##","##........................##",
+"##..C..................E..##","##.......####..####.......##",
+"##.......#........#.......##","##.......#..####..#.......##",
+"##.......#..#K.#..#.......##","##.......#..#.B#..#.......##",
+"##.......#..#..#..#.......##","##.......#........#.......##",
+"##.......##########.......##","##..E..................C..##",
+"##........................##","##........................##",
+"#############S.#############","############################"];
+
+let etat=null, couche='sol', outil=SOLS[0], pile=[], appuye=false;
+const CASE=26, $=id=>document.getElementById(id);
+const estObjet = ch => OBJETS.some(o=>o.s===ch && o.s!=='-');
+
+function vue(q){
+  $('vueCarte').style.display = q==='carte' ? 'flex' : 'none';
+  $('vueJoueur').style.display = q==='joueur' ? 'flex' : 'none';
+  $('goCarte').classList.toggle('actif', q==='carte');
+  $('goJoueur').classList.toggle('actif', q==='joueur');
+}
+
+function depuisLignes(lignes,nom){
+  const H=lignes.length,W=lignes[0].length,sol=[],obj=[];
+  for(let y=0;y<H;y++){ sol.push([]); obj.push([]);
+    for(let x=0;x<W;x++){ const ch=lignes[y][x];
+      if(estObjet(ch)){ sol[y].push('.'); obj[y].push(ch); }
+      else { sol[y].push(ch); obj[y].push('-'); } } }
+  return {nom:nom||'carte',W,H,sol,obj};
+}
+function carteNeuve(){
+  const W=Math.max(4,Math.min(80,+$('lw').value||28));
+  const H=Math.max(4,Math.min(60,+$('lh').value||18));
+  const m=$('modele').value, fond=m==='donjon'?'#':m==='village'?'g':'.';
+  pile.push(JSON.stringify(etat));
+  etat={nom:$('nom').value||'carte',W,H,
+        sol:Array.from({length:H},()=>Array(W).fill(fond)),
+        obj:Array.from({length:H},()=>Array(W).fill('-'))};
+  dessiner();
+}
+function repartirDonjon(){
+  pile.push(JSON.stringify(etat)); etat=depuisLignes(DONJON,'etage1');
+  $('nom').value='etage1'; $('lw').value=etat.W; $('lh').value=etat.H; dessiner();
+}
+function palette(){
+  const liste = couche==='sol'?SOLS:OBJETS;
+  $('onglets').innerHTML='';
+  [['sol','Le sol'],['obj','Ce qu’on pose dessus']].forEach(([k,t])=>{
+    const d=document.createElement('div');
+    d.className='onglet'+(couche===k?' actif':''); d.textContent=t;
+    d.onclick=()=>{couche=k;outil=(k==='sol'?SOLS:OBJETS)[0];palette();};
+    $('onglets').appendChild(d); });
+  $('aideCouche').textContent = couche==='sol'
+    ? 'Le sol, c’est le fond de la case. Peindre par-dessus efface l’ancien sol.'
+    : 'Un objet se pose SUR le sol. « Rien » enlève l’objet sans toucher au sol.';
+  $('palette').innerHTML='';
+  liste.forEach(o=>{ const d=document.createElement('div');
+    d.className='p'+(o===outil?' actif':'');
+    d.innerHTML=`<span class="sym" style="background:${o.f||'#0e1426'}">${o.d||'&nbsp;'}</span>
+                 <span class="txt">${o.n} <small>${o.e}</small></span>`;
+    d.onclick=()=>{outil=o;palette();}; $('palette').appendChild(d); });
+}
+const fondSol = ch => (SOLS.find(o=>o.s===ch)||{}).f || '#0e1426';
+const dessinObj = ch => { const o=OBJETS.find(o=>o.s===ch); return (o&&o.s!=='-')?o.d:''; };
+function dessiner(){
+  const G=$('grille'); G.style.gridTemplateColumns=`repeat(${etat.W}, ${CASE}px)`; G.innerHTML='';
+  for(let y=0;y<etat.H;y++) for(let x=0;x<etat.W;x++){
+    const c=document.createElement('div'); c.className='c';
+    c.style.width=CASE+'px'; c.style.height=CASE+'px';
+    peindre(c,y,x); c.title=`ligne ${y}, colonne ${x}`;
+    c.onpointerdown=e=>{e.preventDefault();appuye=true;pile.push(JSON.stringify(etat));poser(y,x);};
+    c.onpointerenter=()=>{if(appuye)poser(y,x);};
+    G.appendChild(c); }
+  ecrire();
+}
+function peindre(c,y,x){ c.style.background=fondSol(etat.sol[y][x]); c.textContent=dessinObj(etat.obj[y][x]); }
+function poser(y,x){
+  if(couche==='sol'){ if(etat.sol[y][x]===outil.s)return; etat.sol[y][x]=outil.s; }
+  else { if(etat.obj[y][x]===outil.s)return; etat.obj[y][x]=outil.s; }
+  peindre($('grille').children[y*etat.W+x],y,x); ecrire();
+}
+document.addEventListener('pointerup',()=>{appuye=false;});
+
+const BLOQUE=new Set(['#','e','l','v','T']);
+function accessibles(){
+  let dep=null;
+  for(let y=0;y<etat.H;y++) for(let x=0;x<etat.W;x++) if(etat.obj[y][x]==='S') dep=[y,x];
+  const vus=new Set(); if(!dep) return vus;
+  const f=[dep]; vus.add(dep.join(','));
+  while(f.length){ const [y,x]=f.shift();
+    for(const [dy,dx] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const ny=y+dy,nx=x+dx,k=ny+','+nx;
+      if(ny>=0&&ny<etat.H&&nx>=0&&nx<etat.W&&!vus.has(k)&&!BLOQUE.has(etat.sol[ny][nx])){
+        vus.add(k); f.push([ny,nx]); } } }
+  return vus;
+}
+function ecrire(){
+  localStorage.setItem('poseur-carte',JSON.stringify(etat));
+  const solL=etat.sol.map(r=>r.join('')), objL=etat.obj.map(r=>r.join(''));
+  if($('format').value==='json'){
+    const ls={},lo={};
+    SOLS.forEach(o=>ls[o.s]=o.n);
+    OBJETS.filter(o=>o.s!=='-').forEach(o=>lo[o.s]=o.n);
+    $('sortie').value=JSON.stringify({nom:$('nom').value||etat.nom,largeur:etat.W,hauteur:etat.H,
+      legende_sol:ls,legende_objets:lo,bloquants:[...BLOQUE],sol:solL,objets:objL},null,1);
+  } else {
+    $('sortie').value='# Carte « '+($('nom').value||etat.nom)+' » dessinee a la souris\n'+
+      'W,H = '+etat.W+','+etat.H+'\n'+
+      'SOL = [\n'+solL.map(l=>'  "'+l+'",').join('\n')+'\n]\n'+
+      'OBJETS = [\n'+objL.map(l=>'  "'+l+'",').join('\n')+'\n]\n'+
+      'g = [list(l) for l in SOL]\n';
+  }
+  const vus=accessibles();
+  const ou=ch=>{for(let y=0;y<etat.H;y++)for(let x=0;x<etat.W;x++)if(etat.obj[y][x]===ch)return y+','+x;return null;};
+  const t=(nom,ch)=>{const p=ou(ch);
+    if(!p) return `<div class="sous">— ${nom} : absent de la carte</div>`;
+    return vus.has(p)?`<div class="ok">✓ ${nom} : on peut y aller depuis l'entrée</div>`
+                     :`<div class="ko">✗ ${nom} : IMPOSSIBLE à atteindre</div>`;};
+  $('verdict').innerHTML='<b>Le contrôle, en direct</b>'+
+    t('la clé','K')+t('la sortie','D')+t('le boss','B')+
+    t("l'escalier qui monte",'M')+t("l'escalier qui descend",'V');
+}
+function copier(id){ $(id).select(); document.execCommand('copy'); }
+function telecharger(){
+  const py=$('format').value==='py';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([$('sortie').value],{type:'text/plain'}));
+  a.download=($('nom').value||'carte')+(py?'.py':'.json'); a.click();
+}
+function annuler(){ if(pile.length){ etat=JSON.parse(pile.pop());
+  if(etat){$('lw').value=etat.W;$('lh').value=etat.H;dessiner();} } }
+function chargerColle(){
+  const t=prompt('Colle ici le JSON d’une carte, ou les lignes du plan :'); if(!t)return;
+  pile.push(JSON.stringify(etat));
+  try{ const j=JSON.parse(t);
+    etat={nom:j.nom||'carte',W:j.largeur,H:j.hauteur,
+          sol:j.sol.map(r=>r.split('')),obj:j.objets.map(r=>r.split(''))};
+  }catch(e){ etat=depuisLignes(t.split('\n').map(l=>l.trim()).filter(l=>l.length),'carte collee'); }
+  $('lw').value=etat.W;$('lh').value=etat.H;$('nom').value=etat.nom; dessiner();
+}
+
+/* ================== LE JOUEUR ================== */
+const MOUVEMENTS = [
+ ['marcher','Marcher'],['courir','Courir'],['sauter','Sauter'],
+ ['esquiver','Esquiver (roulade)'],['grimper','Grimper'],
+ ['nager','Nager'],['voler','Voler'],['accroupi','S’accroupir'],
+ ['bloquer','Se protéger'],['viser','Viser']
+];
+const COLONNES = {
+  actions:{titres:['Ce qu’il fait','Touche','Durée (s)','Ce que ça donne'],
+           defaut:[['Frapper','clic gauche','0.4','dégâts de l’arme'],
+                   ['Se protéger','clic droit','0','coupe les dégâts de moitié'],
+                   ['Roulade','Espace','0.6','invulnérable pendant la roulade'],
+                   ['Ramasser','E','0.3','prend l’objet devant']]},
+  armes:{titres:['Arme','Dégâts','Portée (m)','Coups par seconde'],
+         defaut:[['Épée courte','12','1.6','1.4'],
+                 ['Arc','9','18','0.8'],
+                 ['Bâton de mage','7','12','1.0']]},
+  skills:{titres:['Compétence','Coût','Recharge (s)','Ce que ça fait'],
+          defaut:[['Boule de feu','15','4','brûle une zone'],
+                  ['Soin','20','12','rend 40 points de vie'],
+                  ['Pas de l’ombre','10','8','téléporte de 6 mètres']]}
+};
+let tables = {};
+
+function construireTable(cle){
+  const def=COLONNES[cle], t=$('t_'+cle);
+  let h='<tr>'+def.titres.map(x=>'<th>'+x+'</th>').join('')+'<th></th></tr>';
+  tables[cle].forEach((lg,i)=>{
+    h+='<tr>'+lg.map((v,j)=>`<td><input value="${String(v).replace(/"/g,'&quot;')}" oninput="majTable('${cle}',${i},${j},this.value)"></td>`).join('')
+      +`<td><button onclick="retirer('${cle}',${i})" style="padding:2px 7px">✕</button></td></tr>`;
+  });
+  t.innerHTML=h;
+}
+function majTable(cle,i,j,v){ tables[cle][i][j]=v; ecrireJoueur(); }
+function ajouter(cle){ tables[cle].push(COLONNES[cle].titres.map(()=> '')); construireTable(cle); ecrireJoueur(); }
+function retirer(cle,i){ tables[cle].splice(i,1); construireTable(cle); ecrireJoueur(); }
+
+function construireMouvements(){
+  $('j_mouvements').innerHTML = MOUVEMENTS.map(([k,n])=>
+    `<label><input type="checkbox" id="mv_${k}" onchange="ecrireJoueur()"> ${n}</label>`).join('');
+}
+
+function ecrireJoueur(){
+  const mv={}; MOUVEMENTS.forEach(([k])=>{ const e=$('mv_'+k); if(e) mv[k]=e.checked; });
+  const clef = (cle) => tables[cle].map(lg=>{
+    const o={}; COLONNES[cle].titres.forEach((t,j)=>o[t]=lg[j]); return o; });
+  const j = {
+    corps:{ modele:$('j_modele').value,
+            animations_deplacement:$('j_animMove').value,
+            animations_gestes:$('j_animGen').value,
+            taille_m:+$('j_taille').value,
+            couleur_tenue:$('j_couleur').value },
+    vitesse:{ marche_m_s:+$('j_marche').value, course_m_s:+$('j_course').value,
+              hauteur_saut_m:+$('j_saut').value, demi_tour_deg_s:+$('j_rot').value },
+    sait_faire: mv,
+    actions: clef('actions'),
+    armes: clef('armes'),
+    competences: clef('skills')
+  };
+  $('sortieJoueur').value = JSON.stringify(j,null,1);
+  localStorage.setItem('poseur-joueur', JSON.stringify({tables, champs:lireChamps(), mv}));
+}
+function lireChamps(){
+  const o={}; ['j_modele','j_animMove','j_animGen','j_taille','j_couleur',
+              'j_marche','j_course','j_saut','j_rot'].forEach(k=>o[k]=$(k).value); return o;
+}
+function telechargerJoueur(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([$('sortieJoueur').value],{type:'application/json'}));
+  a.download='joueur.json'; a.click();
+}
+
+/* ---- demarrage ---- */
+const gardeC=localStorage.getItem('poseur-carte');
+if(gardeC){ try{ etat=JSON.parse(gardeC); }catch(e){} }
+if(!etat) etat=depuisLignes(DONJON,'etage1');
+$('lw').value=etat.W;$('lh').value=etat.H;$('nom').value=etat.nom;
+palette(); dessiner();
+
+const gardeJ=localStorage.getItem('poseur-joueur');
+let sauvJ=null; try{ sauvJ=JSON.parse(gardeJ); }catch(e){}
+tables = (sauvJ&&sauvJ.tables) ? sauvJ.tables
+       : {actions:COLONNES.actions.defaut.map(r=>r.slice()),
+          armes:COLONNES.armes.defaut.map(r=>r.slice()),
+          skills:COLONNES.skills.defaut.map(r=>r.slice())};
+construireMouvements();
+['actions','armes','skills'].forEach(construireTable);
+if(sauvJ){
+  Object.entries(sauvJ.champs||{}).forEach(([k,v])=>{ if($(k)) $(k).value=v; });
+  Object.entries(sauvJ.mv||{}).forEach(([k,v])=>{ const e=$('mv_'+k); if(e) e.checked=v; });
+} else {
+  ['marcher','courir','sauter','esquiver','accroupi','bloquer'].forEach(k=>{ const e=$('mv_'+k); if(e) e.checked=true; });
+}
+ecrireJoueur();
+
+// ════════ IMPORTER UN MODÈLE 3D PRIS AILLEURS (22/08) ════════
+// Envoie un fichier (glb, gltf, vrm, fbx, obj, image) au serveur poseur-serveur.py,
+// qui le range dans assets/importes/. Puis on l'ajoute aux listes déroulantes du
+// joueur pour pouvoir le choisir. Sert le but : importer maps/avatars/items d'ailleurs.
+function poseurAjouterOption(chemin){
+  ['j_modele','j_animMove','j_animGen'].forEach(id=>{
+    const sel = document.getElementById(id); if(!sel) return;
+    if([...sel.options].some(o=>o.value===chemin)) return;
+    const o = document.createElement('option'); o.value=chemin;
+    o.textContent = '★ importé : ' + chemin.split('/').pop();
+    sel.appendChild(o);
+  });
+}
+async function poseurChargerImportes(){
+  try{ const r = await fetch('/importes?t='+Date.now()); const j = await r.json();
+       (j.fichiers||[]).forEach(poseurAjouterOption); }catch(e){}
+}
+async function poseurImporter(input){
+  const f = input.files[0]; if(!f) return;
+  const etat = document.getElementById('poseur-import-etat');
+  etat.textContent = 'envoi de ' + f.name + ' …';
+  const fd = new FormData(); fd.append('fichier', f);
+  try{
+    const r = await fetch('/importer', { method:'POST', body:fd });
+    const j = await r.json();
+    if(j.ok){ poseurAjouterOption(j.chemin);
+      document.getElementById('j_modele').value = j.chemin;
+      if(typeof ecrireJoueur==='function') ecrireJoueur();
+      etat.textContent = '✓ importé : ' + j.chemin + ' (' + j.taille_ko + ' Ko). Choisi comme modèle du joueur.';
+    } else { etat.textContent = '⛔ ' + (j.erreur||'refusé'); }
+  }catch(e){ etat.textContent = '⛔ le serveur ne répond pas. Lance : python3 poseur-serveur.py'; }
+  input.value = '';
+}
+(function(){
+  const bloc = document.createElement('div');
+  bloc.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9999;background:#1b1813;'
+    + 'border:1px solid #3a332a;border-radius:10px;padding:12px 14px;max-width:340px;'
+    + 'font:13px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#eee6d8';
+  bloc.innerHTML = '<b style="color:#f5d9a4">Importer un modèle 3D pris ailleurs</b>'
+    + '<div style="color:#a89a83;font-size:12px;margin:5px 0">glb · gltf · vrm · fbx · obj · image. '
+    + 'Il ira dans assets/importes/ et s\'ajoutera aux listes.</div>'
+    + '<input type="file" accept=".glb,.gltf,.vrm,.fbx,.obj,.png,.jpg,.jpeg,.hdr" '
+    + 'onchange="poseurImporter(this)" style="color:#eee6d8;font-size:12px">'
+    + '<div id="poseur-import-etat" style="color:#e0b062;font-size:12px;margin-top:6px;min-height:15px"></div>';
+  document.body.appendChild(bloc);
+  poseurChargerImportes();
+})();
+</script>
+</body>
+</html>
