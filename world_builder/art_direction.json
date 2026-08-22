@@ -1,0 +1,192 @@
+{
+  "nom": "WorldArtDirectionProfile",
+  "version": 2,
+  "direction": "Stylized Realism / Anime-Inspired Fantasy",
+  "rendu": "stylized-realism",
+  "references_haute_niveau": [
+    "Sword Art Online",
+    "That Time I Got Reincarnated as a Slime"
+  ],
+  "cree_le": "2026-08-22",
+  "maj_le": "2026-08-22",
+  "description": "Reference artistique globale du jeu Kotoage. Cible : des environnements 3D realistes et detailles (architecture credible, materiaux riches, eclairage cinematique, vegetation et terrain detailles, couleurs fantasy), avec des personnages stylises/anime integres dans un monde plus realiste. Formes legerement stylisees plutot que photorealistes pures.",
+  "heritage": {
+    "cel_shading": "Le toon/cel-shading actuel (MeshToonMaterial + contours noirs) est un HERITAGE du projet, pas la cible. On ne le generalise plus ; la migration converge progressivement vers le stylized realism, sans regression destructive."
+  },
+
+  "rendu_definition": {
+    "moteur": "MeshStandardMaterial (PBR, eclairé par pixel)",
+    "paliers": null,
+    "contours": false,
+    "tone_mapping": "ACESFilmic",
+    "exposition": 1.3,
+    "color_space": "sRGB",
+    "lumiere_globale": "HDR (polyhaven ciel-montagne.hdr) en environnement + hemi + soleil directionnel",
+    "ombres": "douces (PCFSoft), lisibles, fenetre autour du joueur",
+    "regle": "Realisme stylise : materiaux riches et credits, lumiere cinematique, jamais de photorealisme pur (formes legerement stylisees)."
+  },
+
+  "palette": {
+    "dominants": [
+      { "nom": "pierre froide",   "hex": "#8b96a8", "usage": "murs, remparts, escaliers" },
+      { "nom": "terre brune",     "hex": "#6b5a3f", "usage": "sols, chemins, champs" },
+      { "nom": "bois sombre",     "hex": "#5b432b", "usage": "charpentes, poutres, tonneaux" },
+      { "nom": "vert foret",      "hex": "#3f7d2e", "usage": "vegetation, feuillage" }
+    ],
+    "secondaires": [
+      { "nom": "ambre chaud",     "hex": "#ffa64a", "usage": "torches, feu, lanternes" },
+      { "nom": "bleu ciel",       "hex": "#7ea8d8", "usage": "ciel, lointain, heures froides" },
+      { "nom": "crepi chaud",     "hex": "#d8c8a8", "usage": "facades, murs crepis" },
+      { "nom": "os pale",         "hex": "#cfc7b2", "usage": "ossuaire, os" }
+    ],
+    "accents": [
+      { "nom": "feu/ambre",       "hex": "#ff8a4a", "usage": "flammes, braises, lanternes" },
+      { "nom": "cyan magique",    "hex": "#2fd0ff", "usage": "portails, cristaux, magie" },
+      { "nom": "or tresor",       "hex": "#ffbe55", "usage": "coffres, cles, halos" },
+      { "nom": "verre rouge",     "hex": "#ff3a5e", "usage": "fioles de vie" }
+    ],
+    "saturation_globale": 0.65,
+    "contraste": { "type": "cinematique", "controle": "chaud/froid", "ombres": "lisibles" },
+    "regle": "Couleurs fantasy riches mais desaturees par defaut ; les accents chauds (feu, ambre) et froids (cyan magique) structurent la lumiere."
+  },
+
+  "materials": {
+    "pierre": {
+      "presets": ["dark_stone", "stone_floor", "stone_trim", "pierre_gradins", "stone_old"],
+      "texture_jeu": "mur-pierre",
+      "pbr": { "normal": true, "bump": true, "roughness": 0.7, "metalness": 0.05 },
+      "regle": "Une pierre realiste stylisee (blocs, joints, usure), partagee entre donjon et batiments."
+    },
+    "bois": {
+      "presets": ["old_wood", "dark_wood", "wet_wood", "bois"],
+      "texture_jeu": "bois",
+      "pbr": { "normal": true, "grain": true, "roughness": 0.85 },
+      "regle": "Un bois a grain, decline par usure (neuf / vieilli / mouille) ; pas de copie stricte."
+    },
+    "metal": {
+      "presets": ["metal", "metal_rusted", "old_metal", "metal_bleu"],
+      "pbr": { "roughness": 0.45, "metalness": 0.85 },
+      "regle": "Metal sombre avec reflets, patine et rouille controlees."
+    },
+    "verre": {
+      "presets": [],
+      "pbr": { "transparent": true, "roughness": 0.1, "metallique": false },
+      "regle": "Verre legerement teinte, reflets discrets."
+    },
+    "eau": {
+      "presets": ["central_water", "dark_water"],
+      "pbr": { "transparent": true, "roughness": 0.15 },
+      "regle": "Eau magique cyan (centre) ou eau sombre (profondeurs), legerement animee, emise douce."
+    },
+    "sol": {
+      "textures": ["sol-terre", "paves", "sol-foret"],
+      "pbr": { "normal": true, "variation": true, "transitions": true },
+      "regle": "Terre pour les champs, paves pour les rues, foret pour la vegetation ; usure et transitions entre zones."
+    },
+    "vegetation": {
+      "verts": ["#3f7d2e", "#4c8f34", "#356b2a", "#5a9c3c", "#2f6326"],
+      "regle": "Feuillage detaille (variation de taille, teinte, rotation), instancie ; jamais 100 copies du meme arbre."
+    },
+    "tissus": {
+      "regle": "Bannieres et tapis teintes a la couleur de l'etage, tissu mat, plis suggeres."
+    }
+  },
+
+  "lighting": {
+    "global": {
+      "soleil": "DirectionalLight (jour), principale — direction claire et constante",
+      "hemisphere": "ciel/sol, ambiance douce",
+      "environnement": "HDR en reflection (scene.environment) pour des reflets riches"
+    },
+    "temperature": {
+      "jour": { "couleur": "#fff2d8", "usage": "plein jour, donjon" },
+      "dore": { "couleur": "#ffcf88", "usage": "heure doree du village" },
+      "soir": { "couleur": "#ff9a5c", "usage": "crepuscule" }
+    },
+    "contraste": "cinematique, controle ; chaud/froid structure chaque plan",
+    "ombres": "douces et lisibles ; dehors, fenetre d'ombre large autour du joueur",
+    "locales": {
+      "torches": "PointLight couleur de l'etage, 6 maximum, reglees dans la boucle",
+      "lanternes": "PointLight chaude, legere, pour le set dressing",
+      "portails": "PointLight cyan 0x2fd0ff, colonne de lumiere additive"
+    },
+    "balance_chaud_froid": "jour chaud / ombres froides / feux chauds / magie froide"
+  },
+
+  "atmosphere": {
+    "profondeur": "FogExp2 colore par map",
+    "brume": {
+      "village": 0.006,
+      "donjon": { "caves": 0.008, "ossuaire": 0.026, "clairiere": 0.010, "voile": 0.045, "palier": 0.030 }
+    },
+    "humidite": "seche dehors, elevee dans la clairiere (etage 3)",
+    "poussiere": "particules discretes, braises aux torches, brume de chaleur au soleil",
+    "meteo": "claire, ciel photographie (HDR polyhaven) ou dôme degrade",
+    "visibilite": "145 m au village, reduite dans les etages brumeux",
+    "regle": "Profondeur par foreground / midground / background : chaque plan respire."
+  },
+
+  "architecture": {
+    "proportions": { "case": 2.6, "maison": "2 a 4 cases", "salle": "50x50 m", "regle": "proportions realistes, echelle humaine" },
+    "silhouettes": "toits pentus, chaume ou tuiles ; la grande salle en dome ; silhouettes lisibles",
+    "materiaux": "bois + crepi (village), pierre (donjon), pierre monumentale (world-builder)",
+    "irregularite": "elevee — rien n'est aligne, les tailles varient, les murs vieillissent",
+    "modularite": "kit reusable (DungeonChamber) pour toute nouvelle salle"
+  },
+
+  "set_dressing": {
+    "densite": { "village": "faible-moyenne", "donjon": "moyenne", "foret": "dense par zones" },
+    "clusters": "arbres en bosquets, touffes semees par fournee instanciee",
+    "repetitions": "evitees — variation de teinte, echelle, rotation, usure",
+    "narration": "chaque objet raconte (puits, foin, outil oublie, poterie cassee)",
+    "objets_secondaires": "lanternes, tonneaux, caisses, fleurs, champignons, puits, bancs, ossements, colonnes"
+  },
+
+  "quality": {
+    "standard": { "niveau": "L2-L3", "exemples": "murs, sol, palissade, arbres" },
+    "midground": { "niveau": "L3", "exemples": "maisons, villageois, props" },
+    "hero": { "niveau": "L4-L5", "exemples": "la grande salle, grandes maisons, place, pont" },
+    "regle": "Hero en L4/L5 quand justifie ; ordinaire en L2/L3 ; LOD et instancing des que possible ; Eevee, pas de volumetriques lourds."
+  },
+
+  "maps": {
+    "village": {
+      "biome": "prairies temperees, foret entre les deux villages",
+      "architecture": "colombages medievale, chaume et tuiles, palissade",
+      "fonction": "hameau de depart + second village au bout de la route",
+      "meteo": "claire, heure doree",
+      "ambiance": "chaleureuse, securisee, vivante",
+      "palette_secondaire": "ambre, terre, bois, crepi chaud",
+      "elements_uniques": "escalier vers le donjon, deux villages, foret traversante, place centrale"
+    },
+    "donjon": {
+      "biome": "pierre souterraine, cinq ambiances (caves, ossuaire, clairiere, voile, palier)",
+      "architecture": "caves a voutes, salles a themes (piliers, crypte, garde, reserve, tresor, sanctuaire)",
+      "fonction": "progression par teleportation, un boss au palier",
+      "meteo": "aucune, brume coloree par etage",
+      "ambiance": "menacante, majestueuse",
+      "palette_secondaire": "ambre (etage 1), bleu froid (2), vert foret (3), violet (4), rouge lave (5)",
+      "elements_uniques": "cercles de teleportation, cristaux, runes, squelette de dragon (etage 5)"
+    },
+    "arene": {
+      "biome": "plateau cyberpunk",
+      "architecture": "skyline de gratte-ciels, anneaux neon, piliers",
+      "fonction": "entrainement, vie illimitee",
+      "meteo": "nuit permanente",
+      "ambiance": "neon cyan/magenta sur nuit bleutee",
+      "palette_secondaire": "cyan 0x1cf0ff, magenta 0xff2bd6",
+      "elements_uniques": "lune hologramme, grille TRON"
+    },
+    "salle": {
+      "biome": "salle circulaire monumentale",
+      "architecture": "dome, gradins, colonnes, escalier majeur",
+      "fonction": "hero, futur etage 1 du donjon",
+      "meteo": "interieur",
+      "ambiance": "centre cyan lumineux sur pierre sombre, perimetre chaud",
+      "palette_secondaire": "cyan centre, orange chaud perimetre",
+      "elements_uniques": "bassin cyan, deux silhouettes, escalier vers l'etage 2"
+    }
+  },
+
+  "regle_globale": "Le joueur doit parcourir un seul univers coherent : meme langage architectural, meme qualite de materiaux, meme logique de lumiere, meme traitement des assets — sans uniformiser les maps. Les personnages gardent leur identite anime/stylisee et s'integrent naturellement dans l'environnement."
+}

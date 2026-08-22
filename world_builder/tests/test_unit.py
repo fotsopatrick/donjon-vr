@@ -29,6 +29,14 @@ def verifie(nom, condition, detail=""):
     return 0
 
 
+def _refuse(fn):
+    try:
+        fn()
+        return False
+    except Exception:
+        return True
+
+
 def main():
     echecs = 0
 
@@ -204,6 +212,41 @@ def main():
     pb = _param({"layout": {"shape": "circular"}, "quality": "L1"}, {"l": 40, "p": 40, "h": 20})
     echecs += verifie("qualité : propagée dans les paramètres",
                       pb["quality"] == 1, pb["quality"])
+
+    # 12. WorldArtDirectionProfile : source de vérité artistique globale
+    from world_builder.art_direction import (charger, materials, map as profil_map,
+                                             palette, profil_jeu, ErreurProfil)  # noqa: E402
+    p = charger()
+    echecs += verifie("profil : direction par défaut",
+                      p["direction"] == "Stylized Realism / Anime-Inspired Fantasy",
+                      p["direction"])
+    echecs += verifie("profil : rendu stylized-realism",
+                      p["rendu"] == "stylized-realism"
+                      and p["rendu_definition"]["moteur"].startswith("MeshStandardMaterial")
+                      and p["rendu_definition"]["contours"] is False,
+                      str(p["rendu_definition"]))
+    echecs += verifie("profil : héritage cel-shading documenté",
+                      "cel_shading" in p.get("heritage", {}),
+                      str(p.get("heritage")))
+    echecs += verifie("profil : palette complète",
+                      len(palette(p)["dominants"]) >= 3 and len(palette(p)["accents"]) >= 3,
+                      str(palette(p)))
+    echecs += verifie("profil : pierre -> presets material_lib",
+                      "dark_stone" in materials(p, "pierre"), str(materials(p, "pierre")))
+    echecs += verifie("profil : village déclaré",
+                      "biome" in profil_map(p, "village")
+                      and "prairies" in profil_map(p, "village")["biome"],
+                      str(profil_map(p, "village")))
+    echecs += verifie("profil : map inconnue refusée",
+                      _refuse(lambda: profil_map(p, "atlantide")), "")
+    echecs += verifie("profil : vue jeu village complète",
+                      set(profil_jeu(p, "village")) >= {"rendu", "palette", "materials",
+                                                        "lighting", "atmosphere", "identite_map"})
+    try:
+        charger("/chemin/qui/n-existe-pas.json")
+        echecs += verifie("profil : fichier absent refusé", False)
+    except ErreurProfil:
+        echecs += verifie("profil : fichier absent refusé", True)
 
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0
