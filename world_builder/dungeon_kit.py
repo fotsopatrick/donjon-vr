@@ -65,11 +65,11 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
 
     # intensités : dérivées du contraste (paramétrables ensuite)
     if contraste == "strong":
-        centre_int, perimetre_int = 3200.0, 9000.0
+        centre_int, perimetre_int = 3600.0, 9500.0
     elif contraste == "moderate":
-        centre_int, perimetre_int = 2200.0, 6000.0
+        centre_int, perimetre_int = 2400.0, 5200.0
     else:
-        centre_int, perimetre_int = 1600.0, 4200.0
+        centre_int, perimetre_int = 1700.0, 3600.0
 
     arena = {
         "enabled": centre_enabled,
@@ -282,6 +282,19 @@ class DungeonChamber:
         roug.inputs["To Max"].default_value = rough + bruit
         links.new(noiseR.outputs["Fac"], roug.inputs["Value"])
         links.new(roug.outputs["Result"], bsdf.inputs["Roughness"])
+        if blocs:
+            # rugosité légèrement différente par bloc (joints plus mats)
+            rougB = nodes.new("ShaderNodeMapRange")
+            rougB.inputs["From Min"].default_value = 0.0
+            rougB.inputs["From Max"].default_value = 1.0
+            rougB.inputs["To Min"].default_value = -0.05
+            rougB.inputs["To Max"].default_value = 0.05
+            mathR = nodes.new("ShaderNodeMath")
+            mathR.operation = "ADD"
+            links.new(vor.outputs["Distance"], rougB.inputs["Value"])
+            links.new(roug.outputs["Result"], mathR.inputs[0])
+            links.new(rougB.outputs["Result"], mathR.inputs[1])
+            links.new(mathR.outputs[0], bsdf.inputs["Roughness"])
 
         if bump:
             bump = nodes.new("ShaderNodeBump")
@@ -387,8 +400,13 @@ class DungeonChamber:
         self._mat_eau("central_water", eau, eau_em, force=3.2, ripple=0.10)
         self._mat_plat("feu_orange", (1.0, 0.45, 0.12, 1), rough=0.6,
                        emissive=(1.0, 0.45, 0.15, 1), force=4.5)
+        # lueur au sol sous les torches (flaque de lumière chaude)
+        self._mat_plat("feu_sol", (0.60, 0.32, 0.10, 1), rough=0.8,
+                       emissive=(0.85, 0.40, 0.14, 1), force=1.2)
         self._mat_metal("metal", (0.15, 0.16, 0.19, 1), rough=0.35)
         self._mat_metal("metal_bleu", (0.12, 0.16, 0.24, 1), rough=0.30)
+        # bois sombre : porte de la salle (storytelling)
+        self._mat_plat("bois", (0.20, 0.13, 0.08, 1), rough=0.85)
 
     # ============================ HELPERS ================================
     def _ajouter(self, primitive, kwargs, mat, nom):
@@ -897,6 +915,115 @@ class DungeonChamber:
                                 self.mats["central_water"], "couronne_emissive")
         self._echelle_x(couronne, k)
 
+    # -------------------- PASSÉE DE DIRECTION ARTISTIQUE --------------------
+    def plinthe_mur(self):
+        """Transition mur/sol : bande de parement à la base du mur."""
+        w = self.param["walls"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        r_int = w["radius"] - w["thickness"] - 0.10
+        plinthe = self._anneau(r_int, r_int + 0.55, 0.28, 0.56,
+                               self.mats["stone_trim"], "plinthe")
+        self._echelle_x(plinthe, k)
+
+    def tourelles_bassin(self):
+        """4 tourelles à orbe cyan sur la bordure du bassin (points focaux)."""
+        a = self.param["arena"]
+        if not a["enabled"]:
+            return
+        r = a["radius"]
+        for i in range(4):
+            ang = i / 4 * math.tau + math.pi / 4
+            x, y = math.cos(ang) * r * 1.10, math.sin(ang) * r * 1.10
+            self._ajouter("cylinder", {"vertices": 10, "radius": 0.16, "depth": 0.7,
+                                       "location": (x, y, 0.60)},
+                          self.mats["stone_trim"], "tourelle_%d" % i)
+            self._ajouter("cylinder", {"vertices": 10, "radius": 0.20, "depth": 0.12,
+                                       "location": (x, y, 0.95)},
+                          self.mats["metal"], "chapiteau_tourelle_%d" % i)
+            self._ajouter("uv_sphere", {"segments": 8, "ring_count": 4,
+                                        "radius": 0.09, "location": (x, y, 1.05)},
+                          self.mats["central_water"], "orbe_tourelle_%d" % i)
+
+    def obelisque_centre(self):
+        """Spire d'énergie au centre du bassin (point focal vertical, héro)."""
+        a = self.param["arena"]
+        if not a["enabled"]:
+            return
+        base = self._ajouter("cylinder", {"vertices": 4, "radius": 0.30, "depth": 0.25,
+                                          "location": (0, 0, 0.50)},
+                             self.mats["stone_trim"], "base_obel")
+        # spire émissive cyan : elle renforce le centre au lieu de le cacher
+        ob = self._ajouter("cone", {"vertices": 4, "radius1": 0.24, "radius2": 0.05,
+                                    "depth": 2.2, "location": (0, 0, 0.62 + 1.1)},
+                           self.mats["central_water"], "obelisque")
+        self._ajouter("uv_sphere", {"segments": 8, "ring_count": 4, "radius": 0.12,
+                                    "location": (0, 0, 0.62 + 2.2 + 0.06)},
+                      self.mats["central_water"], "pointe_obel")
+
+    def traces_sol(self):
+        """Traces d'usage : sentiers sombres des portes vers le centre."""
+        if not self.angles_portes:
+            return
+        s = self.param["steps"]
+        w = self.param["walls"]
+        r0 = s["outer_radius"] + 0.6
+        r1 = w["radius"] - w["thickness"] - 1.2
+        for i, ang in enumerate(self.angles_portes[:2]):
+            for j in (-1, 0, 1):
+                a = ang + j * 0.035
+                r_mid = (r0 + r1) / 2
+                x, y = math.cos(a) * r_mid, math.sin(a) * r_mid
+                b = self._boite((x, y, 0.525), ((r1 - r0), 0.55, 0.018), a,
+                                self.mats["dark_stone"], "trace_%d_%d" % (i, j))
+        return
+
+    def meurtrieres(self):
+        """Meurtrières (fentes) dans les panneaux de mur : densité médiévale."""
+        w = self.param["walls"]
+        p = self.param["room"]
+        r_face = w["radius"] - w["thickness"] + 0.02
+        for i in range(w["segments"]):
+            a = (i + 0.5) / w["segments"] * math.tau
+            x, y = math.cos(a) * r_face, math.sin(a) * r_face
+            for hh in (0.35, 0.62):
+                self._boite((x, y, w["height"] * hh), (0.10, 0.30, w["height"] * 0.10),
+                            a, self.mats["metal_bleu"], "meurtriere_%d_%d" % (i, int(hh * 100)))
+
+    def porte_bois(self):
+        """Porte en bois légèrement entre-ouverte (la salle est habitée)."""
+        d = self.param["doorway"]
+        w = self.param["walls"]
+        if not d["enabled"] or not self.angles_portes:
+            return
+        ang = self.angles_portes[0]
+        x, y = math.cos(ang) * (w["radius"] - 0.6), math.sin(ang) * (w["radius"] - 0.6)
+        large = d["width"] / 2
+        for signe in (-1, 1):
+            dx = signe * large * 0.5
+            a = ang + signe * 0.28   # entre-ouvert
+            b = self._boite((x, y, d["height"] / 2), (0.20, large * 0.92, d["height"]),
+                            a, self.mats["bois"], "vantail_%d" % (0 if signe < 0 else 1))
+            self._boite((x, y, d["height"] / 2), (0.24, large * 0.10, d["height"]),
+                        ang, self.mats["metal"], "ferrure_%d" % (0 if signe < 0 else 1))
+
+    def flaques_torches(self):
+        """Flaques de lumière chaude au sol sous chaque brasero."""
+        l = self.param["lighting"]
+        if not l["warm_perimeter"]:
+            return
+        c = self.param["columns"]
+        s = self.param["steps"]
+        r = c["ring_radius"] * 0.96
+        z = s["height"] * s["count"] + 0.10
+        n = c["count"]
+        for i in range(n):
+            a = i / n * math.tau + 0.02
+            x, y = math.cos(a) * r, math.sin(a) * r
+            self._ajouter("cylinder", {"vertices": 12, "radius": 0.55,
+                                       "depth": 0.03, "location": (x, y, z + 0.01)},
+                          self.mats["feu_sol"], "flaque_%d" % i)
+
     # ============================ ORCHESTRATION ===========================
     def build(self) -> dict:
         self.elliptical_room()
@@ -912,6 +1039,14 @@ class DungeonChamber:
         self.warm_perimeter_lights()
         self.emissive_center()
         self.decorative_elements()
+        # passée direction artistique : densité + storytelling
+        self.plinthe_mur()
+        self.tourelles_bassin()
+        self.obelisque_centre()
+        self.traces_sol()
+        self.meurtrieres()
+        self.porte_bois()
+        self.flaques_torches()
         return {
             "ancre": self.ancre,
             "objet": self.ancre,

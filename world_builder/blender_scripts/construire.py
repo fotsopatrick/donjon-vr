@@ -332,8 +332,8 @@ bpy.context.scene.collection.objects.link(cam)
 empty = bpy.data.objects.new("T", None)
 bpy.context.scene.collection.objects.link(empty)
 if est_interieur:
-    # vue 3/4 cinéma : bassin dominant, colonnes/arches qui encadrent,
-    # gradins en premier plan, fond = mur lointain (profondeur).
+    # vue 3/4 : bassin dominant et dégagé (angle qui le fait briller),
+    # arches visibles dans le haut du cadre, profondeur premier/milieu/fond.
     cam.location = (0, -R * 1.15, R * 1.45)
     empty.location = (0, 0, R * 0.22)
 else:
@@ -364,8 +364,8 @@ if est_interieur:
     # lumière de remplissage douce (lune froide) : les murs restent lisibles,
     # sans écraser le contraste bleu/orange
     soleil = bpy.data.lights.new("Lum_ambiant", type="SUN")
-    soleil.color = (0.62, 0.70, 0.95)
-    soleil.energy = 0.5
+    soleil.color = (0.60, 0.68, 0.95)
+    soleil.energy = 0.4
     so = bpy.data.objects.new("Lum_ambiant", soleil)
     bpy.context.scene.collection.objects.link(so)
     so.rotation_euler = (1.05, 0.0, 0.7)
