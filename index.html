@@ -6369,8 +6369,17 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
 niveau = 1; nouvelEtage(); etat='titre';
 joueur.lacet = 0.6;
 tete.position.set(joueur.x, 1.62, joueur.z);
+
+// le monde-builder (world-builder.js) s'accroche ici : scène, groupe d'étage,
+// niveau courant. Deux lignes, aucune logique de jeu déplacée.
+window.KOTOAGE = {
+  scene, monde,
+  get niveau(){ return niveau; },
+  get estDehors(){ return estDehors(); },
+};
 </script>
 <div id="perf"></div>
 <canvas id="radar" width="164" height="164"></canvas>
+<script type="module" src="world-builder.js"></script>
 </body>
 </html>
