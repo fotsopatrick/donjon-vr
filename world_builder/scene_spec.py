@@ -64,7 +64,8 @@ def valider(spec: dict) -> dict:
             spec[k] = []
         elif not isinstance(v, list):
             raise ErreurSpec("%s doit être une liste" % k)
-        spec[k] = [m for m in v if m]
+        else:
+            spec[k] = [m for m in v if m]
     dims = dict(base["dimensions"])
     if isinstance(spec.get("dimensions"), dict):
         for k, d in (("l", 4.0), ("p", 3.0), ("h", 3.2)):
