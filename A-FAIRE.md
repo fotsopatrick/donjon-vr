@@ -58,3 +58,16 @@
 - Choc d'épées dans l'arène : duel de mana, étincelles, gagnant/perdant.
 - Étage 1 plus clair, plafond à 30 m.
 - Dépôt du jeu sauvegardé sur la tour (`~/depots/kotoage.git`).
+
+## Vus sur la photo de Patrick (22/08, après le fix de l'écran noir)
+- [ ] **Villageois bras en croix** (épouvantail) : rabattreLesBras ne les attrape
+      pas tous. Vérifier que trouverOsCorps trouve bien lUA/lLA sur CES villageois
+      (archer = model1.vrm style Mixamo) et que rabattreLesBras s'applique.
+- [ ] **Ombre noire en étoile** sous un personnage (femme en bleu) : ombre portée
+      dure. Dehors les ombres sont censées être coupées — d'où vient celle-ci ?
+      (peut-être un PNJ avec castShadow, ou un faux plan d'ombre sous les pieds.)
+
+## GAGNÉ le 22/08
+- [x] **Écran noir / on ne peut plus bouger** : colliders de springbone cassés
+      lus au dessin. neutraliserColliders les retire. PROUVÉ par la photo de
+      Patrick (il marche, 32 i/s). Version v22i-collider.
