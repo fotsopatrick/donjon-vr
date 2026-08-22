@@ -1356,8 +1356,11 @@ function genererDehors(){
     }
   }
 
-  // l'escalier vers le donjon : au bout de la rue principale, au sud
-  entree = { x:13, y:16 };
+  // l'entrée du donjon : HORS du village (22/08, route §3) — on sort par un
+  // portail dans la palissade, puis un sentier de terre mène à l'approche
+  // pavée et à l'escalier. Placée dans une alcôve (x=11) POUR NE PAS gêner la
+  // rue vers le second village (le déclencheur de descente est la proximité).
+  entree = { x:11, y:25 };
   doorPos = { x:entree.x, y:entree.y };
   keyPos = null;
   torches = [];
@@ -3088,6 +3091,88 @@ function batirDehors(){
   meshCle.visible = false;
   monde.add(meshCle);
 
+  /* --- LA ROUTE VILLAGE → DONJON (§3-4, 22/08) ---
+     PLACE → RUE → SORTIE (portail dans la rue) → SENTIER DE TERRE bordé →
+     APPROCHE pavée → SEUIL (l'arche de pierre) → ESCALIER → ENTRÉE.
+     Le sentier s'écarte de la rue principale à (13,23), part vers l'ouest
+     puis au sud vers l'entrée (11,25) : la route vers le second village reste
+     libre, et on ne descend qu'en rejoignant l'alcôve. */
+  /* --- la SORTIE : un portail de pierre et bois en travers de la rue --- */
+  {
+    const pierreG = matPBR('mur-pierre', 1, 1, 0xb0a488, 0.85);
+    const boisG = matPBR('bois', 0.6, 1, 0x8a6a44, 0.85);
+    const g = new THREE.Group();
+    for(const c of [-1, 1]){
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.4, 0.55), pierreG);
+      pil.position.set(13*T + c*T*1.25, 1.7, 18*T);
+      g.add(pil);
+      const chap = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.24, 0.72), pierreG);
+      chap.position.set(13*T + c*T*1.25, 3.5, 18*T);
+      g.add(chap);
+    }
+    const linteauG = new THREE.Mesh(new THREE.BoxGeometry(T*3.2, 0.5, 0.6), boisG);
+    linteauG.position.set(13*T, 3.5, 18*T);
+    g.add(linteauG);
+    // deux lanternes suspendues au linteau (émissives, sans lumière dynamique)
+    for(const c of [-1, 1]){
+      const sus = new THREE.Group();
+      const corde = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 5),
+        new THREE.MeshStandardMaterial({ color:0x4a3a26, roughness:0.9 }));
+      corde.position.y = 3.15;
+      const orbe = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0),
+        new THREE.MeshStandardMaterial({ color:0xffc77a, emissive:0xff8a3a, emissiveIntensity:2.0,
+          transparent:true, opacity:0.96, roughness:0.15 }));
+      orbe.position.y = 2.85;
+      sus.add(corde, orbe);
+      sus.position.set(13*T + c*T*0.8, 0, 18*T);
+      g.add(sus);
+    }
+    monde.add(g);
+  }
+
+  /* --- le SENTIER de terre bordé de pierre, et l'APPROCHE pavée --- */
+  {
+    const terreP = matPBR('sol-terre', 2, 2, 0xffffff, 0.92);
+    const bordP = matPBR('mur-pierre', 1, 1, 0xc9bfae, 0.85);
+    const paveP = matPBR('paves', 2, 2, 0xffffff, 0.82);
+    // tronçon horizontal : de la rue (13,23) à (11,23)
+    const horiz = new THREE.Mesh(new THREE.PlaneGeometry((13-11)*T, T*1.15), terreP);
+    horiz.rotation.x = -Math.PI/2;
+    horiz.position.set(12*T, 0.045, 23*T);
+    horiz.receiveShadow = true; monde.add(horiz);
+    // tronçon vertical : de (11,23) à (11,25)
+    const vert = new THREE.Mesh(new THREE.PlaneGeometry(T*1.15, (25-23)*T), terreP);
+    vert.rotation.x = -Math.PI/2;
+    vert.position.set(11*T, 0.045, 24*T);
+    vert.receiveShadow = true; monde.add(vert);
+    // bordures de pierre (quatre longs blocs, pas des cailloux un par un)
+    for(const d of [-1, 1]){
+      const bH = new THREE.Mesh(new THREE.BoxGeometry((13-11)*T + 0.3, 0.14, 0.22), bordP);
+      bH.position.set(12*T, 0.07, 23*T + d*T*0.66);
+      bH.castShadow = true; monde.add(bH);
+      const bV = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, (25-23)*T + 0.3), bordP);
+      bV.position.set(11*T - d*T*0.66, 0.07, 24*T);
+      bV.castShadow = true; monde.add(bV);
+    }
+    // l'approche : un carré de pavés devant l'arche
+    const app = new THREE.Mesh(new THREE.PlaneGeometry(T*3.2, T*3.2), paveP);
+    app.rotation.x = -Math.PI/2;
+    app.position.set(11*T, 0.05, 25*T);
+    app.receiveShadow = true; monde.add(app);
+    // lanterne éclairante au coude du sentier (elle guide, elle coûte une lumière)
+    monde.add(poserLanterne(11*T + T*1.1, 23*T + T*0.3, true));
+    // quelques arbres pour cadrer le sentier (instanciés : 1 appel par essence)
+    const placesArbres = [];
+    for(const [tx, tz] of [[9.3,23],[9.8,24.2],[10.2,22.3],[12.4,22.2],[12.6,24.3],
+                           [9.5,25.6],[12.8,25.5],[9.2,25],[10.4,26.3],[12.2,23.8]]){
+      const wx = tx*T, wz = tz*T;
+      if(mur(wx, wz)) continue;
+      placesArbres.push({ x:wx, z:wz, ech:1.5+Math.random()*0.7, rot:Math.random()*6.28 });
+    }
+    const gA = semer('arbre2', placesArbres);
+    if(gA) monde.add(gA);
+  }
+
   braises = new THREE.Points(new THREE.BufferGeometry().setAttribute('position',
     new THREE.BufferAttribute(new Float32Array(3), 3)),
     new THREE.PointsMaterial({ size:0.01, transparent:true, opacity:0 }));
@@ -3124,17 +3209,6 @@ function batirDehors(){
    village n'est pas touché. */
 function batirZonePilote(){
   if(!estDehors()) return;
-
-  /* --- le chemin de pierre de la place à l'escalier du donjon --- */
-  {
-    const solP = matPBR('paves', 1, 1, 0xffffff, 0.82);
-    const g = new THREE.Mesh(new THREE.PlaneGeometry(T*2.2, T*7),
-      solP);
-    g.rotation.x = -Math.PI/2;
-    g.position.set(13*T, 0.045, (9 + 3.5)*T);
-    g.receiveShadow = true;
-    monde.add(g);
-  }
 
   /* --- les lanternes : quatre autour de la place, deux à l'entrée du donjon --- */
   {
