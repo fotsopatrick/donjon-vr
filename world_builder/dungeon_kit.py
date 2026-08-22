@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-"""dungeon_kit — KIT ARCHITECTURAL PROCÉDURAL RÉUTILISABLE (benchmark 22/08).
+"""dungeon_kit — KIT D'ENVIRONMENT DESIGN PROCÉDURAL (benchmark 22/08).
 
-Transforme une Scene Specification en vraie architecture intérieure de
-fantasy : salle elliptique/circulaire, arène centrale, gradins concentriques,
-colonnes de pierre, arcs en pierre, mur percé de portes, braseros chauds en
-périphérie, bassin émissif au centre.
+Évolution de l'étape "greybox architectural" vers de la vraie architecture
+réutilisable : une DungeonChamber est composée de vrais éléments visuels
+(murs segmentés et crénelés, colonnes architecturales, arcs à clé de voûte,
+gradins à parement, escaliers radiaux, bassin central, niches murales, portes
+voûtées, garde-corps, décor, braseros) pilotés par une Scene Specification.
 
-PRINCIPE : chaque composant est une fonction paramétrique. Aucun modèle
-spécifique à une photo : la Scene Specification pilote les dimensions,
-les matériaux et l'éclairage. Le kit s'exécute SOUS Blender (import bpy),
-mais parametrer() reste testable sans Blender.
+Aucune copie d'une photo : la spec définit le STYLE et la COMPOSITION. La
+même DungeonChamber peut produire salle rituelle, salle du trône, arène,
+salle de boss, sanctuaire ou crypte — seuls les paramètres changent.
+
+parametrer() est pure et testable sans Blender ; le reste s'exécute sous Blender.
 """
 try:
     import bpy
@@ -26,9 +28,9 @@ import random
 # 1. PARAMÈTRES — pure, testable sans Blender
 # ---------------------------------------------------------------------------
 def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
-    """Traduit la Scene Specification + dimensions en paramètres de kit.
-    Tous les champs ont des valeurs par défaut raisonnables ; la spec
-    n'écrase que ce qu'elle décrit réellement."""
+    """SceneSpec + dimensions -> paramètres complets du kit.
+    Chaque champ a un défaut raisonnable ; la spec n'écrase que ce qu'elle
+    décrit réellement."""
     sc = sc or {}
     dims = dims or {"l": 20.0, "p": 16.0, "h": 10.0}
     L = float(dims.get("l", 20.0))
@@ -47,7 +49,6 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
         shape = "circular"
 
     hauteur_mur = max(5.0, min(H, R * 0.75))
-    rayon = R
     r_pool = max(1.5, R * 0.20)
     r_col = R * 0.72
     n_col = max(6, min(12, int(round(R / 2.5))))
@@ -57,63 +58,105 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
     if "cyan" not in couleur_centre and "bleu" not in couleur_centre:
         couleur_centre = "cyan_blue" if per.get("cold_center") else "warm"
 
-    niveau_steps = niveau or 0
-    if not niveau_steps:
-        niveau_steps = 3
-    niveau_steps = max(2, min(5, int(niveau_steps)))
+    niveau_steps = int(niveau) if niveau else 3
+    niveau_steps = max(2, min(5, niveau_steps))
 
+    contraste = (lum.get("warm_cold_contrast") or "unknown").lower()
+
+    # intensités : dérivées du contraste (paramétrables ensuite)
+    if contraste == "strong":
+        centre_int, perimetre_int = 2200.0, 6000.0
+    elif contraste == "moderate":
+        centre_int, perimetre_int = 1600.0, 3200.0
+    else:
+        centre_int, perimetre_int = 1200.0, 2200.0
+
+    arena = {
+        "enabled": centre_enabled,
+        "radius": r_pool,
+        "height": 0.9,
+        "material": "water",
+        "emissive": centre_enabled,
+        "color": couleur_centre,
+        "recessed": 0.9,
+    }
     return {
         "room": {
             "shape": shape,
             "width": L,
             "depth": P,
             "height": hauteur_mur,
-            "rayon": rayon,
+            "rayon": R,
             "elliptique": shape == "elliptical",
             "k_elliptique": max(1.0, L / max(P, 0.1)),
         },
-        "arena": {
-            "enabled": centre_enabled,
-            "radius": r_pool,
-            "color": couleur_centre,
-            "recessed": 0.9,
-        },
+        "central_area": arena,
+        "arena": arena,
         "steps": {
             "count": niveau_steps,
             "inner_radius": r_pool,
             "outer_radius": R * 0.55,
             "height": 0.45,
+            "depth": 0.30,
+        },
+        "stairs": {
+            "enabled": True,
+            "count": 4,
+            "width": max(2.0, R * 0.16),
+            "height": 0.45,
+            "steps_per": 2 * niveau_steps,
         },
         "columns": {
             "count": n_col,
             "radius": R * 0.035,
             "height": hauteur_mur * 1.12,
             "ring_radius": r_col,
+            "style": "fluted",
         },
         "arches": {
+            "enabled": bool(per.get("arches", True)),
             "count": n_col,
             "radius": r_col,
             "width": R * 0.028,
             "height": hauteur_mur * 1.12,
         },
-        "wall": {
+        "walls": {
             "radius": R * 1.04,
             "thickness": 0.35,
             "height": hauteur_mur,
+            "segments": n_col,
+            "parapet": True,
+            "crenel": True,
+        },
+        "niches": {
+            "enabled": True,
+            "count": max(2, n_col // 2),
         },
         "doorway": {
             "enabled": True,
             "count": 2,
             "width": max(2.5, R * 0.22),
             "height": hauteur_mur * 0.72,
+            "arch": True,
+        },
+        "railings": {
+            "enabled": True,
         },
         "materials": {
+            "wall": "dark_stone",
+            "floor": "stone_floor",
+            "trim": "stone_trim",
+            "center": "water",
             "primary": (sc.get("materials", {}) or {}).get("primary", "stone"),
         },
         "lighting": {
+            "center_color": (0.30, 0.55, 1.0),
+            "perimeter_color": (1.0, 0.50, 0.22),
+            "center_intensity": centre_int,
+            "perimeter_intensity": perimetre_int,
             "warm_perimeter": bool(per.get("warm_lights", True)),
             "blue_center": centre_enabled,
-            "contrast": (lum.get("warm_cold_contrast") or "unknown").lower(),
+            "contrast": contraste,
         },
         "atmosphere": [str(a) for a in (sc.get("atmosphere") or [])],
         "seed": int(seed),
@@ -124,20 +167,23 @@ def parametrer(sc: dict, dims: dict, seed: int = 0) -> dict:
 # 2. KIT — sous Blender
 # ---------------------------------------------------------------------------
 class DungeonChamber:
-    """Assemble la scène intérieure à partir des paramètres."""
+    """Compose une salle de donjon complète (environment design) à partir
+    des paramètres. Chaque composant est une méthode réutilisable."""
 
     def __init__(self, scene_spec: dict, dims: dict, seed: int = 0):
         if bpy is None:
             raise RuntimeError("dungeon_kit : Blender (bpy) requis")
         self.param = parametrer(scene_spec or {}, dims, seed)
+        self.rng = random.Random(int(seed) or 0)
         self.mats = {}
         self.objets = []
-        self.rng = random.Random(int(seed) or 0)
-        self.ancre = None            # objet à rendre actif pour le join
+        self.ancre = None
+        self.angles_colonnes = []      # angles des colonnes (utile aux portes)
+        self.angles_portes = []        # angles des portes (pour escaliers/lumières)
         self._construire_materiaux()
 
-    # --- matériaux ---------------------------------------------------------
-    def _mat(self, nom, rgba, rough=0.85, metal=0.0, emissive=None, force=0.0):
+    # ============================ MATÉRIAUX ==============================
+    def _mat_plat(self, nom, rgba, rough=0.85, metal=0.0, emissive=None, force=0.0):
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         bsdf = m.node_tree.nodes.get("Principled BSDF")
@@ -151,9 +197,9 @@ class DungeonChamber:
         self.mats[nom] = m
         return m
 
-    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06):
-        """Pierre avec variation procédurale (noise) — lisible comme de la
-        pierre, pas comme un gris plat."""
+    def _mat_pierre(self, nom, base, rough=0.9, bruit=0.06, bump=True):
+        """Pierre texturée : variation de couleur (noise), microvariation de
+        rugosité, bump procédural. Rien à voir avec un gris de primitive."""
         m = bpy.data.materials.new(nom)
         m.use_nodes = True
         nodes = m.node_tree.nodes
@@ -163,18 +209,35 @@ class DungeonChamber:
         out = nodes.new("ShaderNodeOutputMaterial")
         bsdf = nodes.new("ShaderNodeBsdfPrincipled")
         coord = nodes.new("ShaderNodeTexCoord")
-        noise = nodes.new("ShaderNodeTexNoise")
-        noise.inputs["Scale"].default_value = 45.0
-        ramp = nodes.new("ShaderNodeValToRGB")
-        e0 = ramp.color_ramp.elements[0]
-        e1 = ramp.color_ramp.elements[1]
-        e0.color = (base[0] * 0.70, base[1] * 0.70, base[2] * 0.70, 1)
-        e1.color = (min(1, base[0] * 1.15), min(1, base[1] * 1.15),
-                    min(1, base[2] * 1.15), 1)
-        links.new(coord.outputs["Object"], noise.inputs["Vector"])
-        links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
-        links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-        bsdf.inputs["Roughness"].default_value = rough + bruit * 0.3
+        noise1 = nodes.new("ShaderNodeTexNoise")
+        noise1.inputs["Scale"].default_value = 42.0
+        ramp1 = nodes.new("ShaderNodeValToRGB")
+        e0 = ramp1.color_ramp.elements[0]
+        e1 = ramp1.color_ramp.elements[1]
+        e0.color = (base[0] * 0.68, base[1] * 0.68, base[2] * 0.68, 1)
+        e1.color = (min(1, base[0] * 1.22), min(1, base[1] * 1.22),
+                    min(1, base[2] * 1.22), 1)
+        noise2 = nodes.new("ShaderNodeTexNoise")
+        noise2.inputs["Scale"].default_value = 12.0
+        # base color = ramp1(noise1)
+        links.new(coord.outputs["Object"], noise1.inputs["Vector"])
+        links.new(noise1.outputs["Fac"], ramp1.inputs["Fac"])
+        links.new(ramp1.outputs["Color"], bsdf.inputs["Base Color"])
+        # rugosité : microvariation
+        bsdf.inputs["Roughness"].default_value = rough
+        links.new(coord.outputs["Object"], noise2.inputs["Vector"])
+        roug = nodes.new("ShaderNodeMapRange")
+        roug.inputs["From Min"].default_value = 0.0
+        roug.inputs["From Max"].default_value = 1.0
+        roug.inputs["To Min"].default_value = rough - bruit
+        roug.inputs["To Max"].default_value = rough + bruit
+        links.new(noise2.outputs["Fac"], roug.inputs["Value"])
+        links.new(roug.outputs["Result"], bsdf.inputs["Roughness"])
+        if bump:
+            bump = nodes.new("ShaderNodeBump")
+            bump.inputs["Strength"].default_value = 0.35
+            links.new(noise1.outputs["Fac"], bump.inputs["Height"])
+            links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
         links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
         m.diffuse_color = (base[0], base[1], base[2], 1)
         self.mats[nom] = m
@@ -183,31 +246,33 @@ class DungeonChamber:
     def _construire_materiaux(self):
         p = self.param
         atmos = " ".join(p["atmosphere"])
-        assombrir = 0.08 if "dark" in atmos else 0.0
+        sombre = 0.10 if "dark" in atmos else 0.0
+        f = 1 - sombre
 
-        pierre = (0.24, 0.23, 0.22)
-        if p["materials"]["primary"] == "stone":
-            pierre = (0.23, 0.22, 0.21)
-        self._mat_pierre("pierre_sombre",
-                         (pierre[0] * (1 - assombrir), pierre[1] * (1 - assombrir),
-                          pierre[2] * (1 - assombrir)), rough=0.95, bruit=0.08)
-        self._mat_pierre("pierre_claire", (0.50, 0.48, 0.46), rough=0.9, bruit=0.05)
-        self._mat_pierre("pierre_gradins", (0.40, 0.38, 0.36), rough=0.9, bruit=0.06)
+        # dark_stone : le mur — gris-bleu foncé, pas un noir pur
+        self._mat_pierre("dark_stone", (0.24 * f, 0.24 * f, 0.26 * f), rough=0.95, bruit=0.09)
+        # stone_floor : plus clair, distinct des murs
+        self._mat_pierre("stone_floor", (0.46 * f, 0.45 * f, 0.44 * f), rough=0.88, bruit=0.06)
+        # stone_trim : parement clair pour bordures/marches/éléments
+        self._mat_pierre("stone_trim", (0.62 * f, 0.60 * f, 0.57 * f), rough=0.85, bruit=0.05, bump=False)
+        # pierre_gradins : ton intermédiaire
+        self._mat_pierre("pierre_gradins", (0.38 * f, 0.37 * f, 0.36 * f), rough=0.9, bruit=0.06)
 
         couleur = p["arena"]["color"]
         if "cyan" in couleur or "bleu" in couleur:
             eau = (0.10, 0.46, 0.58, 1)
             eau_em = (0.15, 0.60, 0.90, 1)
         else:
-            eau = (0.88, 0.34, 0.08, 1)
+            eau = (0.90, 0.34, 0.08, 1)
             eau_em = (1.0, 0.52, 0.20, 1)
-        self._mat("eau_lumineuse", eau, rough=0.25, metal=0.15,
-                  emissive=eau_em, force=3.5)
-        self._mat("feu_orange", (0.90, 0.30, 0.08, 1), rough=0.6,
-                  emissive=(1.0, 0.52, 0.20, 1), force=4.0)
-        self._mat("metal_sombre", (0.13, 0.13, 0.16, 1), rough=0.4, metal=0.85)
+        self._mat_plat("central_water", eau, rough=0.25, metal=0.15,
+                       emissive=eau_em, force=2.2)
+        self._mat_plat("feu_orange", (0.90, 0.30, 0.08, 1), rough=0.6,
+                       emissive=(1.0, 0.52, 0.20, 1), force=5.0)
+        self._mat_plat("metal", (0.12, 0.12, 0.15, 1), rough=0.4, metal=0.85)
+        self._mat_plat("metal_bleu", (0.12, 0.16, 0.22, 1), rough=0.35, metal=0.9)
 
-    # --- helpers géométrie -------------------------------------------------
+    # ============================ HELPERS ================================
     def _ajouter(self, primitive, kwargs, mat, nom):
         getattr(bpy.ops.mesh, "primitive_%s_add" % primitive)(**kwargs)
         o = bpy.context.object
@@ -217,64 +282,103 @@ class DungeonChamber:
         self.objets.append(nom)
         return o
 
+    def _echelle_x(self, o, k):
+        if k > 1.001:
+            o.scale = (k, 1.0, 1.0)
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
     def _anneau(self, r_int, r_ext, z, h, mat, nom):
-        """Anneau plein (couronne) : cylindre dont on retire le centre."""
+        """Couronne pleine : cylindre dont on retire le centre."""
         o = self._ajouter("cylinder", {"vertices": 48, "radius": r_ext,
                                        "depth": h, "location": (0, 0, z)},
                           mat, nom)
         if r_int > 0.001:
             bm = bmesh.new()
             bm.from_mesh(o.data)
-            a_del = []
-            for v in bm.verts:
-                if v.co.x * v.co.x + v.co.y * v.co.y < r_int * r_int - 1e-6:
-                    a_del.append(v)
+            a_del = [v for v in bm.verts
+                     if v.co.x * v.co.x + v.co.y * v.co.y < r_int * r_int - 1e-6]
             if a_del:
                 bmesh.ops.delete(bm, geom=a_del, context="VERTS")
             bm.to_mesh(o.data)
             bm.free()
         return o
 
-    def _echelle_x(self, o, k):
-        if k > 1.001:
-            o.scale = (k, 1.0, 1.0)
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    def _segment_anneau(self, r_int, r_ext, a0, a1, z, h, mat, nom):
+        """Segment de mur courbe : anneau réduit à l'angle [a0, a1]."""
+        o = self._ajouter("cylinder", {"vertices": 48, "radius": r_ext,
+                                       "depth": h, "location": (0, 0, z)},
+                          mat, nom)
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        span = (a1 - a0) % math.tau
+        a_del = []
+        for v in bm.verts:
+            if v.co.x * v.co.x + v.co.y * v.co.y < r_int * r_int - 1e-6:
+                a_del.append(v)
+                continue
+            da = (math.atan2(v.co.y, v.co.x) - a0) % math.tau
+            if da > span + 1e-4:
+                a_del.append(v)
+        if a_del:
+            bmesh.ops.delete(bm, geom=a_del, context="VERTS")
+        bm.to_mesh(o.data)
+        bm.free()
+        return o
 
-    # --- composants --------------------------------------------------------
+    def _boite(self, centre, taille, rotation_z, mat, nom, echelle_x=1.0):
+        """Boîte à taille et rotation données (helpers pour pièces variées)."""
+        o = self._ajouter("cube", {"size": 1, "location": centre,
+                                   "rotation": (0, 0, rotation_z)}, mat, nom)
+        o.scale = (taille[0] * echelle_x, taille[1], taille[2])
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        return o
+
+    # ============================ COMPOSANTS =============================
     def elliptical_room(self):
         p = self.param["room"]
         k = p["k_elliptique"] if p["elliptique"] else 1.0
-        sol = self._anneau(0, p["rayon"] * 1.02, 0.28, 0.56,
-                           self.mats["pierre_claire"], "sol")
+        # sol (stone_floor)
+        sol = self._anneau(0, p["rayon"] * 1.02, 0.26, 0.52,
+                           self.mats["stone_floor"], "sol")
         self._echelle_x(sol, k)
-        # assise extérieure (base du monument)
-        base = self._anneau(0, p["rayon"] * 1.10, 0.06, 0.35,
-                            self.mats["pierre_sombre"], "assise")
+        # assise externe (parement trim)
+        base = self._anneau(0, p["rayon"] * 1.12, 0.06, 0.34,
+                            self.mats["stone_trim"], "assise")
         self._echelle_x(base, k)
+        # cercle de sol en parement autour du centre (motif de sol)
+        sol_motif = self._anneau(p["rayon"] * 0.62, p["rayon"] * 0.66, 0.51, 0.02,
+                                 self.mats["stone_trim"], "motif_sol_1")
+        self._echelle_x(sol_motif, k)
 
-    def central_arena(self):
+    def central_pool(self):
         a = self.param["arena"]
         if not a["enabled"]:
             return
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
         r = a["radius"]
-        # bassin creusé
+        # bassin creusé (profondeur visible)
         basin = self._anneau(0, r, -0.15, a["recessed"] * 0.9,
-                             self.mats["pierre_sombre"], "bassin")
+                             self.mats["dark_stone"], "bassin")
         self._echelle_x(basin, k)
-        # remplissage émissif (l'eau / l'énergie)
-        eau = self._anneau(0, r * 0.96, 0.36, 0.10,
-                           self.mats["eau_lumineuse"], "eau_centrale")
+        # eau / énergie émissive
+        eau = self._anneau(0, r * 0.94, 0.36, 0.10,
+                           self.mats["central_water"], "eau_centrale")
         self._echelle_x(eau, k)
-        # bord relevé en métal
-        bord = self._ajouter("torus", {"major_radius": r, "minor_radius": 0.06,
-                                       "location": (0, 0, 0.46)},
-                             self.mats["metal_sombre"], "bord_arena")
+        # bordure en pierre claire (parement)
+        bord = self._anneau(r, r * 1.08, 0.50, 0.14,
+                            self.mats["stone_trim"], "bordure_arena")
         self._echelle_x(bord, k)
+        # jante métallique
+        jante = self._ajouter("torus", {"major_radius": r * 1.04,
+                                        "minor_radius": 0.05, "location": (0, 0, 0.57)},
+                              self.mats["metal"], "jante_arena")
+        self._echelle_x(jante, k)
 
     def concentric_steps(self):
         s = self.param["steps"]
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
         n = s["count"]
         r_int = s["inner_radius"]
         r_ext = s["outer_radius"]
@@ -282,30 +386,84 @@ class DungeonChamber:
             r1 = r_int + (r_ext - r_int) * ((i - 1) / n)
             r2 = r_int + (r_ext - r_int) * (i / n)
             z = s["height"] * i + 0.15
-            mat = self.mats["pierre_gradins"] if i % 2 else self.mats["pierre_sombre"]
-            marche = self._anneau(r1, r2, z, 0.30, mat, "marche_%d" % i)
+            mat = self.mats["pierre_gradins"] if i % 2 else self.mats["dark_stone"]
+            marche = self._anneau(r1, r2, z, s["depth"], mat, "gradin_%d" % i)
             self._echelle_x(marche, k)
+            # parement de la contremarche (tranche claire côté centre)
+            parement = self._anneau(r1 - 0.06, r1 + 0.06, z - s["depth"] / 2,
+                                    s["depth"] + 0.03, self.mats["stone_trim"],
+                                    "parement_%d" % i)
+            self._echelle_x(parement, k)
+
+    def radial_stairs(self):
+        st = self.param["stairs"]
+        if not st["enabled"]:
+            return
+        s = self.param["steps"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        r0 = s["inner_radius"] + 0.5
+        r1 = s["outer_radius"] - 0.3
+        n_steps = st["steps_per"]
+        angles = self.angles_portes or [i / st["count"] * math.tau
+                                        for i in range(st["count"])]
+        larg = st["width"]
+        for i, a in enumerate(angles[:st["count"]]):
+            for kk in range(n_steps):
+                r_mid = r0 + (r1 - r0) * (kk + 0.5) / n_steps
+                z = 0.35 + kk * st["height"]
+                b = self._boite((math.cos(a) * r_mid, math.sin(a) * r_mid, z),
+                                ((r1 - r0) / n_steps, larg, st["height"]),
+                                a, self.mats["stone_trim"],
+                                "escalier_%d_%d" % (i, kk))
+                self._echelle_x(b, k)
 
     def stone_columns(self):
         c = self.param["columns"]
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
         r_col = c["ring_radius"]
-        for i in range(c["count"]):
-            a = i / c["count"] * math.tau
+        self.angles_colonnes = [i / c["count"] * math.tau for i in range(c["count"])]
+        for i, a in enumerate(self.angles_colonnes):
             x, y = math.cos(a) * r_col, math.sin(a) * r_col
-            self._ajouter("cylinder", {"vertices": 16, "radius": c["radius"] * 1.6,
+            # variation contrôlée (cohérence conservée, ±4%)
+            fac = 1.0 + self.rng.uniform(-0.04, 0.04)
+            r_shaft = c["radius"] * fac
+            h_shaft = c["height"] * (1.0 + self.rng.uniform(-0.02, 0.02))
+            # base
+            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.7,
                                        "depth": 0.30, "location": (x, y, 0.15)},
-                          self.mats["pierre_claire"], "col_base_%d" % i)
-            self._ajouter("cylinder", {"vertices": 16, "radius": c["radius"],
-                                       "depth": c["height"], "location": (x, y, 0.3 + c["height"] / 2)},
-                          self.mats["pierre_sombre"], "colonne_%d" % i)
-            self._ajouter("cylinder", {"vertices": 16, "radius": c["radius"] * 1.4,
-                                       "depth": 0.22, "location": (x, y, 0.3 + c["height"] + 0.11)},
-                          self.mats["pierre_claire"], "col_cap_%d" % i)
+                          self.mats["stone_trim"], "col_base_%d" % i)
+            # fût
+            if c["style"] == "fluted":
+                f = self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
+                                               "depth": h_shaft,
+                                               "location": (x, y, 0.3 + h_shaft / 2)},
+                                  self.mats["dark_stone"], "colonne_%d" % i)
+                # cannelures : 8 rainures sombres
+                for g in range(8):
+                    ga = a + g / 8 * math.tau
+                    gx, gy = math.cos(ga) * r_col * 0.999, math.sin(ga) * r_col * 0.999
+                    self._boite((gx, gy, 0.3 + h_shaft / 2),
+                                (0.10, 0.06, h_shaft * 0.9), ga,
+                                self.mats["metal_bleu"], "cannelure_%d_%d" % (i, g))
+            else:
+                self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft,
+                                           "depth": h_shaft,
+                                           "location": (x, y, 0.3 + h_shaft / 2)},
+                              self.mats["dark_stone"], "colonne_%d" % i)
+            # chapiteau : tore + assiette
+            self._ajouter("torus", {"major_radius": r_shaft * 1.5,
+                                    "minor_radius": r_shaft * 0.5,
+                                    "location": (x, y, 0.3 + h_shaft + 0.16)},
+                          self.mats["stone_trim"], "col_tore_%d" % i)
+            self._ajouter("cylinder", {"vertices": 16, "radius": r_shaft * 1.6,
+                                       "depth": 0.20,
+                                       "location": (x, y, 0.3 + h_shaft + 0.32)},
+                          self.mats["stone_trim"], "col_cap_%d" % i)
 
     def stone_arches(self):
         a = self.param["arches"]
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
+        if not a["enabled"]:
+            return
         n = a["count"]
         r_col = a["radius"]
         h_arch = 0.3 + a["height"] + 0.22
@@ -315,10 +473,12 @@ class DungeonChamber:
             aM = (a1 + a2) / 2
             mx, my = math.cos(aM) * r_col, math.sin(aM) * r_col
             r_arc = r_col * math.sin((a2 - a1) / 2)
+            # variation d'épaisseur
+            w_arc = a["width"] * (1.0 + self.rng.uniform(-0.06, 0.06))
             arc = self._ajouter("torus", {"major_radius": r_arc,
-                                          "minor_radius": a["width"],
+                                          "minor_radius": w_arc,
                                           "location": (mx, my, h_arch)},
-                                self.mats["pierre_sombre"], "arc_%d" % i)
+                                self.mats["dark_stone"], "arc_%d" % i)
             axis = __import__("mathutils").Vector((math.cos(aM), math.sin(aM), 0.0))
             q = __import__("mathutils").Vector((0.0, 0.0, 1.0)).rotation_difference(axis)
             arc.rotation_euler = q.to_euler("XYZ")
@@ -330,98 +490,249 @@ class DungeonChamber:
                     bm.faces.remove(f)
             bm.to_mesh(arc.data)
             bm.free()
-            # imposte à la retombée de l'arc
-            self._ajouter("cube", {"size": 1,
-                                   "location": (math.cos(a1) * r_col, math.sin(a1) * r_col, h_arch - 0.2),
-                                   "rotation": (0, 0, aM)},
-                          self.mats["pierre_claire"], "imposte_%d" % i)
+            # imposte (parement) à la retombée
+            self._boite((math.cos(a1) * r_col, math.sin(a1) * r_col, h_arch - 0.2),
+                        (0.30, 0.24, 0.34), aM, self.mats["stone_trim"],
+                        "imposte_%d" % i)
+            # clé de voûte (boîte saillante au sommet de l'arc)
+            self._boite((mx, my, h_arch + r_arc * 0.5),
+                        (0.20, 0.18, 0.30), aM, self.mats["stone_trim"],
+                        "clef_%d" % i)
 
-    def wall_and_doorway(self):
-        w = self.param["wall"]
+    def curved_walls(self):
+        w = self.param["walls"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        n = w["segments"]
+        # les portes remplacent des panneaux entiers
+        angles_portes = set()
+        if self.param["doorway"]["enabled"]:
+            dcount = self.param["doorway"]["count"]
+            for j in range(dcount):
+                idx = int((j + 0.5) * n / dcount) % n
+                angles_portes.add(idx)
+        for i in range(n):
+            a0 = i / n * math.tau
+            a1 = (i + 1) / n * math.tau
+            if i in angles_portes:
+                continue   # laissé ouvert : la porte y sera posée
+            panneau = self._segment_anneau(w["radius"] - w["thickness"], w["radius"],
+                                           a0 + 0.012, a1 - 0.012,
+                                           w["height"] / 2, w["height"],
+                                           self.mats["dark_stone"], "mur_%d" % i)
+            self._echelle_x(panneau, k)
+            # parapet + créneaux au sommet
+            if w["parapet"]:
+                para = self._segment_anneau(w["radius"] - w["thickness"] - 0.05,
+                                            w["radius"] + 0.05,
+                                            a0 + 0.012, a1 - 0.012,
+                                            w["height"] + 0.12, 0.24,
+                                            self.mats["stone_trim"], "parapet_%d" % i)
+                self._echelle_x(para, k)
+            if w["crenel"]:
+                nb_m = 3
+                for m in range(nb_m):
+                    am = a0 + (a1 - a0) * (m + 0.5) / nb_m
+                    largeur = (a1 - a0) / nb_m * w["radius"] * 0.55
+                    h_m = self.rng.uniform(0.25, 0.45)
+                    b = self._boite((math.cos(am) * w["radius"],
+                                     math.sin(am) * w["radius"],
+                                     w["height"] + 0.24 + h_m / 2),
+                                    (largeur, 0.42, h_m), am,
+                                    self.mats["stone_trim"], "creneau_%d_%d" % (i, m))
+                    self._echelle_x(b, k)
+        # ancre pour le join
+        self.ancre = "mur_0" if 0 not in angles_portes else "mur_1"
+
+    def wall_niches(self):
+        n = self.param["niches"]
+        if not n["enabled"]:
+            return
+        w = self.param["walls"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        pris = set()
+        if self.param["doorway"]["enabled"]:
+            dcount = self.param["doorway"]["count"]
+            for j in range(dcount):
+                pris.add(int((j + 0.5) * w["segments"] / dcount) % w["segments"])
+        angles = []
+        for i in range(w["segments"]):
+            if i in pris:
+                continue
+            angles.append((i + 0.5) / w["segments"] * math.tau)
+        rng_n = self.rng
+        for a in rng_n.sample(angles, min(n["count"], len(angles))):
+            x, y = math.cos(a) * (w["radius"] - 0.35), math.sin(a) * (w["radius"] - 0.35)
+            # niche : cadre en parement plaqué au mur
+            cadre = self._boite((x, y, w["height"] * 0.55),
+                                (0.16, w["radius"] * 0.14, w["height"] * 0.35),
+                                a, self.mats["stone_trim"], "niche_cadre")
+            self._echelle_x(cadre, k)
+            # arche de niche
+            nx, ny = math.cos(a) * (w["radius"] - 0.55), math.sin(a) * (w["radius"] - 0.55)
+            arc = self._ajouter("torus", {"major_radius": w["radius"] * 0.06,
+                                          "minor_radius": 0.10,
+                                          "location": (nx, ny, w["height"] * 0.55 + w["radius"] * 0.06)},
+                                self.mats["stone_trim"], "niche_arc")
+            axis = __import__("mathutils").Vector((math.cos(a), math.sin(a), 0.0))
+            q = __import__("mathutils").Vector((0.0, 0.0, 1.0)).rotation_difference(axis)
+            arc.rotation_euler = q.to_euler("XYZ")
+            bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+            bm = bmesh.new()
+            bm.from_mesh(arc.data)
+            for f in list(bm.faces):
+                if all(v.co.z < w["height"] * 0.55 for v in f.verts):
+                    bm.faces.remove(f)
+            bm.to_mesh(arc.data)
+            bm.free()
+            # orbe émissif dans la niche (chaud ou froid selon le contraste)
+            lum = self.param["lighting"]
+            mat_orbe = self.mats["feu_orange"] if lum["warm_perimeter"] else self.mats["central_water"]
+            self._ajouter("uv_sphere", {"segments": 8, "ring_count": 4,
+                                        "radius": 0.16,
+                                        "location": (nx, ny, w["height"] * 0.55)},
+                          mat_orbe, "orbe_niche")
+
+    def doors(self):
         d = self.param["doorway"]
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
-        # mur : anneau fermé, percé ensuite de portes (percées AVANT l'étirement
-        # elliptique pour que les ouvertures restent aux bons angles)
-        mur = self._anneau(w["radius"] - w["thickness"], w["radius"],
-                           w["height"] / 2, w["height"],
-                           self.mats["pierre_sombre"], "mur_peripherique")
-        self.ancre = "mur_peripherique"
-        portes = []
-        if d["enabled"]:
-            larg_half = max(0.6, d["width"] / 2 / w["radius"])
-            for j in range(d["count"]):
-                ang = (0.5 + j) / d["count"] * math.tau   # entre deux colonnes
+        if not d["enabled"]:
+            return
+        w = self.param["walls"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        self.angles_portes = []
+        dcount = d["count"]
+        for j in range(dcount):
+            idx = int((j + 0.5) * w["segments"] / dcount) % w["segments"]
+            ang = (idx + 0.5) / w["segments"] * math.tau
+            self.angles_portes.append(ang)
+            x, y = math.cos(ang) * w["radius"], math.sin(ang) * w["radius"]
+            # piédroits
+            for signe in (-1, 1):
+                da = signe * (d["width"] / 2 / w["radius"])
+                xp, yp = math.cos(ang + da) * w["radius"], math.sin(ang + da) * w["radius"]
+                pd = self._boite((xp, yp, d["height"] / 2), (0.30, 0.30, d["height"]),
+                                 ang, self.mats["stone_trim"], "piedroit_%d" % j)
+                self._echelle_x(pd, k)
+            # linteau
+            lint = self._boite((x, y, d["height"] + 0.15), (d["width"] + 0.4, 0.5, 0.30),
+                               ang, self.mats["stone_trim"], "linteau_%d" % j)
+            self._echelle_x(lint, k)
+            # arche au-dessus de la porte
+            if d["arch"]:
+                r_arc = d["width"] / 2
+                arc = self._ajouter("torus", {"major_radius": r_arc,
+                                              "minor_radius": 0.14,
+                                              "location": (x, y, d["height"] + 0.15)},
+                                    self.mats["dark_stone"], "arc_porte_%d" % j)
+                axis = __import__("mathutils").Vector((math.cos(ang), math.sin(ang), 0.0))
+                q = __import__("mathutils").Vector((0.0, 0.0, 1.0)).rotation_difference(axis)
+                arc.rotation_euler = q.to_euler("XYZ")
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
                 bm = bmesh.new()
-                bm.from_mesh(mur.data)
-                a_del = []
-                for v in bm.verts:
-                    da = (math.atan2(v.co.y, v.co.x) - ang + math.pi) % math.tau - math.pi
-                    if abs(da) < larg_half and v.co.z < d["height"]:
-                        a_del.append(v)
-                if a_del:
-                    bmesh.ops.delete(bm, geom=a_del, context="VERTS")
-                bm.to_mesh(mur.data)
+                bm.from_mesh(arc.data)
+                for f in list(bm.faces):
+                    if all(v.co.z < d["height"] + 0.15 for v in f.verts):
+                        bm.faces.remove(f)
+                bm.to_mesh(arc.data)
                 bm.free()
-                portes.append(ang)
-        self._echelle_x(mur, k)
-        # encadrements de portes (posés au cercle, étirés avec la salle)
-        if d["enabled"]:
-            for j, ang in enumerate(portes):
-                x, y = math.cos(ang) * w["radius"], math.sin(ang) * w["radius"]
-                lint = self._ajouter("cube", {"size": 1, "location": (x, y, d["height"] + 0.2),
-                                              "rotation": (0, 0, ang)},
-                                     self.mats["pierre_claire"], "linteau_porte_%d" % j)
-                self._echelle_x(lint, k)
-                for signe in (-1, 1):
-                    da = signe * larg_half
-                    xp, yp = math.cos(ang + da) * w["radius"], math.sin(ang + da) * w["radius"]
-                    pd = self._ajouter("cube", {"size": 1, "location": (xp, yp, d["height"] / 2),
-                                                "rotation": (0, 0, ang)},
-                                       self.mats["pierre_claire"], "piedroit_%d_%d" % (j, signe))
-                    self._echelle_x(pd, k)
+
+    def railings(self):
+        r = self.param["railings"]
+        if not r["enabled"]:
+            return
+        s = self.param["steps"]
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        r_rail = s["outer_radius"]
+        z_rail = s["height"] * s["count"] + 0.55
+        # main courante (anneau fin)
+        rail = self._anneau(r_rail - 0.06, r_rail + 0.06, z_rail, 0.10,
+                            self.mats["metal"], "main_courante")
+        self._echelle_x(rail, k)
+        # balustres
+        nb = max(12, int(r_rail * 1.2))
+        for i in range(nb):
+            a = i / nb * math.tau
+            x, y = math.cos(a) * r_rail, math.sin(a) * r_rail
+            b = self._ajouter("cylinder", {"vertices": 6, "radius": 0.06,
+                                           "depth": 0.7,
+                                           "location": (x, y, z_rail - 0.35)},
+                              self.mats["stone_trim"], "balustre_%d" % i)
+            self._echelle_x(b, k)
 
     def warm_perimeter_lights(self):
         l = self.param["lighting"]
         if not l["warm_perimeter"]:
             return
-        w = self.param["wall"]
-        n = self.param["columns"]["count"]
-        r = w["radius"] - 0.35
-        z = w["height"] + 0.25
+        c = self.param["columns"]
+        s = self.param["steps"]
+        # braseros sur le gradin supérieur : visibles autour du centre, à
+        # hauteur d'homme — la lumière chaude baigne la scène.
+        r = c["ring_radius"] * 0.96
+        z = s["height"] * s["count"] + 0.55
+        n = c["count"]
         for i in range(n):
-            a = i / n * math.tau
+            a = i / n * math.tau + 0.02
             x, y = math.cos(a) * r, math.sin(a) * r
-            # brasero : pied + vasque + flamme
-            self._ajouter("cylinder", {"vertices": 8, "radius": 0.18, "depth": 0.5,
-                                       "location": (x, y, z - 0.25)},
-                          self.mats["metal_sombre"], "pied_brasero_%d" % i)
-            self._ajouter("cylinder", {"vertices": 8, "radius": 0.42, "depth": 0.12,
+            self._ajouter("cylinder", {"vertices": 8, "radius": 0.16, "depth": 0.45,
+                                       "location": (x, y, z - 0.22)},
+                          self.mats["metal"], "pied_brasero_%d" % i)
+            self._ajouter("cylinder", {"vertices": 8, "radius": 0.40, "depth": 0.12,
                                        "location": (x, y, z + 0.06)},
-                          self.mats["metal_sombre"], "vasque_%d" % i)
-            self._ajouter("uv_sphere", {"segments": 10, "ring_count": 5,
-                                        "radius": 0.22, "location": (x, y, z + 0.3)},
+                          self.mats["metal"], "vasque_%d" % i)
+            fac = 1.0 + self.rng.uniform(-0.12, 0.12)
+            self._ajouter("uv_sphere", {"segments": 12, "ring_count": 6,
+                                        "radius": 0.26 * fac, "location": (x, y, z + 0.32)},
                           self.mats["feu_orange"], "flamme_%d" % i)
 
+    def decorative_elements(self):
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        w = self.param["walls"]
+        # pierres éparses au pied du mur (organisation, pas chaos)
+        nb = 10
+        for i in range(nb):
+            a = self.rng.uniform(0, math.tau)
+            r = w["radius"] - 0.8 + self.rng.uniform(-0.4, 0.4)
+            x, y = math.cos(a) * r, math.sin(a) * r
+            taille = self.rng.uniform(0.15, 0.35)
+            b = self._ajouter("ico_sphere", {"subdivisions": 1, "radius": taille,
+                                             "location": (x, y, taille * 0.35)},
+                              self.mats["pierre_gradins"], "pierre_%d" % i)
+            b.rotation_euler.z = self.rng.uniform(0, math.tau)
+            b.scale = (self.rng.uniform(0.7, 1.4), self.rng.uniform(0.7, 1.4),
+                       self.rng.uniform(0.5, 0.9))
+            bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+            self._echelle_x(b, k)
+
     def emissive_center(self):
-        """Couronne émissive autour de l'arène — souligne le point focal."""
         a = self.param["arena"]
         if not a["enabled"]:
             return
-        k = self.param["room"]["k_elliptique"] if self.param["room"]["elliptique"] else 1.0
-        couronne = self._anneau(a["radius"] * 1.02, a["radius"] * 1.12, 0.05, 0.06,
-                                self.mats["eau_lumineuse"], "couronne_emissive")
+        p = self.param["room"]
+        k = p["k_elliptique"] if p["elliptique"] else 1.0
+        # couronne émissive autour de l'arène (souligne le point focal)
+        couronne = self._anneau(a["radius"] * 1.10, a["radius"] * 1.16, 0.05, 0.05,
+                                self.mats["central_water"], "couronne_emissive")
         self._echelle_x(couronne, k)
 
-    # --- orchestration -----------------------------------------------------
+    # ============================ ORCHESTRATION ===========================
     def build(self) -> dict:
         self.elliptical_room()
-        self.central_arena()
+        self.central_pool()
         self.concentric_steps()
+        self.doors()
+        self.radial_stairs()
         self.stone_columns()
         self.stone_arches()
-        self.wall_and_doorway()
+        self.curved_walls()
+        self.wall_niches()
+        self.railings()
         self.warm_perimeter_lights()
         self.emissive_center()
+        self.decorative_elements()
         return {
             "ancre": self.ancre,
             "objet": self.ancre,

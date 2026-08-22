@@ -164,7 +164,7 @@ def main():
                       p["lighting"]["warm_perimeter"] and p["lighting"]["contrast"] == "strong",
                       str(p["lighting"]))
     echecs += verifie("kit : mur + portes activés",
-                      p["wall"]["height"] >= 5 and p["doorway"]["enabled"], str(p["wall"]))
+                      p["walls"]["height"] >= 5 and p["doorway"]["enabled"], str(p["walls"]))
 
     print("\nRésultat : %d échec(s)" % echecs)
     return 1 if echecs else 0

@@ -367,18 +367,21 @@ else:
     sc.display.shading.show_shadows = True
     sc.world.color = (0.09, 0.10, 0.13)
 
-# pour la salle intérieure : lampes = le contraste bleu/cyan + orange se lit
+# pour la salle intérieure : lampes = le contraste bleu/cyan + orange se lit.
+# Couleurs et intensités pilotées par les paramètres du kit (lighting).
 if est_interieur:
     bpy.ops.object.select_all(action="DESELECT")
+    lum_c = k_param["lighting"]["center_color"]
+    lum_p = k_param["lighting"]["perimeter_color"]
     lum = bpy.data.lights.new("Lum_centre", type="POINT")
-    lum.color = (0.30, 0.55, 1.0); lum.energy = 2600
+    lum.color = lum_c; lum.energy = k_param["lighting"]["center_intensity"]
     o = bpy.data.objects.new("Lum_centre", lum)
     bpy.context.scene.collection.objects.link(o)
     o.location = (0, 0, R * 0.5)
     for i in range(nb_colonnes):
         a = i / nb_colonnes * math.tau
         lum = bpy.data.lights.new("Lum_chaud_%d" % i, type="POINT")
-        lum.color = (1.0, 0.5, 0.22); lum.energy = 6000
+        lum.color = lum_p; lum.energy = k_param["lighting"]["perimeter_intensity"]
         o = bpy.data.objects.new("Lum_chaud_%d" % i, lum)
         bpy.context.scene.collection.objects.link(o)
         o.location = (math.cos(a) * r_col, math.sin(a) * r_col, 2.5)

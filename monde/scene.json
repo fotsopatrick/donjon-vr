@@ -419,6 +419,90 @@
           ]
         }
       }
+    },
+    {
+      "id": "building_008",
+      "slug": "grande-salle-circulaire",
+      "assetFile": "modeles/generes/grande-salle-circulaire_008_v1.glb",
+      "assetVersion": 1,
+      "lieu": 0,
+      "position": {
+        "x": -100.0,
+        "z": 60.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.0,
+      "meta": {
+        "style": "medieval",
+        "materials": [
+          "aged_stone"
+        ],
+        "features": [
+          "dome"
+        ],
+        "dimensions": {
+          "l": 40.0,
+          "p": 40.0,
+          "h": 20.0
+        },
+        "toit": {
+          "type": "dôme",
+          "pente": "nulle",
+          "couleur": "gris"
+        },
+        "variation": {
+          "seed": 12345,
+          "weathered": 0.8,
+          "moss": 0.3
+        },
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        },
+        "scene": {
+          "layout": {
+            "shape": "elliptical",
+            "symmetry": "radial",
+            "focal_point": "center"
+          },
+          "center": {
+            "type": "luminous_area",
+            "color": "cyan_blue"
+          },
+          "perimeter": {
+            "stairs": false,
+            "columns": true,
+            "arches": true,
+            "walls": true,
+            "warm_lights": true,
+            "cold_center": true
+          },
+          "levels": 1,
+          "materials": {
+            "primary": "stone"
+          },
+          "lighting": {
+            "warm_cold_contrast": "strong",
+            "warm_orange": true,
+            "cold_blue_center": true
+          },
+          "atmosphere": [
+            "dark",
+            "mystical",
+            "ancient",
+            "monumental"
+          ]
+        }
+      }
     }
   ]
 }
