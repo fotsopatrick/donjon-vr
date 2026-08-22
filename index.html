@@ -259,6 +259,38 @@ import { clone as cloneSkinned } from './jsm/utils/SkeletonUtils.js';   // clone
 import { mergeGeometries } from './jsm/utils/BufferGeometryUtils.js';
 import { RGBELoader } from './jsm/loaders/RGBELoader.js';
 
+/* ═══════════ CAPTEUR D'ERREUR VISIBLE (22/08) ═══════════
+   Avant, quand quelque chose plantait, l'écran restait NOIR et MUET : impossible
+   de savoir pourquoi sans ouvrir les outils du navigateur. Maintenant l'erreur
+   s'affiche EN GROS à l'écran, et Patrick n'a qu'à la recopier. */
+function montrerErreur(txt){
+  let b = document.getElementById('boite-erreur');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'boite-erreur';
+    b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;'
+      + 'background:rgba(140,20,20,0.96);color:#fff;font:14px/1.5 monospace;'
+      + 'padding:12px 16px;white-space:pre-wrap;max-height:45vh;overflow:auto;'
+      + 'border-bottom:3px solid #ff6a5a';
+    document.body.appendChild(b);
+  }
+  b.textContent = '⛔ LE JEU A RENCONTRÉ UN PROBLÈME (recopie ceci à Claude) :\n\n' + txt;
+}
+// Erreurs SANS GRAVITÉ à ignorer : le navigateur les jette mais le jeu marche.
+// (souris verrouillée refusée, son bloqué tant qu'on n'a pas cliqué…)
+const ERREURS_BENIGNES = /pointer lock|permissions check|play\(\) request|user gesture|user activation|NotAllowedError|AbortError/i;
+window.addEventListener('error', e=>{
+  const msg = e.message || 'erreur';
+  if(ERREURS_BENIGNES.test(msg)) return;
+  montrerErreur(msg + '\n' + (e.filename||'').split('/').pop() + ' ligne ' + (e.lineno||'?')
+    + (e.error && e.error.stack ? '\n\n' + e.error.stack.split('\n').slice(0,4).join('\n') : ''));
+});
+window.addEventListener('unhandledrejection', e=>{
+  const msg = (e.reason && (e.reason.message||e.reason.stack)) || String(e.reason);
+  if(ERREURS_BENIGNES.test(msg)) return;
+  montrerErreur('promesse rejetée : ' + msg);
+});
+
 /* ═══════════════ 1. LE PLAN — repris tel quel du jeu 2D ═══════════════ */
 let W = 28, H = 18;                   // la grille, en cases (le dehors l'allonge, voir genererDehors)
 const H_DONJON = 18;                  // hauteur d'un étage de donjon
