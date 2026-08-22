@@ -2384,7 +2384,12 @@ function poserSolQuaternius(){
   const box = new THREE.Box3().setFromObject(tuile), sz = new THREE.Vector3(); box.getSize(sz);
   const tw = sz.x, td = sz.z;
   if(!(tw > 0.4) || !(td > 0.4)) return false;                  // mesure douteuse → plan de secours
-  const nx = Math.min(60, Math.ceil(W*T/tw)+1), nz = Math.min(40, Math.ceil(H*T/td)+1);   // borné : jamais de freeze
+  // Le sol doit couvrir TOUTE la longueur du village (145 m). Avant, nz était
+  // borné à 40 tuiles : le second village (au-delà) n'avait pas de sol, et on
+  // voyait le ciel du fond à travers le trou (« la photo du ciel au sol », 22/08).
+  // On couvre tout ; garde-fou seulement si le total explose (tuiles minuscules).
+  const nx = Math.ceil(W*T/tw)+1, nz = Math.ceil(H*T/td)+1;
+  if(nx*nz > 8000) return false;   // tuile trop petite -> plan de secours plutôt qu'un freeze
   const inst = new THREE.InstancedMesh(src.geometry, src.material, nx*nz);
   inst.receiveShadow = true; inst.frustumCulled = false;
   const world = src.matrixWorld.clone(), m4 = new THREE.Matrix4(), tr = new THREE.Matrix4();
