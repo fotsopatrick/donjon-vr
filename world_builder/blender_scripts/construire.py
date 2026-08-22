@@ -61,6 +61,8 @@ MATS = {
                    emissive=(0.85, 0.42, 0.16, 1), emissive_force=1.6),
     "toit_rouge": mat("toit_rouge", (0.55, 0.18, 0.12, 1), rough=0.85),
     "toit_gris": mat("toit_gris", (0.40, 0.40, 0.42, 1), rough=0.85),
+    "toit_bleu": mat("toit_bleu", (0.22, 0.32, 0.52, 1), rough=0.6,
+                    metal=0.25),
 }
 
 
@@ -140,25 +142,46 @@ if couleur_toit == "rouge":
     mat_toit = MATS["toit_rouge"]
 elif couleur_toit == "gris":
     mat_toit = MATS["toit_gris"]
+elif couleur_toit == "bleu":
+    mat_toit = MATS["toit_bleu"]
 elif "thatch" in spec.get("materials", []):
     mat_toit = MATS["thatch"]
 else:
     mat_toit = materiau_bois()
 
-bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, H + h_toit / 2))
-toit_obj = bpy.context.object
-toit_obj.name = "toit"
-toit_obj.scale = (L / 2 * 1.06, P / 2 * 1.08, h_toit)
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-bm = bmesh.new()
-bm.from_mesh(toit_obj.data)
-for v in bm.verts:
-    k = v.co.x / (L * 0.53)
-    if k >= -0.999:
-        v.co.y -= (k * k) * (P * 0.42)
-bm.to_mesh(toit_obj.data)
-bm.free()
-toit_obj.data.materials.append(mat_toit)
+if (toit.get("type") or "").lower() in ("dome", "dôme"):
+    # dôme : demi-sphère posée sur les murs (silhouette de coupole)
+    dh = max(L, P) * 0.45
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12,
+                                         radius=1, location=(0, 0, H))
+    dome = bpy.context.object
+    dome.name = "toit"
+    dome.scale = (L / 2, P / 2, dh)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bm = bmesh.new()
+    bm.from_mesh(dome.data)
+    for f in list(bm.faces):
+        if all(v.co.z < H for v in f.verts):
+            bm.faces.remove(f)
+    bm.to_mesh(dome.data)
+    bm.free()
+    dome.data.materials.append(mat_toit)
+    toit_obj = dome
+else:
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, H + h_toit / 2))
+    toit_obj = bpy.context.object
+    toit_obj.name = "toit"
+    toit_obj.scale = (L / 2 * 1.06, P / 2 * 1.08, h_toit)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bm = bmesh.new()
+    bm.from_mesh(toit_obj.data)
+    for v in bm.verts:
+        k = v.co.x / (L * 0.53)
+        if k >= -0.999:
+            v.co.y -= (k * k) * (P * 0.42)
+    bm.to_mesh(toit_obj.data)
+    bm.free()
+    toit_obj.data.materials.append(mat_toit)
 
 # ---------- porte (face avant, -Z) ----------
 porte_l, porte_h = min(0.9, L * 0.24), min(1.9, H * 0.62)

@@ -201,6 +201,56 @@
           "atmosphere": "fog moisture"
         }
       }
+    },
+    {
+      "id": "building_005",
+      "slug": "grande-salle-elliptique-verre",
+      "assetFile": "modeles/generes/grande-salle-elliptique-verre_005_v1.glb",
+      "assetVersion": 1,
+      "lieu": 0,
+      "position": {
+        "x": -60.0,
+        "z": -60.0
+      },
+      "rotationY": 0.0,
+      "echelle": 1.0,
+      "meta": {
+        "style": "generic",
+        "materials": [
+          "stone"
+        ],
+        "features": [
+          "dome"
+        ],
+        "dimensions": {
+          "l": 50.0,
+          "p": 40.0,
+          "h": 30.0
+        },
+        "toit": {
+          "type": "dôme",
+          "pente": "nulle",
+          "couleur": "bleu"
+        },
+        "variation": {
+          "seed": 42,
+          "weathered": 0.3,
+          "moss": 0.1
+        },
+        "style_profile": {
+          "architecture": "nordic medieval",
+          "materials": [
+            "dark_wood",
+            "aged_stone",
+            "moss"
+          ],
+          "terrain": "rocky wet",
+          "vegetation": "dense conifers",
+          "lighting": "night cold",
+          "accent": "warm interior lights",
+          "atmosphere": "fog moisture"
+        }
+      }
     }
   ]
 }

@@ -45,8 +45,8 @@ SCHEMA_SPEC = {
     "materials": str(MATERIAUX_CONNUS),
     "features": str(TRAITS_CONNUS),
     "dimensions": {"l": "longueur m", "p": "profondeur m", "h": "hauteur m"},
-    "toit": {"type": "pentu | plat", "pente": "forte | moyenne | nulle",
-             "couleur": "optionnel : rouge | gris | chaume"},
+    "toit": {"type": "pentu | plat | dôme", "pente": "forte | moyenne | nulle",
+             "couleur": "optionnel : rouge | gris | bleu | chaume"},
     "variation": {"seed": "entier stable", "weathered": "0..1",
                   "moss": "0..1"},
 }
@@ -54,26 +54,37 @@ SCHEMA_SPEC = {
 
 # Le modèle vision ne reçoit QUE l'image et cette consigne. Aucun concept du
 # projet, aucun secret : il produit un VisualProfile (une LECTURE de l'image),
-# pas une mesure. Pour tout ce qu'il ne voit pas avec certitude, il renvoie
-# vide plutôt que de deviner — on ne prétend jamais qu'une image est comprise
-# si elle ne l'est pas.
+# pas une mesure.
+# Leçon 22/08 : un prompt trop strict (« renvoie vide si incertain ») pousse le
+# modèle au tout-vide sur des photos réelles — il voit pourtant la structure,
+# les matériaux et la palette. On lui demande maintenant de décrire ce qu'il
+# voit RÉELLEMENT, sans inventer un élément absent, avec un niveau d'incertitude
+# honnête. Le vide n'est réservé qu'aux champs vraiment indéterminables.
 PROMPT_VISION = (
-    "Tu examines une image de référence pour un outil de modélisation 3D de "
-    "bâtiments. Produis UNIQUEMENT un objet JSON, sans texte autour, au schéma "
-    "exact ci-dessous. Décris UNIQUEMENT ce que tu vois réellement dans l'image. "
-    "Pour tout champ que tu ne peux pas déterminer avec certitude, mets une "
-    "chaîne vide ou une liste vide — ne devine jamais.\n"
+    "Tu examines une image de référence pour un outil de modélisation 3D. "
+    "Produis UNIQUEMENT un objet JSON, sans texte autour, au schéma exact "
+    "ci-dessous. Décris la structure dominante que tu vois réellement : son "
+    "architecture (si ce n'est pas un bâtiment classique, décris librement la "
+    "silhouette, les formes, les lignes), ses matériaux apparents, ses couleurs "
+    "dominantes, son toit (type, pente, couleur), les proportions RELATIVES "
+    "entre largeur/profondeur/hauteur (ratios, jamais des mètres), et son "
+    "ambiance (lumière, atmosphère).\n"
+    "Règle d'honnêteté : décris UNIQUEMENT ce que tu vois. N'invente jamais un "
+    "élément absent de l'image. Un champ totalement indéterminable = chaîne vide "
+    "ou liste vide. Un élément distingué avec un doute = décris-le et monte le "
+    "niveau d'incertitude. Le but : donner assez d'indices visuels (silhouette, "
+    "matériaux, palette, ambiance) pour que l'esprit général soit reproduit.\n"
     "Schéma attendu :\n"
     "{\n"
-    '  "type_objet": "building" ou "",\n'
-    '  "architecture": "description courte en français, 2 à 8 mots (ex : maison nordique à toit pentu)",\n'
-    '  "style": "nordic | medieval | rustic | japonais | tropical | generic | ", \n'
-    '  "materiaux_visibles": liste prise dans ["dark_wood","wood","aged_stone","stone","plaster","moss","thatch"] — vide si incertain,\n'
-    '  "traits_visibles": liste prise dans ["steep_roof","weathered_wood","moss","chimney","porch","balcony"] — vide si incertain,\n'
-    '  "couleurs": ["brun foncé","gris pierre","rouge","chaume",...] — noms de couleurs réellement vus,\n'
-    '  "toit": {"type": "pentu | plat | ", "pente": "forte | moyenne | nulle | ", "couleur": "rouge | gris | chaume | "},\n'
-    '  "proportions": {"l": 0.0..1.0, "p": 0.0..1.0, "h": 0.0..1.0} — ratios RELATIFS entre les dimensions de l\'objet vu (ex : l=1.0, p=0.8, h=0.9), JAMAIS des mètres,\n'
-    '  "ambiance": liste courte de mots ["nuit","brouillard","froid","humide","ensoleillé","chaleureux",...],\n'
+    '  "type_objet": "building | tour | salle | pavillon | ... ou court descriptif libre",\n'
+    '  "architecture": "description courte en français, 2 à 10 mots (ex : vaisseau à dôme elliptique de verre sur armature métallique)",\n'
+    '  "style": "nordic | medieval | rustic | japonais | tropical | futuriste | generic | ", \n'
+    '  "materiaux_visibles": liste prise dans ["dark_wood","wood","aged_stone","stone","plaster","moss","thatch","metal","glass","concrete"] — vide si incertain,\n'
+    '  "traits_visibles": liste prise dans ["steep_roof","weathered_wood","moss","chimney","porch","balcony","dome","arches","columns"] — vide si incertain,\n'
+    '  "couleurs": ["brun foncé","gris pierre","bleu","orange",...] — noms de couleurs réellement vus,\n'
+    '  "toit": {"type": "pentu | plat | dôme | ", "pente": "forte | moyenne | nulle | ", "couleur": "rouge | gris | bleu | chaume | "},\n'
+    '  "proportions": {"l": 0.0..1.0, "p": 0.0..1.0, "h": 0.0..1.0} — ratios RELATIFS de l\'objet vu (ex : l=1.0, p=0.8, h=0.9), JAMAIS des mètres,\n'
+    '  "ambiance": liste courte de mots ["nuit","brouillard","froid","humide","scientifique","mystérieuse","lumineuse","ensoleillé","chaleureux",...],\n'
     '  "incertitude": "faible | moyenne | forte"\n'
     "}\n"
     "Réponds strictement ce JSON."
@@ -154,7 +165,8 @@ class DeepSeekClient:
         if ref_faits:
             lignes.append("Faits mesurés sur l'image de référence :")
             for k, v in ref_faits.items():
-                if k in ("source", "analysé_par", "avertissement", "taille"):
+                if k in ("source", "analysé_par", "avertissement",
+                         "avertissement_palette", "taille"):
                     continue
                 if isinstance(v, (dict, list)):
                     v = json.dumps(v, ensure_ascii=False)

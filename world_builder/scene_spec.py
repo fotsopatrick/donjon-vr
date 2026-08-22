@@ -10,11 +10,13 @@ Blender ne voit JAMAIS la demande en clair : il ne voit que ce dictionnaire.
 """
 from __future__ import annotations
 
+import ast
+
 TYPES_SUPPORTES = ("building",)
 MATERIAUX_CONNUS = ("dark_wood", "wood", "aged_stone", "stone", "plaster",
                     "moss", "thatch")
 TRAITS_CONNUS = ("steep_roof", "weathered_wood", "moss", "chimney",
-                 "porch", "balcony")
+                 "porch", "balcony", "dome")
 
 # Direction artistique par défaut : Dark Nordic Cinematic Fantasy (DA 22).
 # Persistant : un asset créé dans une scène reprend le profil de la scène
@@ -49,6 +51,20 @@ def spec_vide() -> dict:
     }
 
 
+def _decouper_liste(v: str) -> list:
+    """Le modèle spec renvoie parfois un tuple en chaîne : "('stone','glass')".
+    On le découpe ; sinon on garde la chaîne telle quelle."""
+    s = v.strip()
+    if s[:1] in "([{":
+        try:
+            p = ast.literal_eval(s)
+            if isinstance(p, (list, tuple)):
+                return [str(x) for x in p if str(x).strip()]
+        except (ValueError, SyntaxError):
+            pass
+    return [s] if s else []
+
+
 def valider(spec: dict) -> dict:
     """Contrôle qu'une spec est exploitable, normalise les valeurs."""
     if not isinstance(spec, dict):
@@ -67,12 +83,12 @@ def valider(spec: dict) -> dict:
         if v is None:
             spec[k] = []
         elif isinstance(v, str):
-            spec[k] = [v]
+            spec[k] = _decouper_liste(v)
         elif isinstance(v, (list, tuple)):
-            spec[k] = list(v)
+            spec[k] = [m for m in v if m]
         else:
             raise ErreurSpec("%s doit être une liste" % k)
-        spec[k] = [m for m in spec[k] if m]
+        spec[k] = [str(m).strip() for m in spec[k] if str(m).strip()]
     dims = dict(base["dimensions"])
     if isinstance(spec.get("dimensions"), dict):
         for k, d in (("l", 4.0), ("p", 3.0), ("h", 3.2)):

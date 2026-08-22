@@ -58,15 +58,30 @@ class VisionReferenceAnalyzer(ReferenceAnalyzer):
             raise ErreurReference(
                 "clé DEEPSEEK_API_KEY absente : vision réelle indisponible. "
                 "On ne simule pas la vision.")
-        base = self.palette.analyser(chemin)
+        try:
+            base = self.palette.analyser(chemin)
+            palette = {
+                "taille": base["taille"],
+                "palette_dominante": base["palette_dominante"],
+                "luminosite": base["luminosite"],
+                "familles": base["familles"],
+                "usure_estimee": base["usure_estimee"],
+            }
+        except ErreurReference as e:
+            # JPEG/GIF/WebP : le décodage palette est PNG pur, donc indisponible.
+            # La vision RÉELLE, elle, lit l'image — on continue, en le disant.
+            palette = {
+                "taille": None,
+                "palette_dominante": [],
+                "luminosite": None,
+                "familles": {},
+                "usure_estimee": None,
+                "avertissement_palette": str(e),
+            }
         profil = self.client.visual_profile(chemin)
         return {
             "source": chemin,
-            "taille": base["taille"],
-            "palette_dominante": base["palette_dominante"],
-            "luminosite": base["luminosite"],
-            "familles": base["familles"],
-            "usure_estimee": base["usure_estimee"],
+            **palette,
             "visual_profile": profil,
             "deductions": self._deductions(profil),
             "analysé_par": self.modele_vision,
