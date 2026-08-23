@@ -3022,8 +3022,8 @@ function batirDehors(){
                          z:gy*T + T/2 + (Math.random()-0.5)*T*0.8,
                          ech:1.6 + Math.random()*0.9, rot:Math.random()*6.28 });
       }
-      for(const [fx, fz] of [[4,4],[7,5],[19,5],[23,4]]){
-        const nom = especesF[(fx*7 + fz) % 5];
+      for(const [fx, fz] of [[4,1.2],[7,1.2],[19,1.2],[23,1.2]]){   // derrière les fermes, hors des cadrages
+        const nom = especesF[Math.abs(Math.round(fx*7 + fz)) % 5];
         parF[nom].push({ x:fx*T, z:fz*T, ech:1.7 + Math.random(), rot:Math.random()*6.28 });
       }
       for(const e of especesF){ const g = semer(e, parF[e]); if(g) monde.add(g); }

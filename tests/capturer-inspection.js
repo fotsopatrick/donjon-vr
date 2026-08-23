@@ -4,6 +4,7 @@
 // puis génère la planche tests/captures/inspection/index.html.
 const http = require('http'), fs = require('fs'), path = require('path');
 const PORT = process.argv[2] || 9250;
+const FILTRE = process.argv[3] || '';   // régénère SEULEMENT ce sous-ensemble (id ou cat)
 const OUTDIR = path.join(__dirname, 'captures', 'inspection');
 const BASE = 'http://127.0.0.1:8099/index.html';
 fs.mkdirSync(OUTDIR, { recursive: true });
@@ -27,7 +28,14 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
   }
   console.log('INSPECTION chargée =', pret);
   const pts = await ev('JSON.stringify(window.INSPECTION.points)');
-  const points = JSON.parse(pts);
+  let points = JSON.parse(pts);
+  if (FILTRE) points = points.filter(p => (p.id || '').includes(FILTRE) || (p.cat || '').includes(FILTRE));
+  console.log('points à capturer :', points.length, FILTRE ? ('(filtre « ' + FILTRE + ' »)') : '');
+
+  // les villageois ruinent le cadrage (ils marchent, un peut passer devant la
+  // caméra) : on les masque pendant les captures MONDE, on les garde en jeu.
+  const cacherVillageois = () => ev('window.D&&window.D.villageois&&window.D.villageois.forEach(function(v){v.obj.visible=false});1');
+  const montrerVillageois = () => ev('window.D&&window.D.villageois&&window.D.villageois.forEach(function(v){v.obj.visible=true});1');
 
   // 1) le titre, AVANT de lancer le jeu
   const titre = points.find(p => p.ui === 'titre');
@@ -45,14 +53,15 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
     if (pt.id === 'u-titre') continue;
     if (pt.ui === 'hud' || pt.ui === 'pause') continue;   // traités à part
     await ev('window.INSPECTION.aller(' + JSON.stringify(pt) + ');1');
+    if (pt.creature || pt.cat === 'Village' || pt.cat === 'Ciel') await cacherVillageois();
     await dodo(3500);                                    // laisse le rendu se poser
     await shot(pt.id);
     console.log('capture', pt.id, '—', pt.nom);
   }
 
-  // 4) HUD en jeu (capture normale, HUD visible)
+  // 4) HUD en jeu (capture normale, HUD visible, village habité)
   const hud = points.find(p => p.ui === 'hud');
-  if (hud){ await ev('window.INSPECTION.aller(' + JSON.stringify(points.find(p => p.id === '01-spawn')) + ');1'); await dodo(3000); await shot(hud.id); console.log('capture', hud.id); }
+  if (hud){ await montrerVillageois(); await ev('window.INSPECTION.aller(' + JSON.stringify(points.find(p => p.id === '01-spawn')) + ');1'); await dodo(3000); await shot(hud.id); console.log('capture', hud.id); }
   // 5) pause
   const pause = points.find(p => p.ui === 'pause');
   if (pause){ await ev('window.INSPECTION.aller(' + JSON.stringify(pause) + ');1'); await dodo(2500); await shot(pause.id); console.log('capture', pause.id); await ev('window.D.reprendreJeu&&window.D.reprendreJeu();1'); }

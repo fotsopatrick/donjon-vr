@@ -16,10 +16,10 @@ const POINTS = [
   { cat:'Village', id:'03-rue',              nom:'Rue principale',        niveau:0, x:13*T, z:13*T,   lacet:3.14,note:'La rue vers la sortie' },
   { cat:'Village', id:'04-sortie',           nom:'Sortie du village',     niveau:0, x:13*T, z:17.6*T, lacet:3.14,note:'Le portail en travers de la rue' },
   { cat:'Village', id:'05-route-donjon',     nom:'Route vers le donjon',  niveau:0, x:13*T, z:22.2*T, lacet:-1.25,note:'Le coude vers le sentier' },
-  { cat:'Village', id:'06-approche-donjon',  nom:'Sentier / approche',    niveau:0, x:11.6*T, z:23.5*T, lacet:3.14,note:'Le sentier de terre bordé' },
-  { cat:'Village', id:'07-entree-donjon',    nom:'Entrée du donjon',      niveau:0, x:11*T, z:24.2*T, lacet:3.14,note:'L’arche de pierre et l’escalier' },
+  { cat:'Village', id:'06-approche-donjon',  nom:'Sentier / approche',    niveau:0, x:11.6*T, z:23.0*T, lacet:3.14,note:'Le sentier de terre bordé' },
+  { cat:'Village', id:'07-entree-donjon',    nom:'Entrée du donjon',      niveau:0, x:11.5*T, z:24.2*T, lacet:3.14,note:'L’arche de pierre et l’escalier' },
   { cat:'Village', id:'08-second-village',   nom:'Second village',        niveau:0, x:13*T, z:45*T,   lacet:3.14,note:'Sa place, son puits, sa croix' },
-  { cat:'Village', id:'09-fermes',           nom:'Zone des fermes',       niveau:0, x:6.5*T, z:5.5*T, lacet:0,   note:'La ferme ouest, ses champs clôturés' },
+  { cat:'Village', id:'09-fermes',           nom:'Zone des fermes',       niveau:0, x:6.5*T, z:4.5*T, lacet:0,   note:'La ferme ouest, ses champs clôturés' },
   { cat:'Village', id:'10-bordure',          nom:'Bordure / transition',  niveau:0, x:2.5*T, z:20*T,  lacet:0,   note:'La lisière vers la forêt' },
   { cat:'Village', id:'11-aerienne',         nom:'Vue aérienne du village', niveau:0, x:13*T, z:9*T, lacet:3.14, tangage:-0.7, vol:true, hauteur:38, note:'Tout le hameau vu de haut' },
   { cat:'Village', ciel:'village_golden', id:'12-aerienne-donjon',  nom:'Vue aérienne vers le donjon', niveau:0, x:13*T, z:24*T, lacet:3.14, tangage:-0.55, vol:true, hauteur:38, note:'Le chemin vu depuis les airs' },
@@ -34,14 +34,14 @@ const POINTS = [
   { cat:'Donjon', id:'d07-transitions',      nom:'Transitions entre salles', niveau:1, x:14.5*T, z:13.5*T, lacet:0, note:'Le passage vers le donjon central' },
 
   // ── CRÉATURES (dans le VILLAGE, référence PBR lumineuse) ──
-  { cat:'Créatures', id:'c-rat-seul',        nom:'Rat — seul',        creature:'rat',       niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.2*T, fige:true,  note:'Volume, ancrage, matériau' },
-  { cat:'Créatures', id:'c-rat-combat',      nom:'Rat — en combat',   creature:'rat',       niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.6*T, fige:false, note:'Il s’approche' },
-  { cat:'Créatures', id:'c-spectre-seul',    nom:'Spectre — seul',    creature:'spectre',   niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.2*T, fige:true,  note:'Volume 3D flottant' },
-  { cat:'Créatures', id:'c-spectre-combat',  nom:'Spectre — en combat',creature:'spectre',  niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.6*T, fige:false, note:'Il s’approche' },
-  { cat:'Créatures', id:'c-slime-seul',      nom:'Slime — seul',      creature:'slime',     niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.2*T, fige:true,  note:'' },
-  { cat:'Créatures', id:'c-slime-combat',    nom:'Slime — en combat', creature:'slime',     niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.6*T, fige:false, note:'' },
-  { cat:'Créatures', id:'c-squelette-seul',  nom:'Squelette — seul',  creature:'squelette', niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.2*T, fige:true,  note:'' },
-  { cat:'Créatures', id:'c-squelette-combat',nom:'Squelette — en combat',creature:'squelette',niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.6*T, fige:false, note:'' },
+  { cat:'Créatures', id:'c-rat-seul',        nom:'Rat — seul',        creature:'rat',       niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.7*T, fige:true, tangage:-0.12,  note:'Volume, ancrage, matériau' },
+  { cat:'Créatures', id:'c-rat-combat',      nom:'Rat — en combat',   creature:'rat',       niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.9*T, fige:false, tangage:-0.12, note:'Il s’approche' },
+  { cat:'Créatures', id:'c-spectre-seul',    nom:'Spectre — seul',    creature:'spectre',   niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.7*T, fige:true, tangage:-0.12,  note:'Volume 3D flottant' },
+  { cat:'Créatures', id:'c-spectre-combat',  nom:'Spectre — en combat',creature:'spectre',  niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.9*T, fige:false, tangage:-0.12, note:'Il s’approche' },
+  { cat:'Créatures', id:'c-slime-seul',      nom:'Slime — seul',      creature:'slime',     niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.7*T, fige:true, tangage:-0.12,  note:'' },
+  { cat:'Créatures', id:'c-slime-combat',    nom:'Slime — en combat', creature:'slime',     niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.9*T, fige:false, tangage:-0.12, note:'' },
+  { cat:'Créatures', id:'c-squelette-seul',  nom:'Squelette — seul',  creature:'squelette', niveau:0, px:13*T, pz:7.5*T, cx:13*T, cz:6.7*T, fige:true, tangage:-0.12,  note:'' },
+  { cat:'Créatures', id:'c-squelette-combat',nom:'Squelette — en combat',creature:'squelette',niveau:0, px:13*T, pz:7.2*T, cx:13*T, cz:6.9*T, fige:false, tangage:-0.12, note:'' },
 
   // ── CIEL / ATMOSPHÈRE ──
   { cat:'Ciel', id:'s-village-day',     nom:'Village — jour',      ciel:'village_day',     niveau:0, x:13*T, z:9.7*T, lacet:0 },
@@ -80,7 +80,7 @@ function aller(pt){
     if(D.allerA && (!window.KOTOAGE || window.KOTOAGE.niveau !== 0)) D.allerA(0);
     D.joueur.vol = false; D.joueur.saut = 0;
     D.joueur.x = pt.px; D.joueur.z = pt.pz;
-    D.joueur.lacet = 0; D.joueur.tangage = 0;
+    D.joueur.lacet = 0; D.joueur.tangage = pt.tangage || -0.12;
     if(D.inspecterCreature){
       const e = D.inspecterCreature(pt.creature, pt.cx, pt.cz);
       if(e && pt.fige) e.cd = 9999;      // « seul » : il reste en place, face au joueur

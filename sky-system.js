@@ -38,6 +38,24 @@ function texNuage(){
   return _texNuage;
 }
 
+/* le SOLEIL : une source de lumière en dégradé radial, PAS une primitive plate.
+   Cœur blanc chaud → jaune doré → halo transparent : aucune arête visible. */
+let _texSoleil = null;
+function texSoleil(){
+  if(_texSoleil) return _texSoleil;
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  const d = g.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+  d.addColorStop(0, 'rgba(255,253,242,1)');
+  d.addColorStop(0.16, 'rgba(255,246,220,0.96)');
+  d.addColorStop(0.38, 'rgba(255,228,168,0.5)');
+  d.addColorStop(0.68, 'rgba(255,200,128,0.14)');
+  d.addColorStop(1, 'rgba(255,184,96,0)');
+  g.fillStyle = d; g.fillRect(0, 0, S, S);
+  _texSoleil = new THREE.CanvasTexture(c);
+  return _texSoleil;
+}
+
 const PRESETS = {
   village_day: {
     skyTop: 0x4a8fd6, skyMid: 0x9ecdf0, skyBottom: 0xd8e8f4,
@@ -158,15 +176,13 @@ function groupeCiel(){
   const groupe = new THREE.Group();
   groupe.name = 'sky-groupe';
 
-  /* soleil : disque + lueur */
+  /* soleil : une source en dégradé radial (pas une primitive plate) */
   _soleil = new THREE.Group();
-  _soleil.add(new THREE.Mesh(
-    new THREE.CircleGeometry(8, 28),
-    new THREE.MeshBasicMaterial({ color: 0xfff0c8, fog: false, toneMapped: false })));
-  _soleil.add(new THREE.Sprite(new THREE.SpriteMaterial({
-    map: texNuage(), color: 0xffe0b0, transparent: true, opacity: 0.32,
-    blending: THREE.AdditiveBlending, depthWrite: false })));
-  _soleil.children[1].scale.setScalar(90);
+  const disque = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texSoleil(), color: 0xfff4dc, transparent: true, depthWrite: false,
+    fog: false, toneMapped: false }));
+  disque.scale.setScalar(48);
+  _soleil.add(disque);
   groupe.add(_soleil);
 
   /* lune */
@@ -227,8 +243,7 @@ function majPositions(p){
   if(_soleil){
     _soleil.position.copy(dir).multiplyScalar(66);
     _soleil.lookAt(0, 0, 0);
-    _soleil.children[0].material.color.setHex(p.soleilCouleur);
-    _soleil.children[1].material.color.setHex(p.soleilCouleur);
+    if(_soleil.children[0]) _soleil.children[0].material.color.setHex(p.soleilCouleur);
     _soleil.visible = true;
   }
   if(_lune){
