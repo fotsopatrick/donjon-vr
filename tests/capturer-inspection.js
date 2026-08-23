@@ -18,7 +18,13 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
   await new Promise(r => ws.onopen = r);
   await env('Runtime.enable'); await env('Page.enable');
   const ev = async x => { const r = await env('Runtime.evaluate', { expression: x, returnByValue: true }); return r.result && r.result.value };
-  const shot = async id => { const { data } = await env('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(path.join(OUTDIR, id + '.png'), Buffer.from(data, 'base64')); };
+  const CATS = { Village:'village', Donjon:'donjon', 'Créatures':'creatures', Ciel:'ciel', UI:'ui' };
+const shot = async (id, cat) => {
+  const sous = CATS[cat] || 'autre';
+  fs.mkdirSync(path.join(OUTDIR, sous), { recursive: true });
+  const { data } = await env('Page.captureScreenshot', { format: 'png' });
+  fs.writeFileSync(path.join(OUTDIR, sous, id + '.png'), Buffer.from(data, 'base64'));
+};
 
   await env('Page.navigate', { url: BASE + '?t=' + Date.now() + '#village' });
   let pret = false;
@@ -40,7 +46,7 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
   // 1) le titre, AVANT de lancer le jeu
   const titre = points.find(p => p.ui === 'titre');
   await dodo(2000);
-  if (titre){ await shot(titre.id); console.log('capture', titre.id, '—', titre.nom); }
+  if (titre){ await shot(titre.id, titre.cat); console.log('capture', titre.id, '—', titre.nom); }
 
   // 2) on lance le jeu
   await ev('(function(){var b=document.getElementById("jouer");if(b&&!b.disabled)b.click()})()');
@@ -55,16 +61,16 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
     await ev('window.INSPECTION.aller(' + JSON.stringify(pt) + ');1');
     if (pt.creature || pt.cat === 'Village' || pt.cat === 'Ciel') await cacherVillageois();
     await dodo(3500);                                    // laisse le rendu se poser
-    await shot(pt.id);
+    await shot(pt.id, pt.cat);
     console.log('capture', pt.id, '—', pt.nom);
   }
 
   // 4) HUD en jeu (capture normale, HUD visible, village habité)
   const hud = points.find(p => p.ui === 'hud');
-  if (hud){ await montrerVillageois(); await ev('window.INSPECTION.aller(' + JSON.stringify(points.find(p => p.id === '01-spawn')) + ');1'); await dodo(3000); await shot(hud.id); console.log('capture', hud.id); }
+  if (hud){ await montrerVillageois(); await ev('window.INSPECTION.aller(' + JSON.stringify(points.find(p => p.id === '01-spawn')) + ');1'); await dodo(3000); await shot(hud.id, hud.cat); console.log('capture', hud.id); }
   // 5) pause
   const pause = points.find(p => p.ui === 'pause');
-  if (pause){ await ev('window.INSPECTION.aller(' + JSON.stringify(pause) + ');1'); await dodo(2500); await shot(pause.id); console.log('capture', pause.id); await ev('window.D.reprendreJeu&&window.D.reprendreJeu();1'); }
+  if (pause){ await ev('window.INSPECTION.aller(' + JSON.stringify(pause) + ');1'); await dodo(2500); await shot(pause.id, pause.cat); console.log('capture', pause.id); await ev('window.D.reprendreJeu&&window.D.reprendreJeu();1'); }
 
   // 6) la planche / contact sheet
   let html = '<!doctype html><html lang="fr"><head><meta charset="utf-8">' +
@@ -82,7 +88,7 @@ const dodo = ms => new Promise(r => setTimeout(r, ms));
   let cat = '';
   for (const pt of points){
     if (pt.cat !== cat){ cat = pt.cat; html += '<div class="groupe">' + cat + '</div><div class="grille">'; }
-    html += '<div class="carte"><img src="' + pt.id + '.png" alt="' + pt.id + '">' +
+    html += '<div class="carte"><img src="' + (CATS[pt.cat]||'autre') + '/' + pt.id + '.png" alt="' + pt.id + '">' +
             '<div class="leg"><b>' + pt.id + ' — ' + pt.nom + '</b>' +
             (pt.note ? '<span>' + pt.note + '</span>' : '') + '</div></div>';
   }
