@@ -5,7 +5,7 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const PORT = process.argv[2] || 9250;
 const FILTRE = process.argv[3] || '';   // régénère SEULEMENT ce sous-ensemble (id ou cat)
-const OUTDIR = path.join(__dirname, 'captures', 'inspection');
+const OUTDIR = process.env.OUT || path.join(__dirname, 'captures', 'inspection');
 const BASE = 'http://127.0.0.1:8099/index.html';
 fs.mkdirSync(OUTDIR, { recursive: true });
 const gj = p => new Promise((r, j) => http.get('http://127.0.0.1:' + PORT + p, x => { let d = ''; x.on('data', c => d += c); x.on('end', () => { try { r(JSON.parse(d)) } catch (e) { j(e) } }); }).on('error', j));

@@ -456,7 +456,7 @@ const ETAGES = [
     // Demande de Patrick (21/08) : le premier étage doit être PLUS CLAIR et PLUS HAUT.
     // int = force de la lumière, fogD = épaisseur de la brume (plus petit = on voit loin),
     // haut = hauteur du plafond en mètres (20 partout ailleurs).
-    theme:{ sol:0x9aa3b2, plaf:0x515d75, sky:0xa08a62, gnd:0x3a3226, int:1.75, fog:0x3a2f1c, fogD:0.008, haut:30 } },   // pierre ambre chaud, bien éclairée
+    theme:{ sol:0x9aa3b2, plaf:0x515d75, sky:0xa08a62, gnd:0x3a3226, int:2.0, fog:0x3a2f1c, fogD:0.008, haut:30 } },   // pierre ambre chaud, éclairée (int 2.0 en PBR)
   { salles:5, faune:['paysan','paysan','squelette','slime'], teinte:0x9d7bff, nom:'l\'ossuaire',
     theme:{ sol:0x9aa2b4, plaf:0x2a3348, sky:0x6274a0, gnd:0x161c2a, int:0.9, fog:0x101626, fogD:0.026 } },     // os pâle, froid bleuté
   { salles:6, faune:['rat','slime_rouge','paysan','squelette','slime_rouge'], teinte:0x36d6a8, nom:'la clairière',
@@ -1595,29 +1595,39 @@ function cerner(racine, epaisseur = 0.014){
 /* Convertit tout un groupe au style dessiné, puis pose les contours.
    Le cache évite de refabriquer dix fois la même matière partagée. */
 const cacheToon = new Map();
-function styliser(racine, epaisseur = 0.014){
-  racine.traverse(o=>{
-    if(!o.isMesh || o.userData.estContour) return;
-    // les volumes projettent leur ombre et la reçoivent ; les contours, non
-    o.castShadow = true;
-    o.receiveShadow = true;
-    if(o.isInstancedMesh) {            // les murs : on convertit, mais pas de contour
-      if(o.material && o.material.isMeshStandardMaterial){
-        let t = cacheToon.get(o.material);
-        if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
-        o.material = t;
-      }
-      return;
-    }
-    if(o.material && o.material.isMeshStandardMaterial){
-      let t = cacheToon.get(o.material);
-      if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
-      o.material = t;
-    }
-  });
-  if(epaisseur > 0) cerner(racine, epaisseur);
-  return racine;
-}
+ function styliser(racine, epaisseur = 0.014){
+   /* ZONE PILOTE PBR (audit P1+P2, 23/08) : dehors (niveau 0) + donjon é.1.
+      Fini le cel-shading 4 paliers et les contours noirs ici : on garde les
+      ombres portées, les MeshStandardMaterial restent PBR (relief, ACES).
+      Les étages 2-5 gardent le rendu toon tant que la zone n'est pas validée. */
+   if(niveau <= 1){
+     racine.traverse(o=>{
+       if(o.isMesh && !o.isInstancedMesh && o.material && !o.material.transparent) o.castShadow = true;
+     });
+     return racine;
+   }
+   racine.traverse(o=>{
+     if(!o.isMesh || o.userData.estContour) return;
+     // les volumes projettent leur ombre et la reçoivent ; les contours, non
+     o.castShadow = true;
+     o.receiveShadow = true;
+     if(o.isInstancedMesh) {            // les murs : on convertit, mais pas de contour
+       if(o.material && o.material.isMeshStandardMaterial){
+         let t = cacheToon.get(o.material);
+         if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
+         o.material = t;
+       }
+       return;
+     }
+     if(o.material && o.material.isMeshStandardMaterial){
+       let t = cacheToon.get(o.material);
+       if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
+       o.material = t;
+     }
+   });
+   if(epaisseur > 0) cerner(racine, epaisseur);
+   return racine;
+ }
 
 /* ═══════════════ 3. LA SCÈNE ═══════════════ */
 const scene = new THREE.Scene();
@@ -1629,7 +1639,7 @@ const tete = new THREE.Group();          // porte la caméra : lacet + tangage +
 tete.add(camera);
 scene.add(tete);
 
-const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
 renderer.setPixelRatio(1);          // 1 pixel rendu = 1 pixel écran : le meilleur rapport
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -2079,7 +2089,7 @@ function batir(){
   hemi.color.setHex(th.sky); hemi.groundColor.setHex(th.gnd); hemi.intensity = th.int;   // ambiance PROPRE à l'étage
   renderer.shadowMap.enabled = true;   // DONJON : on rallume les ombres (coupées dehors)
   jour.castShadow = true;      // petits espaces -> les ombres portées marchent
-  ambiance.intensity = 0.5;    // et on garde le relief (pas besoin de tout aplatir)
+  ambiance.intensity = 1.1;    // PBR (zone pilote) : intérieur éclairé sans aplatir — le toon masquait l'obscurité réelle
   scene.fog = new THREE.FogExp2(th.fog, th.fogD);                                          // brouillard coloré = chaque étage a son atmosphère
   // on vide l'étage précédent
   while(monde.children.length){
@@ -2291,7 +2301,7 @@ function batir(){
   if(bossSalle) creerBoss(bossSalle.x, bossSalle.y);
   if(niveau === 1) poserGuerrier();
 
-  /* --- tout le décor passe au trait --- */
+  /* --- pipeline de rendu : styliser bascule lui-même (PBR niveau ≤ 1) --- */
   styliser(monde, 0.02);
 
   /* --- les habitants --- */
@@ -3409,7 +3419,8 @@ function batirDehors(){
   /* Dehors, on garde les matières telles quelles : ce sont les textures qui
      donnent la matière, pas les paliers de lumière. Seuls les habitants et les
      modèles importés passent au trait, pour rester lisibles. */
-  for(const v of villageois) cerner(v.obj, 0.009);   // contour plus fin : ils se fondent dans le décor stylized
+  /* P2 : plus de contours noirs sur les villageois (fin du look dessiné).
+     Ils sont intégrés par la lumière PBR et leurs ombres douces. */
   batirZonePilote();
 }
 

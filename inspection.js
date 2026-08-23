@@ -25,11 +25,11 @@ const POINTS = [
   { cat:'Village', ciel:'village_golden', id:'12-aerienne-donjon',  nom:'Vue aérienne vers le donjon', niveau:0, x:13*T, z:24*T, lacet:3.14, tangage:-0.55, vol:true, hauteur:38, note:'Le chemin vu depuis les airs' },
 
   // ── DONJON (étage 1 = PLAN_ETAGE1, reproductible) ──
-  { cat:'Donjon', ciel:'village_golden', id:'d01-entree',           nom:'Entrée du donjon (é.1)', niveau:1, x:14.5*T, z:16.5*T, lacet:0,    note:'Spawn é.1, le cercle de téléportation à côté' },
+  { cat:'Donjon', ciel:'village_golden', id:'d01-entree',           nom:'Entrée du donjon (é.1)', niveau:1, x:13*T, z:16.6*T, lacet:0,    note:'Spawn é.1, le cercle de téléportation à côté' },
   { cat:'Donjon', id:'d02-premiere-salle',   nom:'Première salle (é.1)',  niveau:1, x:8.5*T, z:8.5*T,  lacet:0,    note:'La salle ouest, le donjon central' },
-  { cat:'Donjon', id:'d03-couloir',          nom:'Couloir (é.1)',         niveau:1, x:7.5*T, z:12.5*T, lacet:1.57, note:'Le passage est-ouest' },
+  { cat:'Donjon', id:'d03-couloir',          nom:'Couloir (é.1)',         niveau:1, x:12.5*T, z:12.5*T, lacet:4.71, note:'Le passage est-ouest' },
   { cat:'Donjon', id:'d04-salle-decor',      nom:'Salle décorée (é.1)',   niveau:1, x:22.5*T, z:13.5*T, lacet:0,    note:'Salle à thème (trésor/crypte)' },
-  { cat:'Donjon', id:'d05-salle-ennemis',    nom:'Salle avec ennemis (é.1)', niveau:1, x:4.5*T, z:4.5*T, lacet:3.14, note:'Le garde E à l’ouest' },
+  { cat:'Donjon', id:'d05-salle-ennemis',    nom:'Salle avec ennemis (é.1)', niveau:1, x:4.2*T, z:4.5*T, lacet:3.14, note:'Le garde E à l’ouest' },
   { cat:'Donjon', id:'d06-salle-profonde',   nom:'Salle profonde (é.1)',  niveau:1, x:13.3*T, z:9.7*T, lacet:0,    note:'La salle du boss B au cœur' },
   { cat:'Donjon', id:'d07-transitions',      nom:'Transitions entre salles', niveau:1, x:14.5*T, z:13.5*T, lacet:0, note:'Le passage vers le donjon central' },
 
