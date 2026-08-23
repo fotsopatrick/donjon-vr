@@ -2295,12 +2295,9 @@ function batir(){
   styliser(monde, 0.02);
 
   /* --- les habitants --- */
-  for(const e of ennemis){
-    let g;
-    // LES CRÉATURES passent par la bibliothèque réutilisable quand elles y sont
-    // (components/creatures.js) : rat, spectre. Les autres gardent leur fabrique
-    // interne — on migre progressivement, sans casser le gameplay.
+  function fabriquerEnnemi(e){
     const _comp = window.CREATURES && window.CREATURES.trouver(e.type);
+    let g;
     if(_comp){
       g = window.CREATURES.construire(_comp.componentId, { ph: e.ph, scale: _comp.scale });
     } else
@@ -2455,6 +2452,11 @@ function batir(){
       g.add(corps, queue, oeilG, oeilD);
       g.userData.corps = corps;
     }
+    return g;
+  }
+  for(const e of ennemis){
+    const g = fabriquerEnnemi(e);
+    const _comp = window.CREATURES && window.CREATURES.trouver(e.type);
     const hauteurs = { slime:0.42, rat:0.22, squelette:0, spectre:0.35, paysan:0 };
     g.position.set(e.x*T, hauteurs[e.type] ?? 0.3, e.y*T);
     monde.add(g);
@@ -7147,7 +7149,27 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              get villageois(){ return villageois; }, frapper, get etageCourant(){ return etageCourant; },
              poserLesVillageois,
              /* aller directement à un étage — pour essayer un gardien sans tout refaire */
-             allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
+              allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
+              /* inspection des créatures : fabrique UNE créature seule, à un endroit */
+              inspecterCreature(type, x, z){
+                const e = { x: x/T, y: z/T, type, vie: 12, cd: 0, ph: Math.random()*6,
+                            mort: 0, obj: null, phase: 'garde', tempo: 0 };
+                const g = fabriquerEnnemi(e);
+                const hauteurs = { slime:0.42, rat:0.22, squelette:0, spectre:0.35, paysan:0 };
+                g.position.set(e.x*T, hauteurs[e.type] ?? 0.3, e.y*T);
+                monde.add(g);
+                e.obj = g; meshEnnemis.push(g);
+                e.vieMax = e.vie;
+                const yBarre = ((window.CREATURES && window.CREATURES.trouver(type)) || {}).hauteurBarre || 2.05;
+                const jaFond = new THREE.Sprite(new THREE.SpriteMaterial({ color:0x1a0606, transparent:true, opacity:0.75, depthWrite:false }));
+                jaFond.scale.set(0.92,0.13,1); jaFond.position.y=yBarre; jaFond.renderOrder=18;
+                const jaBar = new THREE.Sprite(new THREE.SpriteMaterial({ color:0xff3333, depthWrite:false }));
+                jaBar.scale.set(0.86,0.08,1); jaBar.position.set(0,yBarre,0.01); jaBar.renderOrder=19;
+                g.add(jaFond, jaBar); e.barre = jaBar; e.barreFond = jaFond;
+                ennemis.push(e);
+                return e;
+              },
+              ouvrirPause, reprendreJeu,
              get pouvoirs(){ return pouvoirs; },
              get grid(){ return grid; }, get ennemis(){ return ennemis; },
              get murIM(){ return murIM; }, get meshPortail(){ return meshPortail; }, get flammes(){ return flammes; },
@@ -7209,5 +7231,6 @@ window.KOTOAGE = {
 <script type="module" src="chat-traduction.js"></script>
 <script type="module" src="sky-system.js"></script>
 <script type="module" src="components/creatures.js"></script>
+<script type="module" src="inspection.js"></script>
 </body>
 </html>

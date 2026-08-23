@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Lance les captures d'inspection reproductibles (Phase A). Un seul chrome.
+set -u
+PORT=9250
+PROF="/tmp/chrome-insp-$$"
+cleanup(){ pkill -9 -f "user-data-dir=$PROF" 2>/dev/null; rm -rf "$PROF" 2>/dev/null; }
+trap cleanup EXIT
+google-chrome --headless=new --user-data-dir="$PROF" --remote-debugging-port=$PORT \
+  --disk-cache-size=1 --autoplay-policy=no-user-gesture-required --window-size=1600,1000 \
+  "http://127.0.0.1:8099/index.html" >/tmp/insp-chrome.log 2>&1 &
+sleep 9
+timeout 280 node ~/donjon-vr/tests/capturer-inspection.js $PORT
+echo "--- chrome tué par le trap ---"
