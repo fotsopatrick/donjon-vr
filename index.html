@@ -368,6 +368,7 @@
 { "imports": { "three": "./three.module.js" } }
 </script>
 <script src="assets/sons.js"></script>
+<script src="webmcp/webmcp.js"></script>
 <script type="module">
 import * as THREE from './three.module.js';
 import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
@@ -507,7 +508,11 @@ function generer(){
     if(Math.random()<0.5){ creuserH(ax,bx,ay); creuserV(ay,by,bx); }
     else               { creuserV(ay,by,ax); creuserH(ax,bx,by); }
   }
-  const k = posLibre(rooms[rooms.length-1]); keyPos  = {x:k.x,y:k.y}; grid[k.y][k.x]=KEY;
+  // Le cercle de téléportation (keyPos) est posé PRÈS du départ (rooms[0]),
+  // comme sur l'étage 1 — sinon, placé dans la salle la plus lointaine, il est
+  // introuvable au milieu du labyrinthe (bug signalé : « impossible de descendre »).
+  // La porte/escalier de descente, elle, reste dans la salle d'après (rooms[1]).
+  const k = posLibre(rooms[0]);              keyPos  = {x:k.x,y:k.y}; grid[k.y][k.x]=KEY;
   // aux paliers, personne ne ramasse la clé : quelqu'un la garde
   cleVerrouillee = estPalier(niveau);
   bossSalle = cleVerrouillee ? { x:cX(rooms[rooms.length-1]), y:cY(rooms[rooms.length-1]) } : null;
@@ -7330,6 +7335,27 @@ window.KOTOAGE = {
   get estDehors(){ return estDehors(); },
   photoFond: () => texPaysageGrade || texPaysage,   // le décor d'horizon (château jaugé)
 };
+
+// ── WebMCP (hackathon) : pont vers l'état réel du jeu pour les outils ──
+// Exposé par le module, pour l'intégration webmcp/integration.js (module
+// chargé après). Sans document.modelContext, rien ne se passe : le jeu est
+// inchangé. Tout est défensif (try/catch, getters paresseux).
+try {
+  if (window.KOTOAGE_WEBMCP && !window.__webmcpConnexion) {
+    window.__webmcpConnexion = {
+      get joueur(){ return joueur; },
+      get grid(){ return grid; },
+      get niveau(){ return niveau; },
+      get T(){ return T; }, get W(){ return W; }, get H(){ return H; },
+      get torches(){ return torches; },
+      construireMurs(){ construireMurs(); },
+      poserPiege(x, z){ poserPiege(Math.round(x), Math.round(z)); },
+      dessinerCoeurs(){ dessinerCoeurs(); },
+      monte(type, x, z){ return window.D && window.D.inspecterCreature && window.D.inspecterCreature(type, x, z); },
+      dire(t){ dire(String(t), 3); },
+    };
+  }
+} catch (e) {}
 </script>
 <div id="perf"></div>
 <canvas id="radar" width="164" height="164"></canvas>
@@ -7339,5 +7365,6 @@ window.KOTOAGE = {
 <script type="module" src="sky-system.js"></script>
 <script type="module" src="components/creatures.js"></script>
 <script type="module" src="inspection.js"></script>
+<script type="module" src="webmcp/integration.js"></script>
 </body>
 </html>

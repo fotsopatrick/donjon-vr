@@ -1,0 +1,13 @@
+* text=auto
+*.glb binary
+*.vrm binary
+*.hdr binary
+*.mp3 binary
+*.ogg binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.zip binary
+*.bin binary
+*.exe binary
+*.blend binary
