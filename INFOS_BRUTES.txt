@@ -1,0 +1,231 @@
+=== STRUCTURE ===
+total 25464
+drwxrwxr-x 23 orel orel     4096 Aug 27 18:01 .
+drwxr-x--- 62 orel orel    12288 Aug 27 17:47 ..
+drwxrwxr-x  7 orel orel     4096 Aug 23 18:04 .git
+-rw-rw-r--  1 orel orel      356 Aug 22 13:38 .gitignore
+drwxrwxr-x  2 orel orel     4096 Aug 20 01:01 .veille
+-rw-rw-r--  1 orel orel     6227 Aug 22 11:14 A-FAIRE.md
+-rw-rw-r--  1 orel orel    11879 Aug 23 09:24 ART_DIRECTION_AUDIT.md
+-rw-rw-r--  1 orel orel     2317 Aug 21 07:22 CIRCUIT-AVATAR.md
+-rw-rw-r--  1 orel orel     4089 Aug 20 17:16 CIRCUITS-JEU.md
+-rw-rw-r--  1 orel orel     2908 Aug 20 21:15 CLAUDE.md
+-rw-rw-r--  1 orel orel     7151 Aug 22 02:54 DOC-PROJET.md
+-rw-rw-r--  1 orel orel     3665 Aug 20 07:59 GOUT-PATRICK.md
+-rw-r--r--  1 root root       18 Aug 27 18:01 INFOS_BRUTES.txt
+-rw-rw-r--  1 orel orel     3627 Aug 19 02:45 LISEZMOI.md
+-rw-rw-r--  1 orel orel     1839 Aug 23 12:22 P3_1_REPORT.md
+-rw-rw-r--  1 orel orel     4773 Aug 19 02:45 PERFORMANCE.md
+-rw-rw-r--  1 orel orel     2204 Aug 26 18:01 ROADMAP-KOTOAGE.md
+drwxrwxr-x  2 orel orel     4096 Aug 22 14:53 __pycache__
+-rw-rw-r--  1 orel orel     4443 Aug 22 21:15 analyser-capture.py
+-rwxrwxr-x  1 orel orel     2561 Aug 19 22:13 analyser-combat.py
+-rw-------  1 orel orel   141328 Aug 19 02:29 apercu-ciel-reel.jpg
+-rw-------  1 orel orel    37002 Aug 18 23:47 apercu-couloir.jpg
+-rw-------  1 orel orel    64327 Aug 19 00:51 apercu-decor.jpg
+-rw-------  1 orel orel    40517 Aug 19 00:16 apercu-esprit.jpg
+-rw-------  1 orel orel    35066 Aug 19 00:22 apercu-gardien.jpg
+-rw-------  1 orel orel   130351 Aug 19 02:02 apercu-hameau-texture.jpg
+-rw-------  1 orel orel    59880 Aug 19 01:21 apercu-hameau.jpg
+-rw-------  1 orel orel    76263 Aug 19 01:28 apercu-hameau2.jpg
+-rw-------  1 orel orel   155050 Aug 19 18:43 apercu-paysage-actuel.jpg
+-rw-------  1 orel orel    64901 Aug 18 23:47 apercu-slime.jpg
+-rw-------  1 orel orel    58049 Aug 19 00:29 apercu-solo-leveling.jpg
+-rw-------  1 orel orel    35414 Aug 19 02:43 apercu-splat.jpg
+-rw-------  1 orel orel    39473 Aug 19 00:16 apercu-statut.jpg
+-rw-------  1 orel orel   126942 Aug 19 02:43 apercu-village-rue.jpg
+-rw-------  1 orel orel   156813 Aug 19 02:43 apercu-village.jpg
+drwxrwxr-x 17 orel orel     4096 Aug 22 11:38 assets
+drwxrwxr-x  2 orel orel     4096 Aug 20 18:36 audio
+drwxrwxr-x  2 orel orel     4096 Aug 20 17:58 blender
+-rwxrwxr-x  1 orel orel     1761 Aug 20 21:19 capture-propre.sh
+drwxrwxr-x  2 orel orel     4096 Aug 24 23:31 carte
+-rw-rw-r--  1 orel orel     2488 Aug 20 20:20 cdp-9246.js
+-rw-rw-r--  1 orel orel     2488 Aug 20 21:08 cdp-9248.js
+-rw-rw-r--  1 orel orel     1526 Aug 20 17:04 cdp-check.js
+-rw-rw-r--  1 orel orel     1201 Aug 20 17:24 cdp-err.js
+-rw-rw-r--  1 orel orel     1175 Aug 20 17:06 cdp-eval.js
+-rw-rw-r--  1 orel orel     2488 Aug 20 17:21 cdp-jouer.js
+-rw-rw-r--  1 orel orel     1140 Aug 20 17:04 cdp-shot.js
+-rw-rw-r--  1 orel orel     5135 Aug 22 14:52 chat-traduction.js
+-rw-rw-r--  1 orel orel     3861 Aug 22 14:52 chat-traduction.py
+drwxrwxr-x  2 orel orel     4096 Aug 22 23:10 components
+drwxrwxr-x  4 orel orel     4096 Aug 21 18:16 cris
+-rw-rw-r--  1 orel orel     7704 Aug 19 01:54 demo-realiste.html
+-rw-rw-r--  1 orel orel     5255 Aug 19 02:32 demo-splat.html
+drwxrwxr-x  4 orel orel     4096 Aug 20 00:55 design
+-rw-rw-r--  1 orel orel     3134 Aug 21 07:31 diag-vrm.js
+-rw-rw-r--  1 orel orel    26131 Aug 22 11:41 donjon-plan.html
+-rw-rw-r--  1 orel orel     2132 Aug 23 12:22 donjon_P3_1_comparatif.html
+-rw-rw-r--  1 orel orel 22274266 Aug 23 12:23 donjon_P3_1_murs.zip
+-rw-rw-r--  1 orel orel    10595 Aug 19 15:36 essai-cyber.html
+drwxrwxr-x  2 orel orel     4096 Aug 19 17:11 garde
+-rwxrwxr-x  1 orel orel     2261 Aug 21 07:22 garde-fou.sh
+-rwxrwxr-x  1 orel orel     2072 Aug 21 07:20 gemini-critique.py
+-rw-rw-r--  1 orel orel   356226 Aug 23 18:11 index.html
+-rw-rw-r--  1 orel orel   198387 Aug 19 23:58 index.html.avant-maisons-quaternius
+-rw-rw-r--  1 orel orel    11096 Aug 23 09:55 inspection.js
+drwxrwxr-x  5 orel orel     4096 Aug 21 00:50 jsm
+drwxrwxr-x  4 orel orel     4096 Aug 22 13:35 modeles
+drwxrwxr-x  2 orel orel     4096 Aug 22 13:43 monde
+-rw-rwxr--  1 orel orel    50317 Aug 18 23:35 original.html
+drwxrwxr-x  2 orel orel     4096 Aug 23 13:30 outils
+drwxrwxr-x  2 orel orel     4096 Aug 20 17:34 paysages
+-rw-rw-r--  1 orel orel     4684 Aug 22 11:40 poseur-serveur.py
+-rw-rw-r--  1 orel orel      865 Aug 22 14:43 serveur-nocache.py
+-rw-rw-r--  1 orel orel    12349 Aug 23 08:27 sky-system.js
+drwxrwxr-x  2 orel orel     4096 Aug 20 16:34 skybox
+drwxrwxr-x  2 orel orel     4096 Aug 21 09:22 specs
+-rw-rw-r--  1 orel orel     1137 Aug 20 18:03 specs-combat.md
+-rw-rw-r--  1 orel orel     1448 Aug 20 19:50 specs-eclairage-duel.md
+-rw-rw-r--  1 orel orel     1194 Aug 20 16:10 specs-ia-entrainement.md
+-rw-rw-r--  1 orel orel     1008 Aug 20 16:51 specs-mage.md
+-rw-rw-r--  1 orel orel     1840 Aug 20 16:26 specs-pieges.md
+-rw-rw-r--  1 orel orel     4945 Aug 20 20:08 specs-vol-combat-dbz.md
+-rw-rw-r--  1 orel orel     9718 Aug 23 18:11 test-jeu.js
+-rw-rw-r--  1 orel orel     3098 Aug 20 19:00 test-menu.js
+drwxrwxr-x  3 orel orel     4096 Aug 23 09:16 tests
+-rw-rw-r--  1 orel orel  1304820 Aug 18 23:35 three.module.js
+drwxrwxr-x  4 orel orel     4096 Aug 20 19:49 voix
+-rw-rw-r--  1 orel orel    19206 Aug 22 14:34 world-builder-ui.js
+-rw-rw-r--  1 orel orel     5167 Aug 22 13:44 world-builder.js
+drwxrwxr-x  7 orel orel     4096 Aug 22 20:51 world_builder
+
+=== FICHIERS TROUVES (50 premiers) ===
+./tests/audit-phase-b.sh
+./tests/valider-pilote.sh
+./tests/village-vues.sh
+./tests/creatures-donjon.sh
+./tests/sonde-donjon.js
+./tests/capturer-inspection.js
+./tests/valider-pilote.js
+./tests/runtime.js
+./tests/run.sh
+./tests/route-donjon.js
+./tests/sonde-ui.sh
+./tests/sonde-mur.js
+./tests/verif-orange.js
+./tests/sonde-guerrier.js
+./tests/sonde-etat.sh
+./tests/audit-phase-b.js
+./tests/village-vues.js
+./tests/capturer-inspection.sh
+./tests/sonde-vol.js
+./tests/photo-etage1.js
+./tests/sonde-village.js
+./tests/sonde-traduction.js
+./tests/creatures-donjon.js
+./tests/route-donjon.sh
+./tests/sonde-worldbuilder.js
+./tests/sonde-inspection.js
+./tests/sonde-perf.js
+./tests/captures/pilote-v1.png
+./tests/captures/village-apres-aerien.png
+./tests/captures/avatar_demi_tour.png
+./tests/captures/village-avant-second-village.png
+./tests/captures/village-entree.png
+./tests/captures/amplitude_2.png
+./tests/captures/village-ferme.png
+./tests/captures/worldbuilder_ui.png
+./tests/captures/memoire_apres_ouverture.png
+./tests/captures/pilote-v3-hud.png
+./tests/captures/village-avant-place.png
+./tests/captures/village-avant-route-donjon.png
+./tests/captures/inspection/ciel/s-overcast.png
+./tests/captures/inspection/ciel/s-night.png
+./tests/captures/inspection/ciel/s-village-day.png
+./tests/captures/inspection/ciel/s-magical.png
+./tests/captures/inspection/ciel/s-village-golden.png
+./tests/captures/inspection/village/12-aerienne-donjon.png
+./tests/captures/inspection/village/09-fermes.png
+./tests/captures/inspection/village/01-spawn.png
+./tests/captures/inspection/village/06-approche-donjon.png
+./tests/captures/inspection/village/08-second-village.png
+./tests/captures/inspection/village/03-rue.png
+
+=== PORTS OUVERTS (hors 127.0.0.1) ===
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                      
+LISTEN 0      4096         0.0.0.0:2049       0.0.0.0:*                                                                
+LISTEN 0      4096         0.0.0.0:44209      0.0.0.0:*    users:(("rpc.mountd",pid=174088,fd=5))                      
+LISTEN 0      4096         0.0.0.0:36439      0.0.0.0:*    users:(("rpc.mountd",pid=174088,fd=9))                      
+LISTEN 0      4096         0.0.0.0:111        0.0.0.0:*    users:(("rpcbind",pid=172597,fd=4),("systemd",pid=1,fd=267))
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("systemd",pid=1,fd=330))                            
+LISTEN 0      4096         0.0.0.0:42349      0.0.0.0:*                                                                
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=275544,fd=18))                
+LISTEN 0      4096         0.0.0.0:51029      0.0.0.0:*    users:(("rpc.statd",pid=173332,fd=9))                       
+LISTEN 0      5            0.0.0.0:8100       0.0.0.0:*    users:(("python3",pid=301014,fd=3))                         
+LISTEN 0      5            0.0.0.0:8123       0.0.0.0:*    users:(("python3",pid=137752,fd=3))                         
+LISTEN 0      128          0.0.0.0:8002       0.0.0.0:*    users:(("python3",pid=306588,fd=4))                         
+LISTEN 0      4096         0.0.0.0:36949      0.0.0.0:*    users:(("rpc.mountd",pid=174088,fd=13))                     
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=275544,fd=20))                
+LISTEN 0      4096            [::]:34827         [::]:*    users:(("rpc.mountd",pid=174088,fd=7))                      
+LISTEN 0      4096            [::]:2049          [::]:*                                                                
+LISTEN 0      4096            [::]:35569         [::]:*                                                                
+LISTEN 0      4096               *:3000             *:*    users:(("grafana",pid=302176,fd=20))                        
+LISTEN 0      2                  *:3389             *:*    users:(("xrdp",pid=6090,fd=13))                             
+LISTEN 0      4096            [::]:111           [::]:*    users:(("rpcbind",pid=172597,fd=6),("systemd",pid=1,fd=269))
+LISTEN 0      4096            [::]:22            [::]:*    users:(("systemd",pid=1,fd=333))                            
+LISTEN 0      4096               *:9100             *:*    users:(("node_exporter",pid=302172,fd=3))                   
+LISTEN 0      4096               *:9090             *:*    users:(("prometheus",pid=302174,fd=7))                      
+LISTEN 0      4096            [::]:55447         [::]:*    users:(("rpc.mountd",pid=174088,fd=15))                     
+LISTEN 0      4096            [::]:47445         [::]:*    users:(("rpc.mountd",pid=174088,fd=11))                     
+LISTEN 0      4096            [::]:39803         [::]:*    users:(("rpc.statd",pid=173332,fd=11))                      
+
+=== ENVIRONNEMENT ===
+.git repo local: true | branche: master
+
+=== CONFIG FILES ===
+./monde/scene.json           -> {"version":1, "objets":[]}  (vide, prêt à remplir)
+./carte/inventaire.json      -> {"releve_le":..., "lieux":[...]} (inventaire réel visité)
+./carte/etage2-cryptes.json  -> plan de l'étage 2 (cryptes)
+./world_builder/registre.json-> assets générés: id/slug/type/versions/file/activeVersion/meta
+./world_builder/art_direction.json
+
+=== CODE PRINCIPAL ===
+index.html (~3 850 lignes)  -> LE jeu (Three.js r169 local, aucun appel réseau).
+                              Console expose window.D: scene, camera, renderer, lampe,
+                              lumieres, joueur, tete, mur, T, W, H, traiterChat,
+                              esprit, caseDevant, dirCardinale, voixDuMonde,
+                              basculerStatut, lireSkills, sauvegarderPartie...
+serveur-nocache.py / poseur-serveur.py -> serveurs locaux (port 8099), sans cache.
+chat-traduction.py (port 8766) -> serveur local de traduction fr->ja (clé DeepSeek via
+                              env DEEPSEEK_API_KEY, jamais dans le code ni le navigateur;
+                              sans clé -> HTTP 501, le jeu garde le français).
+world-builder.js / world-builder-ui.js / sky-system.js / inspection.js / diag-vrm.js
+
+=== API / COMMUNICATION ===
+- Serveur du jeu : http://127.0.0.1:8099/index.html (bind 127.0.0.1, ne va JAMAIS sur le VPS).
+- API interne du jeu = window.D (voir ci-dessus) : traiterChat('...') est LA porte vocale/
+  textuelle vers l'esprit du donjon ; voixDuMonde('...') affiche/prononce un texte.
+- pas de REST, pas de socket serveur : la comm. passe par le DOM et window.D.
+- Harnais de test : Chrome headless + protocole DevTools (CDP) port 9222, WebSocket,
+  commands Page.navigate / Runtime.evaluate (cdp-jouer.js, tests/*).
+- Tests : node test-jeu.js (statique) et bash tests/run.sh (comportement piloté).
+
+=== L'ESPRIT DU DONJON (surface d'interaction vocale, fonction traiterChat) ===
+Reconnaît des mots-clés (texte normalisé) et AGIT :
+- colonne de feu (attaque suprême), boules de feu / eau / vent (INCANTATIONS)
+- potion/soigne/vie -> +1 coeur ; epee/arme -> epée enchantée ; bouclier -> +2 coeurs max
+- coffre -> pose un coffre devant ; cle -> obtient la clé ; jumeau ; torche ; piège...
+- skills du joueur (elem feu/eau/vent -> projectile, sinon "pas encore rendu réel")
+- "Le donjon dort encore. Descends d'abord." si pas en état 'jeu'.
+DÉCLENCHEUR + pouvoirsPerso (menu pause) branchent des incantations aux boutons.
+Voix clonée locale : dossier voix/ + pipeline ~/voix-locale/ (Coqui XTTS).
+
+=== TAGS / PROPRIETES / METADATA ===
+- PLAN syntaxe cartes grille : # mur, . sol, S départ, D sortie, K cercle teleport,
+  B boss, C coffre (PLAN_ETAGE1).
+- registre.json world_builder : assets avec id/slug/type + versions GLB + meta
+  (style, materials, features, dimensions l/p/h, toit type/pente, variation seed/weathered/moss).
+- SPECS : specs-combat.md (mana, pas ki), specs-eclairage-duel.md, specs-ia-entrainement.md,
+  specs-mage.md, specs-pieges.md, specs-vol-combat-dbz.md.
+- Etats/regles CLAUDE.md : machine faible, un seul chrome test, TDD, depôt git sur le VPS.
+- portes avatar : mouvements amples + combos + placement + oeul Gemini + Patrick.
+
+=== PORTS (donjon + déjà en place) ===
+- 8099 (127.0.0.1) : le jeu KOTOAGE (serveur python 8099, déjà lancé)
+- 8002 : backend chat Alice (Tour) - cible de la fusion
+- 8100 : carte vivante Alice
+- 8766 (127.0.0.1) : chat-traduction (n'affiche pas ici car 127.0.0.1 filtré)
+- 3000/9090/9100 : Grafana / Prometheus / node_exporter (monitoring)
+- 22 : ssh ; 3389 : xrdp ; NFS 2049 (montée locale) - bruit système
