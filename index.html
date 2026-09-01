@@ -456,7 +456,7 @@ const ETAGES = [
     // Demande de Patrick (21/08) : le premier étage doit être PLUS CLAIR et PLUS HAUT.
     // int = force de la lumière, fogD = épaisseur de la brume (plus petit = on voit loin),
     // haut = hauteur du plafond en mètres (20 partout ailleurs).
-    theme:{ sol:0x9aa3b2, plaf:0x515d75, sky:0xa08a62, gnd:0x3a3226, int:2.0, fog:0x3a2f1c, fogD:0.008, haut:30 } },   // pierre ambre chaud, éclairée (int 2.0 en PBR)
+    theme:{ sol:0x9aa3b2, plaf:0x515d75, sky:0xa08a62, gnd:0x3a3226, int:1.75, fog:0x3a2f1c, fogD:0.008, haut:30 } },   // pierre ambre chaud, bien éclairée
   { salles:5, faune:['paysan','paysan','squelette','slime'], teinte:0x9d7bff, nom:'l\'ossuaire',
     theme:{ sol:0x9aa2b4, plaf:0x2a3348, sky:0x6274a0, gnd:0x161c2a, int:0.9, fog:0x101626, fogD:0.026 } },     // os pâle, froid bleuté
   { salles:6, faune:['rat','slime_rouge','paysan','squelette','slime_rouge'], teinte:0x36d6a8, nom:'la clairière',
@@ -793,9 +793,9 @@ const texFlamme = textureHalo(0.28);
 /* ═══════════════ 1. LE MAGASIN DE MODÈLES ═══════════════
    Des modèles tout faits, pris chez Kenney (domaine public, CC0). On les
    charge une fois au démarrage, et on en pose des copies. Chaque copie passe
-   ensuite par `styliser()`, donc elle prend le même trait et les mêmes
-   paliers de lumière que le reste : les modèles d'un autre s'accordent au
-   style de la maison. */
+   ensuite par `styliser()`, donc elle garde les ombres et les matériaux du
+   lieu : les modèles d'un autre s'accordent à sa lumière sans changer de
+   pipeline. */
 
 const KENNEY = {
   nature : 'assets/nature-kit/Models/GLTF format/',
@@ -1592,42 +1592,17 @@ function cerner(racine, epaisseur = 0.014){
   return racine;
 }
 
-/* Convertit tout un groupe au style dessiné, puis pose les contours.
-   Le cache évite de refabriquer dix fois la même matière partagée. */
+/* Prépare un groupe de décor sans remplacer ses matériaux PBR.
+   Le décor du donjon garde ses textures, reliefs et lumières continues. */
 const cacheToon = new Map();
- function styliser(racine, epaisseur = 0.014){
-   /* ZONE PILOTE PBR (audit P1+P2, 23/08) : dehors (niveau 0) + donjon é.1.
-      Fini le cel-shading 4 paliers et les contours noirs ici : on garde les
-      ombres portées, les MeshStandardMaterial restent PBR (relief, ACES).
-      Les étages 2-5 gardent le rendu toon tant que la zone n'est pas validée. */
-   if(niveau <= 1){
-     racine.traverse(o=>{
-       if(o.isMesh && !o.isInstancedMesh && o.material && !o.material.transparent) o.castShadow = true;
-     });
-     return racine;
-   }
-   racine.traverse(o=>{
-     if(!o.isMesh || o.userData.estContour) return;
-     // les volumes projettent leur ombre et la reçoivent ; les contours, non
-     o.castShadow = true;
-     o.receiveShadow = true;
-     if(o.isInstancedMesh) {            // les murs : on convertit, mais pas de contour
-       if(o.material && o.material.isMeshStandardMaterial){
-         let t = cacheToon.get(o.material);
-         if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
-         o.material = t;
-       }
-       return;
-     }
-     if(o.material && o.material.isMeshStandardMaterial){
-       let t = cacheToon.get(o.material);
-       if(!t){ t = enToon(o.material); cacheToon.set(o.material, t); }
-       o.material = t;
-     }
-   });
-   if(epaisseur > 0) cerner(racine, epaisseur);
-   return racine;
- }
+function styliser(racine, _epaisseur = 0.014){
+  racine.traverse(o=>{
+    if(!o.isMesh || o.userData.estContour) return;
+    o.castShadow = true;
+    o.receiveShadow = true;
+  });
+  return racine;
+}
 
 /* ═══════════════ 3. LA SCÈNE ═══════════════ */
 const scene = new THREE.Scene();
@@ -1639,7 +1614,7 @@ const tete = new THREE.Group();          // porte la caméra : lacet + tangage +
 tete.add(camera);
 scene.add(tete);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance' });
 renderer.setPixelRatio(1);          // 1 pixel rendu = 1 pixel écran : le meilleur rapport
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1801,17 +1776,38 @@ let coffre=null, pieges=[], jumeaux=[], decors=[], objets=[];
    sans grandir et son bas décollait du sol → « murs invisibles » en bas. */
 let geoMur = new THREE.BoxGeometry(T, HT, T);
 let geoMurH = HT;   // la hauteur pour laquelle la boîte a été taillée
-const murT = texMur.clone();    murT.needsUpdate = true; murT.repeat.set(2, 2.4);
-const relT = texRelief.clone(); relT.needsUpdate = true; relT.repeat.set(2, 2.4);
+const murT = matiere('mur-pierre', 1, 1);  // photo de pierre, à l'échelle du mur
+murT.needsUpdate = true;
+const relT = texRelief.clone(); relT.needsUpdate = true;
+// La photo n'est pas parfaitement tileable : le miroir évite une cassure
+// franche quand la répétition retombe sur ses bords.
+murT.wrapS = murT.wrapT = THREE.MirroredRepeatWrapping;
+relT.wrapS = relT.wrapT = THREE.MirroredRepeatWrapping;
 const matMur = new THREE.MeshStandardMaterial({
   map:murT, bumpMap:relT, bumpScale:0.28, roughness:0.72, metalness:0.06,
   color:0x8b96a8,
 });
+matMur.onBeforeCompile = shader => {
+  shader.vertexShader = shader.vertexShader.replace('#include <uv_vertex>', `
+    #include <uv_vertex>
+    #ifdef USE_INSTANCING
+      vec4 murInstanceOrigin = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+      float murSeed = fract(sin(dot(murInstanceOrigin.xz, vec2(12.9898, 78.233))) * 43758.5453);
+      vec2 murUvShift = vec2(murSeed, fract(murSeed * 43.17));
+      vMapUv += murUvShift;
+      vBumpMapUv += murUvShift;
+    #endif`);
+};
 
 /* Rebâtit toute la pierre d'après la grille. Appelé au départ, et à chaque fois
    qu'un sort perce un passage ou dresse un mur. */
 function construireMurs(){
   if(murIM){ monde.remove(murIM); murIM.dispose(); }
+  // Les faces des murs sont bien plus hautes que larges : garder la même
+  // échelle physique évite d'étirer la photo verticalement.
+  const repeatMur = Math.max(1, (HT / T) * 0.95);
+  murT.repeat.set(0.95, repeatMur);
+  relT.repeat.set(0.95, repeatMur);
   // On retaille la boîte du mur à la hauteur du lieu, si elle a changé.
   // Sinon le mur flotte (bug du 22/08). Il monte du SOL (y=0) jusqu'au plafond.
   if(geoMurH !== HT){ geoMur.dispose(); geoMur = new THREE.BoxGeometry(T, HT, T); geoMurH = HT; }
@@ -2089,7 +2085,7 @@ function batir(){
   hemi.color.setHex(th.sky); hemi.groundColor.setHex(th.gnd); hemi.intensity = th.int;   // ambiance PROPRE à l'étage
   renderer.shadowMap.enabled = true;   // DONJON : on rallume les ombres (coupées dehors)
   jour.castShadow = true;      // petits espaces -> les ombres portées marchent
-  ambiance.intensity = 1.1;    // PBR (zone pilote) : intérieur éclairé sans aplatir — le toon masquait l'obscurité réelle
+  ambiance.intensity = 0.5;    // et on garde le relief (pas besoin de tout aplatir)
   scene.fog = new THREE.FogExp2(th.fog, th.fogD);                                          // brouillard coloré = chaque étage a son atmosphère
   // on vide l'étage précédent
   while(monde.children.length){
@@ -2301,7 +2297,7 @@ function batir(){
   if(bossSalle) creerBoss(bossSalle.x, bossSalle.y);
   if(niveau === 1) poserGuerrier();
 
-  /* --- pipeline de rendu : styliser bascule lui-même (PBR niveau ≤ 1) --- */
+  /* --- pipeline PBR : les matériaux gardent leur relief et leurs textures --- */
   styliser(monde, 0.02);
 
   /* --- les habitants --- */
@@ -3419,8 +3415,7 @@ function batirDehors(){
   /* Dehors, on garde les matières telles quelles : ce sont les textures qui
      donnent la matière, pas les paliers de lumière. Seuls les habitants et les
      modèles importés passent au trait, pour rester lisibles. */
-  /* P2 : plus de contours noirs sur les villageois (fin du look dessiné).
-     Ils sont intégrés par la lumière PBR et leurs ombres douces. */
+  for(const v of villageois) cerner(v.obj, 0.009);   // contour plus fin : ils se fondent dans le décor stylized
   batirZonePilote();
 }
 
@@ -4022,7 +4017,7 @@ function nouvelEtage(){
   renderer.toneMappingExposure = 1.3;
   if(niveau===1){ genererDepuisPlan(PLAN_ETAGE1); } else { generer(); }
   batir();
-  if(coffresPlan.length) poserCoffre(coffresPlan[0].x, coffresPlan[0].y);   // un coffre posé (ouvrable avec E)
+  if(coffresPlan.length) poserCoffre(coffresPlan[0].x, coffresPlan[0].y, 'etage'+niveau+':coffre');   // un coffre posé (ouvrable avec E), mémorisé
   if(niveau===5) poserDragon();                                             // le squelette de dragon trône à l'étage 5
   const s0 = rooms[0];
   joueur.x = cX(s0)*T + T/2;
@@ -4073,11 +4068,24 @@ let joueurNom = 'Patrick';
 let classe = 'chevalier';   // Chevalier (épée) ou Mage (feu + énergie)
 let departNiveau = 0;   // 0 = village, 1 = donjon (choisi au titre)
 let niveauMax = 1;      // le plus profond jamais atteint : sert à la reprise
+/* ═══ MÉMOIRE DU MONDE — les faits qui survivent à la session ═══
+   Un fait = une clé stable (« etage1:coffre ») et sa valeur, écrit par
+   noterFait AU MOMENT où le monde change, relu à la génération d'un étage.
+   Volontairement minimal : pas d'event bus, pas de système générique.
+   Stocké DANS la sauvegarde joueur : même identité (kotoage:<nom>),
+   même durée de vie — les deux ne peuvent pas se désynchroniser. */
+let faits = {};
+function noterFait(cle, valeur){
+  if(!cle) return;
+  faits[cle] = valeur;
+  sauvegarderPartie();
+}
+function lireFait(cle){ return faits[cle]; }
 function cleSauvegarde(){ return 'kotoage:' + (joueurNom || 'Patrick'); }
 function sauvegarderPartie(){
   try{ localStorage.setItem(cleSauvegarde(), JSON.stringify({
     v:1, niveau, niveauMax, vie:joueur.vie, vieMax:joueur.vieMax, epee:!!joueur.epee,
-    eclats, pouvoirs })); }catch(e){}
+    eclats, pouvoirs, faits })); }catch(e){}
 }
 function chargerPartie(){
   try{ const j = JSON.parse(localStorage.getItem(cleSauvegarde())||'null');
@@ -4089,8 +4097,8 @@ function effacerPartie(){ try{ localStorage.removeItem(cleSauvegarde()); }catch(
 function commencer(){
   const sv = chargerPartie();
   niveau = departNiveau;                    // le choix Village (0) / Donjon (1) / Entraînement (-1)
-  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; niveauMax = sv.niveauMax || sv.niveau || 1; }
-  else  { joueur.vie = joueur.vieMax = 10; niveauMax = 1; }   // jauge de vie granulaire (au lieu de 3 cœurs)
+  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; niveauMax = sv.niveauMax || sv.niveau || 1; faits = sv.faits || {}; }
+  else  { joueur.vie = joueur.vieMax = 10; niveauMax = 1; faits = {}; }   // jauge de vie granulaire (au lieu de 3 cœurs)
   joueur.manaMax = 20 + (niveauMax-1)*6;                      // le mana max grandit avec le niveau
   joueur.mana = joueur.manaMax;
   if(departNiveau >= 1) niveau = Math.max(departNiveau, niveauMax);   // reprise : on revient au plus profond atteint
@@ -4129,6 +4137,10 @@ chargerModeles().then(()=>{
   if(h==='arene'||h==='donjon'||h==='village'){
     departNiveau = h==='arene'?-1 : h==='donjon'?1 : 0;
     setTimeout(()=>{ try{ commencer(); }catch(e){ console.log('AUTOSTART', e.message); } }, 300);
+  }
+  // → MISSION =1 : Alice (API :8002) pilote l'avatar toute seule, pour la démo
+  if(/mission/.test(location.search) && typeof alice === 'function'){
+    setTimeout(()=>{ try{ alice('parcours le donjon et trouve la sortie'); }catch(e){ console.log('AMISSION', e.message); } }, 4500);
   }
 });
 
@@ -4277,11 +4289,15 @@ function poserDragon(){
 }
 
 /* ═══ INTERACTION (touche E) : coffre, portail, plus tard PNJ/forge ═══ */
+function poserCoffreOuvert(c){          // la posture visuelle du coffre ouvert
+  c.ouvert = true;
+  c.couvercle.rotation.x = -1.15;
+  c.couvercle.position.set(0, 0.62, -0.24);
+}
 function ouvrirCoffre(){
   if(!coffre || coffre.ouvert) return false;
-  coffre.ouvert = true;
-  coffre.couvercle.rotation.x = -1.15;
-  coffre.couvercle.position.set(0, 0.62, -0.24);
+  poserCoffreOuvert(coffre);
+  if(coffre.id) noterFait(coffre.id, true);   // le monde se souvient : ce coffre est ouvert
   if(!joueur.epee){ joueur.epee = true; esprit("Une épée dormait dans le coffre. Elle est à toi."); }
   else if(joueur.vie < joueur.vieMax){ joueur.vie++; dessinerCoeurs(); esprit("Le coffre rendait un cœur."); }
   else esprit("Le coffre était vide. Le donjon a de l'humour.");
@@ -4299,7 +4315,7 @@ function interagir(){
   if(o){ ouvrirFicheObjet(o); return; }
   basculerStatut();                        // sinon : la fiche du joueur
 }
-function poserCoffre(tx, ty){
+function poserCoffre(tx, ty, id){
   const g = new THREE.Group();
   const caisse = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.45,0.5),
     new THREE.MeshStandardMaterial({ color:0x4a331f, roughness:0.85 }));
@@ -4314,7 +4330,8 @@ function poserCoffre(tx, ty){
   g.add(caisse, couvercle, ferrure);
   g.position.set(tx*T+T/2, 0, ty*T+T/2);
   monde.add(g);
-  coffre = { obj:g, couvercle, x:tx, y:ty, ouvert:false };
+  coffre = { obj:g, couvercle, x:tx, y:ty, ouvert:false, id:id||null };
+  if(coffre.id && lireFait(coffre.id)) poserCoffreOuvert(coffre);   // déjà ouvert dans une vie précédente
 }
 
 function poserPiege(tx, ty){
@@ -4813,7 +4830,8 @@ function fermerSaisie(){
 addEventListener('keydown', ev=>{ if(saisieOuverte && ev.key==='Escape'){ ev.preventDefault(); fermerSaisie(); } }, true);
 elSaisieT.addEventListener('keydown', ev=>{
   ev.stopPropagation();
-  if(ev.key === 'Enter'){ const v = elSaisieT.value; fermerSaisie(); traiterChat(v); }
+  if(ev.key === 'Enter'){ const v = elSaisieT.value; fermerSaisie(); traiterChat(v);
+    if(/parcours|donjon|sortie|explor|droite|gauche|porte|avance/.test(v) && typeof alice === 'function') alice(v); }
   else if(ev.key === 'Escape') fermerSaisie();
 });
 
@@ -7149,7 +7167,83 @@ if(_skC) _skC.onclick = ()=>{
   rafraichirSkills();
 };
 
+/* ═══ ALICE — le pilote du donjon (API locale :8002) ═══
+   Alice reçoit la mission, répond (care hacking), et l'avatar exécute
+   son plan : à droite, à gauche, porte… en utilisant le VRAI moteur du jeu
+   (la table touches) — donc avec ses collisions et ses murs. */
+const ALICE_API = 'http://127.0.0.1:8002/chat';
+function aliceMarche(ms, code){ touches[code] = true; setTimeout(()=>{ touches[code] = false; }, ms||420); }
+function aliceOuvrirPorte(effetateral=false){
+  const d = dirCardinale(), o = OFFSETS[d];
+  const px = Math.floor(joueur.x/T), pz = Math.floor(joueur.z/T);
+  for(let i=1;i<=6;i++){
+    const tx = px + o[0]*i, ty = pz + o[1]*i;
+    if(tx<0||ty<0||tx>=W||ty>=H) break;
+    if(grid[ty][tx]===DOOR){
+      grid[ty][tx] = FLOOR;
+      if(doorPos) doorPos = null;
+      construireMurs();
+      esprit('Alice ouvre la porte devant toi. 🚪', true);
+      return true;
+    }
+    if(grid[ty][tx]===WALL) break;
+  }
+  esprit('Alice : pas de porte par là…', true);
+  return false;
+}
+function alicePiloter(ordre){
+  const t = normaliser(ordre);
+  if(etat !== 'jeu') return 'horsjeu';
+  _aliceDernierOrdre = t;
+  let res;
+  if     (t.includes('droite')){ aliceMarche(480,'KeyD'); esprit('Alice  ↪ droite', true); res='right'; }
+  else if(t.includes('gauche')){ aliceMarche(480,'KeyA'); esprit('Alice  ↩ gauche', true); res='left'; }
+  else if(t.includes('porte')) { aliceOuvrirPorte();                               res='open'; }
+  else if(t.includes('avance') || t.includes('devant')){ aliceMarche(480,'KeyW'); esprit('Alice  ⬆ devant', true); res='forward'; }
+  if(res) setTimeout(()=>aliceRapporter(true), 280);
+  return res;
+}
+function alice(texte){
+  esprit('Alice réfléchit…', true);
+  return fetch(ALICE_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:texte})})
+    .then(r=>r.json()).then(d=>{
+      const msg = (d && d.reponse) ? d.reponse : '…';
+      esprit('Alice  »  ' + msg, true);
+      const gestes = [];
+      (msg.match(/droite|gauche|porte|avance|devant/gi)||[]).forEach(g=>{
+        const k = normaliser(g);
+        if(!gestes.includes(k)) gestes.push(k);
+      });
+      let i = 0;
+      const suite = ()=>{ if(i>=gestes.length) return; const mot=gestes[i++]; alicePiloter(mot); setTimeout(suite, 720); };
+      suite();
+      return gestes;
+    })
+    .catch(e=>{ esprit('Alice est injoignable : ' + e.message, true); return []; });
+}
+/* ═══ CARTE VIVANTE — le jeu pousse son état vers la carte (🟢 Alice, 🔴 sortie, 🟡 chemin) ═══
+   La page :8002/carte_donjon lit /donjon/etat et dessine la grille en direct. */
+const RAPPORT_URL = 'http://127.0.0.1:8002/donjon/etat';
+let _carteEtage = null, _carteTile = null, _carteChemin = [], _aliceDernierOrdre = null;
+function aliceTile(){ return { x: Math.floor(joueur.x/T), z: Math.floor(joueur.z/T) }; }
+function aliceRapporter(force){
+  if(etat !== 'jeu' || !W || !H) return;
+  const t = aliceTile();
+  if(!force && _carteTile && _carteTile.x===t.x && _carteTile.z===t.z) return;
+  _carteTile = t;
+  if(!_carteChemin.some(p=>p[0]===t.x && p[1]===t.z)) _carteChemin.push([t.x,t.z]);
+  const etage = etageCourant;
+  const p = { etage, niveau, pos: t, chemin: _carteChemin,
+              dims: { w: W, h: H }, t: T, dernier: _aliceDernierOrdre,
+              cible: doorPos ? { x: doorPos.x, z: doorPos.y } : null };
+  if(_carteEtage !== etage){ p.grille = grid.map(l=>l.join('')); _carteEtage = etage; }
+  fetch(RAPPORT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).catch(function(){});
+}
+setInterval(()=>aliceRapporter(false), 300);
 window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur, T, W, H,
+             alice, piloter: alicePiloter, ouvrirPorte: aliceOuvrirPorte, marcher: aliceMarche,
+             raporteur: aliceRapporter,
+             get pos(){ return { x:joueur.x, z:joueur.z, lacet:joueur.lacet, etage:etageCourant, vie:joueur.vie }; },
              traiterChat, esprit, caseDevant, dirCardinale, voixDuMonde, basculerStatut,
              arme, armeDos, avatar, basculerVue,
              get armeMode(){ return armeMode; },   // 'epee' | 'deux' | 'poings' — pour les tests
@@ -7158,6 +7252,8 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              get guerrier(){ return guerrier; },   // pour tester son animation
              get MODELES(){ return MODELES; }, get ANIM_MAGE(){ return ANIM_MAGE; },
              get villageois(){ return villageois; }, frapper, get etageCourant(){ return etageCourant; },
+             get faits(){ return faits; }, noterFait, lireFait, ouvrirCoffre,
+             get coffre(){ return coffre; },
              poserLesVillageois,
              /* aller directement à un étage — pour essayer un gardien sans tout refaire */
               allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },

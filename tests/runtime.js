@@ -360,6 +360,85 @@ const VK = { KeyW:87,KeyA:65,KeyS:83,KeyD:68,KeyE:69,KeyR:82,KeyF:70,Space:32 };
         const c = await ev('document.querySelector(".classe-tab.on") && document.querySelector(".classe-tab.on").dataset.classe');
         assert(c === 'mage', 'le bouton Mage devrait devenir actif (.on), obtenu ' + c);
       } },
+    { nom: 'memoire_coffre', desc: 'MÉMOIRE DU MONDE : ouvrir le coffre de l\'étage 1 note un fait qui survit au rechargement',
+      run: async () => {
+        await load('#donjon'); await demarrer();
+        assert((await ev('window.D.etat')) === 'jeu', 'le jeu n\'est pas démarré');
+        // CAS 1 — état initial : nouveau jeu, aucun fait, coffre fermé
+        const nbFaits0 = Object.keys(JSON.parse(await ev('JSON.stringify(window.D.faits||{})'))).length;
+        const o0 = await ev('window.D.coffre && window.D.coffre.ouvert');
+        assert(nbFaits0 === 0, 'un nouveau jeu ne doit avoir AUCUN fait (vus : ' + nbFaits0 + ')');
+        assert(o0 === false, 'au premier lancement le coffre doit être FERMÉ');
+        // on s'approche du coffre, face à lui, pour la photo et pour l'action
+        const approcher = async dist => {
+          await ev('(function(){var c=window.D.coffre.obj.position,j=window.D.joueur;j.x=c.x+'+dist+';j.z=c.z;j.lacet=Math.PI/2;j.tangage=0;})()');
+          await sleep(500);
+        };
+        await approcher(1.4);
+        await shot('memoire_avant_ouverture');
+        // CAS 2 — ouverture par la VRAIE action (touche E)
+        await key('KeyE','keyDown'); await sleep(200); await key('KeyE','keyUp');
+        const o1 = await ev('window.D.coffre.ouvert');
+        const f1 = await ev('window.D.lireFait("etage1:coffre")');
+        assert(o1 === true, 'le coffre doit être OUVERT après E (état vu : ' + o1 + ')');
+        assert(f1 === true, 'le fait « etage1:coffre » doit être noté, vu : ' + f1);
+        await shot('memoire_apres_ouverture');
+        // CAS 3 — RECHARGEMENT réel de la page (même profil → localStorage conservé)
+        await load('#donjon'); await demarrer();
+        const f2 = await ev('window.D.lireFait("etage1:coffre")');
+        const o2 = await ev('window.D.coffre && window.D.coffre.ouvert');
+        const r2 = await ev('window.D.ouvrirCoffre()');   // tentative de deuxième pillage
+        assert(f2 === true, 'après rechargement le fait doit EXISTER encore');
+        assert(o2 === true, 'après rechargement le coffre doit DÉJÀ être ouvert (vu : ' + o2 + ')');
+        assert(r2 === false, 'on ne doit pas pouvoir rouvrir un coffre déjà ouvert');
+        await approcher(1.4);                       // on retourne voir le coffre
+        await shot('memoire_apres_rechargement');
+      } },
+    { nom: 'banque_salle', desc: 'BANQUE : la salle #banque démarre, recolorée bleu/gris, avec portail, écran de solde et compétence « virement »',
+      run: async () => {
+        await load('#banque'); await demarrer();
+        // PATIENCE : l'ancre #banque autolance commencer() après le chargement des modèles
+        for (let i = 0; i < 15 && !(await ev('window.D && typeof window.D.estBanque === "function" && window.D.estBanque()')); i++) await sleep(1000);
+        const diag = await ev('JSON.stringify({etat: window.D && window.D.etat, estBanque: (typeof window.D==="object" && typeof window.D.estBanque==="function") ? window.D.estBanque() : "?", fond: window.D && window.D.scene && window.D.scene.background ? window.D.scene.background.getHex() : null})');
+        assert(await ev('window.D && typeof window.D.estBanque === "function"') === true
+          ? await ev('window.D.estBanque()')
+          : false, 'la salle banque ne démarre pas — état vu : ' + diag);
+        // 1. la palette banque est visible (bleu nuit, peint par batirBanque)
+        const fond = await ev('window.D.scene.background && window.D.scene.background.getHex()');
+        assert(fond === 0x0a1220, 'le fond doit être bleu nuit banque 0x0a1220 (vu : ' + fond + ')');
+        // 2. le HUD affiche « Banque »
+        const hud = await ev('document.getElementById("etage") ? document.getElementById("etage").textContent : ""');
+        assert(/Banque/.test(hud), 'le HUD doit afficher Banque (vu : "' + hud + '")');
+        // 3. le portail et l'écran de solde sont posés et visibles
+        assert(await ev('!!(window.D.meshPortail && window.D.meshPortail.visible)'), 'le portail de la banque doit être posé et visible');
+        assert(await ev('!!(window.D.banque && window.D.banque.ecran && window.D.banque.ecran.visible)'), 'l\'écran de solde doit être visible dans la banque');
+        // 4. parler « valider un virement » lance une projection (la compétence est vivante)
+        const avant = await ev('(window.D.projectiles || []).length');
+        await ev('window.D.traiterChat("valider un virement")'); await sleep(500);
+        const apres = await ev('(window.D.projectiles || []).length');
+        const espr = await ev('document.getElementById("repond") ? document.getElementById("repond").textContent : ""');
+        assert(apres > avant, 'dire « valider un virement » doit lancer un projectile (' + avant + ' → ' + apres + ')');
+        assert(/Valider un virement/.test(espr), 'le panneau doit afficher le nom bancaire (vu : "' + espr + '")');
+        await shot('banque_salle');
+      } },
+    { nom: 'banque_portail_sandbox', desc: 'BANQUE : le portail déclenche UNE requête POST sandbox (sans faire descendre d\'étage)',
+      run: async () => {
+        await load('#banque'); await demarrer();
+        for (let i = 0; i < 15 && !(await ev('window.D && typeof window.D.estBanque === "function" && window.D.estBanque()')); i++) await sleep(1000);
+        assert(await ev('window.D.estBanque()'), 'la banque ne démarre pas');
+        // compteur réseau : on compte les POST /donjon/sandbox SANS bloquer le vrai fetch
+        const cmp = await ev('(function(){ window.__sandboxPosts = 0; var f = window.fetch.bind(window); window.fetch = function(u,o){ var url = (typeof u === "string") ? u : (u && u.url) || ""; if (url.indexOf("donjon/sandbox") !== -1) window.__sandboxPosts++; return f(u,o); }; return true; })()');
+        assert(cmp === true, 'impossible d\'accrocher le compteur réseau');
+        // on pose le joueur SUR le portail (déclenchement automatique de majPortail)
+        await ev('(function(){ var p = window.D.meshPortail.position; window.D.joueur.x = p.x + 0.3; window.D.joueur.z = p.z + 0.3; })()');
+        await sleep(2000);
+        const posts = await ev('window.__sandboxPosts || 0');
+        const statut = await ev('(window.D.banque && window.D.banque.dernierStatut) || ""');
+        const pasDescente = await ev('window.D.estBanque()');
+        assert(posts > 0, 'le portail doit déclencher le POST /donjon/sandbox (postes : ' + posts + ')');
+        assert(statut.length > 3, 'l\'écran doit porter un statut sandbox (vu : "' + statut + '")');
+        assert(pasDescente, 'le portail banque ne doit PAS faire descendre au donjon (estBanque doit rester vrai)');
+      } },
   ];
 
   function assert(cond, msg) { if (!cond) throw new Error(msg); }

@@ -73,6 +73,16 @@ v('sauvegarde de partie (localStorage)', /localStorage/.test(script) && /functio
 v('reprise auto au demarrage', /chargerPartie\(\)/.test(script));
 v('choix de joueur Patrick/Hamda', /choix-joueur/.test(html) && /Hamda/.test(html));
 v('sauvegarde par joueur (cle nommee)', /'kotoage:'/.test(script));
+// GARDE-FOU MÉMOIRE DU MONDE (23/08) : une conséquence doit survivre à l'action.
+// Le coffre de l'étage 1 est la première pierre : fait noté à l'ouverture, relu
+// à la pose du coffre, stocké DANS la sauvegarde joueur (même identité).
+v('memoire du monde (faits + noterFait)', /let faits\s*=\s*\{\}/.test(script) && /function noterFait/.test(script) && /function lireFait/.test(script));
+v('les faits voyagent DANS la sauvegarde joueur', /pouvoirs,\s*faits\s*\}\)\)/.test(script));
+v('faits restaures a la reprise / remis a zero en nouvelle partie', /sv\.faits\s*\|\|\s*\{\}/.test(script) && /niveauMax = 1; faits = \{\};/.test(script));
+v('coffre de l\'etage 1 identifie (cle stable)', /'etage'\s*\+\s*niveau\s*\+\s*':coffre'/.test(script));
+v('ouverture du coffre note le fait', /poserCoffreOuvert\(coffre\);\s*\n\s*if\(coffre\.id\)\s*noterFait\(coffre\.id,\s*true\)/.test(script));
+v('coffre deja ouvert relu a la pose (pas de deuxieme contenu)', /coffre\.id && lireFait\(coffre\.id\)\) poserCoffreOuvert\(coffre\)/.test(script));
+v('etat du monde observable par le harnais (window.D.faits)', /get faits\(\)\{ return faits; \}/.test(script));
 // On LIT la hauteur au lieu de recopier le chiffre : sinon le contrôle casse
 // dès qu'on change le plafond, et il ne vérifie plus rien d'utile.
 v('plafond très haut (HT>=8)', (function(){
@@ -113,6 +123,29 @@ v('menu pause present', /id="menu-pause"/.test(html));
 v('creation de skills (localStorage par joueur)', /kotoage-skills-/.test(script) && /function ouvrirPause/.test(script));
 v('incantation feu branchee', /includes\('feu'\)|includes\("feu"\)/.test(script));
 v('guerrier arme du meme combat (attaque/hit/mort)', /guerrier[\s\S]{0,40}Sword_Attack|Sword_Attack[\s\S]{0,200}guerrier|EX = \{ Idle_Loop/.test(script) && /guerrier\.jouer/.test(script));
+// GARDE-FOU BANQUE (démo 2 min, plan validé 28/08) : la salle existe, la palette
+// bleu/gris, le guichet, l'écran de solde, le portail passerelle Azure, et les
+// compétences renommées en actions bancaires.
+v('banque : salle (batirBanque)', /function batirBanque\(/.test(script));
+v('banque : predicat (estBanque niveau -2)', /function estBanque\(\)\{\s*return niveau === -?\d+;\s*\}/.test(script) && /niveau === -2/.test(script));
+v('banque : ancre #banque', /h==='arene'\|\|h==='donjon'\|\|h==='village'\|\|h==='banque'/.test(script) && /h==='banque'\?-2/.test(script));
+v('banque : palette bleu nuit (fond)', /0x0a1220/.test(script));
+v('banque : palette anneaux bleu clair', /0x2f9bff/.test(script) && /0x2f7ed6/.test(script));
+v('banque : palette sol emissif bleu', /0x1e6ae0/.test(script));
+v('banque : liseré cyan (bandeau guichet)', /0x38c8ff/.test(script));
+v('banque : guichet posé', /guichet\s*=\s*new THREE\.Mesh/.test(script));
+v('banque : ecran de solde (fabriquerPanneau reutilisé)', /banqueEcran\s*=\s*fabriquerPanneau/.test(script));
+v('banque : peintreBanque (redessine la toile)', /function peintreBanque/.test(script));
+v('banque : portail posé dans la salle', /poserPortail\(cx,\s*cz\s*-\s*4\)/.test(script));
+v('banque : portail -> requete sandbox Azure', /donjon\/sandbox/.test(script) && /action:\x27provision\x27/.test(script));
+v('banque : sandbox ne casse pas si la Tour dort (HORS LIGNE)', /\.catch\(\(\)=>peintreBanque\('HORS LIGNE'/.test(script));
+v('banque : ecran + statut exposés au harnais (D.banque)', /get banque\(\)\{ return \{ ecran: banqueEcran/.test(script));
+v('banque : harnais D exposes estBanque', /get estBanque\(\)\{ return estBanque; \}/.test(script));
+v('banque : compétence « Valider un virement » (nom + mot clé)', /Valider un virement/.test(script) && /valider un virement/.test(script));
+v('banque : compétence « Approuver un prêt »', /Approuver un prêt/.test(script) && /approuver un prêt/.test(script));
+v('banque : compétence « Vérifier antifraude »', /Vérifier antifraude/.test(script));
+v('banque : compétence « Audit interne »', /Audit interne/.test(script));
+v('banque : compétence « Transfert SWIFT »', /Transfert SWIFT/.test(script));
 
 // 3. PHYSIQUE DU SAUT — l arc doit monter puis retomber (pic ~0.9 m, ~0.7 s)
 {
