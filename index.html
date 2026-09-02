@@ -3528,7 +3528,26 @@ function batirZonePilote(){
 const joueur = { x:0, z:0, vie:3, vieMax:3, mana:20, manaMax:20, cle:false, lacet:0, cap:0, tangage:0,
                  roulis:0, pas:0, inv:0, atkCd:0, secousse:0, souffle:0,
                  dash:0, dashCd:0, dx:0, dz:0, epee:false,
-                 combo:0, comboT:0, saut:0, vy:0 };
+                 combo:0, comboT:0, saut:0, vy:0,
+                 niv:1, xp:0, force:1, vitalite:1, esprit:1, agilite:1, points:0 };
+/* PROGRESSION : niveau, experience, points (esprit Slime/Solo/SAO) */
+function xpSeuil(n){ return 4 + n*n*2; }
+function gagnerXp(n){
+  joueur.xp += n; let monte=false;
+  while(joueur.xp >= xpSeuil(joueur.niv)){
+    joueur.xp -= xpSeuil(joueur.niv);
+    joueur.niv++; joueur.points += 3; joueur.vieMax += 1; joueur.vie = joueur.vieMax;
+    monte = true;
+  }
+  if(monte) monteeNiveau();
+  try{ sauvegarderPartie(); }catch(e){}
+}
+function monteeNiveau(){
+  try{ bip(523,0.12,'square',0.08); bip(659,0.12,'square',0.08,0.12);
+       bip(784,0.14,'square',0.08,0.24); bip(1047,0.32,'square',0.09,0.38); }catch(e){}
+  try{ dire('NIVEAU SUPERIEUR \u2014 niveau ' + joueur.niv + ' \u00b7 ' + joueur.points + ' points a repartir', 3.2); }catch(e){}
+  try{ if(!statutOuvert) basculerStatut(); else dessinerStatut(); }catch(e){}
+}
 const RAYON = 0.42;                     // il ne passe pas dans les murs
 
 function mur(wx, wz){
@@ -3760,7 +3779,7 @@ function frapper(){
     const forceLame = (armeMode === 'deux') ? 0.7 : 1;
     e.vie -= Math.max(1, Math.round(((joueur.epee ? 3 : 1) + (troisieme ? 2 : 0) + (tourbillon ? 4 : 0)) * forceLame));
     flashImpact(e.x*T, 1.0, e.y*T);
-    if(e.vie <= 0){ e.vie = 0; e.mort = 0.55; }
+    if(e.vie <= 0){ e.vie = 0; e.mort = 0.55; gagnerXp(2); }
     touche = true;
     joueur.secousse = tourbillon ? 0.75 : (troisieme ? 0.5 : 0.3);
     hitstop = Math.max(hitstop, 0.055);             // gel d'impact au contact
@@ -3776,7 +3795,7 @@ function frapper(){
     if(gd < 3.0 && (gx*avant.x + gz*avant.z)/(gd||1) > 0.15){
       guerrier.vie -= (joueur.epee?3:2) + (troisieme?2:0) + (tourbillon?3:0);
       touche = true; window.Sons?.impact(); flashImpact(guerrier.x, 1.1, guerrier.z); hitstop = Math.max(hitstop, 0.055);
-      if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !', 3); }
+      if(guerrier.vie<=0){ guerrier.vie=0; guerrier.jouer('mort'); guerrier.mortT=1.8; dire('Guerrier vaincu !', 3); gagnerXp(6); }
       else guerrier.jouer('hit');
     }
   }
@@ -4090,6 +4109,7 @@ function cleSauvegarde(){ return 'kotoage:' + (joueurNom || 'Patrick'); }
 function sauvegarderPartie(){
   try{ localStorage.setItem(cleSauvegarde(), JSON.stringify({
     v:1, niveau, niveauMax, vie:joueur.vie, vieMax:joueur.vieMax, epee:!!joueur.epee,
+    niv:joueur.niv, xp:joueur.xp, force:joueur.force, vitalite:joueur.vitalite, esprit:joueur.esprit, agilite:joueur.agilite, points:joueur.points,
     eclats, pouvoirs, faits })); }catch(e){}
 }
 function chargerPartie(){
@@ -4102,8 +4122,8 @@ function effacerPartie(){ try{ localStorage.removeItem(cleSauvegarde()); }catch(
 function commencer(){
   const sv = chargerPartie();
   niveau = departNiveau;                    // le choix Village (0) / Donjon (1) / Entraînement (-1)
-  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; niveauMax = sv.niveauMax || sv.niveau || 1; faits = sv.faits || {}; }
-  else  { joueur.vie = joueur.vieMax = 10; niveauMax = 1; faits = {}; }   // jauge de vie granulaire (au lieu de 3 cœurs)
+  if(sv){ joueur.vie = sv.vie; joueur.vieMax = sv.vieMax; joueur.epee = sv.epee; eclats = sv.eclats||0; pouvoirs = sv.pouvoirs||[]; niveauMax = sv.niveauMax || sv.niveau || 1; faits = sv.faits || {}; joueur.niv=sv.niv||1; joueur.xp=sv.xp||0; joueur.force=sv.force||1; joueur.vitalite=sv.vitalite||1; joueur.esprit=sv.esprit||1; joueur.agilite=sv.agilite||1; joueur.points=sv.points||0; }
+  else  { joueur.vie = joueur.vieMax = 10; niveauMax = 1; faits = {}; joueur.niv=1; joueur.xp=0; joueur.force=joueur.vitalite=joueur.esprit=joueur.agilite=1; joueur.points=0; }   // jauge de vie granulaire (au lieu de 3 cœurs)
   joueur.manaMax = 20 + (niveauMax-1)*6;                      // le mana max grandit avec le niveau
   joueur.mana = joueur.manaMax;
   if(departNiveau >= 1) niveau = Math.max(departNiveau, niveauMax);   // reprise : on revient au plus profond atteint
@@ -5001,15 +5021,16 @@ function dessinerStatut(){
   g.strokeStyle = 'rgba(120,190,255,0.55)'; g.lineWidth = 2;
   g.beginPath(); g.moveTo(44, 84); g.lineTo(w-44, 84); g.stroke();
 
-  lignePanneau(g, w, 112, 'Nom',      'Sans-Nom');
-  lignePanneau(g, w, 156, 'Étage',    String(niveau));
-  lignePanneau(g, w, 200, 'Cœurs',    joueur.vie + ' / ' + joueur.vieMax);
-  lignePanneau(g, w, 244, 'Clé',      joueur.cle ? 'obtenue' : '—');
-  lignePanneau(g, w, 288, 'Arme',     joueur.epee ? 'épée enchantée' : 'poings');
-  lignePanneau(g, w, 332, 'Jumeaux',  String(jumeaux.length));
-  lignePanneau(g, w, 354, 'Éclats',   String(eclats), '#8fd4ff');
-  if(boss && boss.mort<=0)
-    lignePanneau(g, w, 376, 'Gardien', boss.vie + ' / ' + boss.vieMax, '#ff9a7a');
+  lignePanneau(g, w, 108, 'Nom',        (joueurNom || 'Sans-Nom'));
+  lignePanneau(g, w, 140, 'Niveau',     String(joueur.niv), '#ffe08a');
+  lignePanneau(g, w, 172, 'Expérience', joueur.xp + ' / ' + xpSeuil(joueur.niv));
+  lignePanneau(g, w, 204, 'Cœurs',      joueur.vie + ' / ' + joueur.vieMax);
+  lignePanneau(g, w, 236, 'Force · Vitalité', joueur.force + ' · ' + joueur.vitalite);
+  lignePanneau(g, w, 268, 'Esprit · Agilité', joueur.esprit + ' · ' + joueur.agilite);
+  lignePanneau(g, w, 300, 'Points libres', String(joueur.points), joueur.points>0 ? '#8fffa8' : '#a8cdf0');
+  lignePanneau(g, w, 332, 'Étage',      String(niveau));
+  lignePanneau(g, w, 364, 'Clé · Arme', (joueur.cle?'clé':'—') + ' · ' + (joueur.epee?'épée':'poings'));
+  lignePanneau(g, w, 388, 'Éclats · Jumeaux', eclats + ' · ' + jumeaux.length, '#8fd4ff')
 
   g.strokeStyle = 'rgba(120,190,255,0.35)';
   g.beginPath(); g.moveTo(44, 412); g.lineTo(w-44, 412); g.stroke();
