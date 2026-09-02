@@ -4761,9 +4761,52 @@ function traiterChat(texte){
     // un pouvoir inventé par le joueur : il porte son nom, il fait ce qu'il a dit
     const inv = Object.keys(pouvoirsPerso).find(n=>t.includes(normaliser(n)));
     if(inv){ traiterChat(pouvoirsPerso[inv]); return; }
-    // pas un sort, pas un pouvoir : le héros PARLE (mode parole, sans jeter de sort)
+    // pas un sort, pas un pouvoir : avant de juste parler, on laisse le
+    // co-maître de jeu WebMCP essayer d'agir dans le monde (si le pont est là)
+    if(assistantWebmcp(t)) return;
     parlerJoueur(texte);
   }
+}
+
+// ── Le co-maître de jeu WebMCP : accompagne, n'OFFRE pas. Règle de la tour :
+// comme Raphaël sur un slime, on part de presque rien et on se construit —
+// la force ne se reçoit pas, elle SE DÉBLOQUE en surmontant l'épreuve.
+// Chaque action est donc une épreuve que le JOUEUR relève, jamais un cadeau.
+function assistantWebmcp(t){
+  const C = (typeof window !== 'undefined')
+    && (document.modelContext || (typeof globalThis!=='undefined' && globalThis.__modelContextFake))
+    && window.KOTOAGE_WEBMCP
+    && window.__webmcpConnexion;
+  if(!C) return false;
+  try{
+    // L'épreuve : un ennemi surgit, c'est AU JOUEUR de le vaincre.
+    if(t.includes('monstre') || t.includes('squelette') || t.includes('garde') || t.includes('ennemi') || t.includes('defi') || t.includes('epreuve')){
+      const type = t.includes('horde') ? 'horde'
+        : (t.includes('gardien') || t.includes('garde')) ? 'gardien' : 'guerrier';
+      if(typeof C.monte==='function'){
+        const x = Math.round(joueur.x/T)+1, z = Math.round(joueur.z/T)+0;
+        C.monte('squelette', x, z);
+        if(typeof C.dire==='function') C.dire('Un '+(type==='guerrier'?'gardien':'défi')+' t\'attend. Le surmonter te rendra plus fort.');
+      }
+      return true;
+    }
+    // Jamais de potion offerte : il N'OCTROIE pas la vie. Il renvoie à l'épreuve.
+    if(t.includes('potion') || t.includes('soigne') || t.includes('vie')){
+      if(typeof C.dire==='function') C.dire('La force ne se reçoit pas. Combats et elle te reviendra.');
+      return true;
+    }
+    // Il ne raconte pas une récompense : il pose l'épreuve à gravir.
+    if(t.includes('raconte') || t.includes('histoire') || t.includes('presente')){
+      if(typeof C.dire==='function') C.dire('Étage '+niveau+'. Une épreuve te sépare du sommet. Elle est à toi.');
+      return true;
+    }
+    // Simplement dresser l'état : lucide, sans donner.
+    if(t.includes('etat') || t.includes('force') || t.includes('coeur')){
+      if(typeof C.dire==='function') C.dire('Tu as '+joueur.vie+' de vie, niveau '+niveau+'. Ce niveau, tu l\'as bâti.');
+      return true;
+    }
+  }catch(e){ /* le co-maître se tait plutôt que de casser le jeu */ }
+  return false;
 }
 
 /* ═══ les oreilles : la voix ═══ */
