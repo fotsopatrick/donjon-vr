@@ -35,6 +35,7 @@ OUTILS_ATTENDUS = {
     "defier",
     "raconter",
     "braignak_etude",
+    "marchander",
 }
 
 
@@ -342,6 +343,33 @@ class TestEtudeDeBraignak(unittest.TestCase):
         a = node("braignak_etude", {"sujet": "force"})
         b = node("braignak_etude", {"sujet": "force"})
         self.assertEqual(a["message"], b["message"])
+
+
+class TestSorciereOutil(unittest.TestCase):
+    """L'outil 9 — marchander avec la Vieille Sorciere (SPEC-SORCIERE.md).
+
+    Elle vend cher, elle ne descend jamais sous son plancher, et marchander
+    l'agace : trois offres insultantes et elle s'embrouille."""
+
+    def test_sans_argument_elle_liste_ses_armes(self):
+        rep = node("marchander", {})
+        self.assertTrue(rep["ok"])
+        self.assertEqual(len(rep["armes"]), 4)
+
+    def test_elle_annonce_son_prix(self):
+        rep = node("marchander", {"arme": "epee"})
+        self.assertTrue(rep["ok"])
+        self.assertEqual(rep["prix"], 90)
+        self.assertFalse(rep["vendu"])
+
+    def test_au_prix_demande_elle_vend(self):
+        rep = node("marchander", {"arme": "dague", "offre": 30})
+        self.assertTrue(rep["vendu"])
+
+    def test_offre_insultante_refusee(self):
+        rep = node("marchander", {"arme": "baton", "offre": 5})
+        self.assertFalse(rep["vendu"])
+        self.assertIn("insulte", rep["message"])
 
 
 if __name__ == "__main__":

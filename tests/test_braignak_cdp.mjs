@@ -182,6 +182,53 @@ try {
   verifier('la salle serveurs est bien la map jouée', scene3d.sallesQuantiques > 0,
     scene3d.sallesQuantiques + ' salle(s) serveurs');
 
+  // --- 9. LE CLONE et BONNE ÉTOILE, dans le vrai jeu ----------------------
+  const boutonClone = await js(
+    "(()=>{const b=[...document.querySelectorAll('[data-j]')].find(x=>x.dataset.j==='Clone');"
+    + " return b ? 'present' : 'absent';})()");
+  verifier("le bouton Clone existe à l'écran-titre", boutonClone === 'present', boutonClone);
+
+  const etoile = JSON.parse(await js(
+    '(()=>{const c=window.__webmcpConnexion;'
+    + " const b=[...document.querySelectorAll('[data-j]')].find(x=>x.dataset.j==='Clone');"
+    + ' if(b) b.onclick();'
+    + ' c.demarrer();'
+    + ' const nom=c.joueurNom, dispo0=c.bonneEtoileDispo, vie0=c.joueur.vie;'
+    + ' let coups=0;'
+    // On frappe jusqu'a ce que l'etoile SERVE, et on s'arrete LA. Continuer
+    // apres, c'est mourir du coup suivant : c'est exactement ce que la regle
+    // dit (elle ne sert qu'une fois), pas un defaut.
+    + ' while(c.bonneEtoileDispo && coups < 60){ c.joueur.inv = 0; c.blesser(); coups++; }'
+    + ' return JSON.stringify({nom, dispo0, vie0, coups,'
+    + ' vieApres:c.joueur.vie, dispoApres:c.bonneEtoileDispo, etat:c.etat});})()'));
+  verifier('choisir Clone met bien le Clone aux commandes', String(etoile.nom).toLowerCase() === 'clone', 'joueur = ' + etoile.nom);
+  verifier("Bonne Étoile est en réserve au départ", etoile.dispo0 === true, JSON.stringify(etoile));
+  verifier("Bonne Étoile sauve le Clone : il reste à 1 point de vie",
+    etoile.vieApres === 1 && etoile.dispoApres === false, JSON.stringify(etoile));
+
+
+  const apresEtoile = JSON.parse(await js(
+    '(()=>{const c=window.__webmcpConnexion;'
+    + ' const avant=c.joueur.vie;'
+    + ' c.joueur.inv = 0; c.blesser();'
+    + ' return JSON.stringify({avant, apres:c.joueur.vie, dispo:c.bonneEtoileDispo, etat:c.etat});})()'));
+  // La vie du jeu remonte toute seule (regeneration) : elle vaut 1.0002, pas 1.
+  // La VRAIE regle a prouver n'est donc pas « la vie tombe a zero », mais
+  // « l'etoile ne le remonte PAS a 1 une deuxieme fois ».
+  verifier("l'étoile ne sert qu'une fois : elle ne le sauve pas deux fois",
+    apresEtoile.apres < 1 && apresEtoile.dispo === false, JSON.stringify(apresEtoile));
+
+  const etoileAutre = JSON.parse(await js(
+    '(()=>{const c=window.__webmcpConnexion;'
+    + " const b=[...document.querySelectorAll('[data-j]')].find(x=>x.dataset.j==='Patrick');"
+    + ' if(b) b.onclick();'
+    + ' c.demarrer();'
+    + ' let coups=0;'
+    + ' while(c.joueur.vie > 0 && coups < 60){ c.joueur.inv = 0; c.blesser(); coups++; }'
+    + ' return JSON.stringify({nom:c.joueurNom, vieApres:c.joueur.vie});})()'));
+  verifier("les autres joueurs n'ont PAS Bonne Étoile", etoileAutre.vieApres <= 0,
+    JSON.stringify(etoileAutre));
+
   ws.close();
 } catch (e) {
   verifier('le banc va au bout', false, e.message);

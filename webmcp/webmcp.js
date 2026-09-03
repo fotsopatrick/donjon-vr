@@ -45,6 +45,12 @@ const ETUDES_BRAIGNAK = {
   },
 };
 
+// LA VIEILLE SORCIERE (SPEC-SORCIERE.md) : sa logique vit dans son propre
+// fichier, webmcp/sorciere.js, pour rester pure et testable seule.
+const SORCIERE = (typeof require === 'function')
+  ? require('./sorciere.js')
+  : (typeof window !== 'undefined' ? window.KOTOAGE_SORCIERE : null);
+
 // Grille du donjon (mêmes constantes que index.html) : 28 × 18.
 const W = 28;
 const H = 18;
@@ -302,6 +308,26 @@ function creerControleurWebMCP({ modelContext, etat }) {
         };
       },
     },
+    {
+      name: "marchander",
+      description:
+        "Marchande avec la Vieille Sorciere, qui vend des armes au fond du donjon. Sans argument : ce qu'elle vend. Avec {arme} : son prix. Avec {arme, offre} : sa reponse. Elle ne descend jamais sous 90 % de son prix, et marchander trop bas la vexe (le prix monte) — trois fois et elle s'embrouille.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          arme: { type: "string", description: "dague, epee, hache ou baton" },
+          offre: { type: "integer", minimum: 0, description: "ce que le joueur propose" },
+        },
+      },
+      execute: async ({ arme, offre } = {}) => {
+        if (!SORCIERE) return echec("la sorciere n'est pas la");
+        if (!etat.sorciere) etat.sorciere = SORCIERE.creerSorciere();
+        const demande = {};
+        if (arme !== undefined) demande.arme = arme;
+        if (offre !== undefined) demande.offre = offre;
+        return SORCIERE.marchander(etat.sorciere, demande);
+      },
+    },
   ];
 
   for (const outil of outils) {
@@ -310,7 +336,7 @@ function creerControleurWebMCP({ modelContext, etat }) {
   return outils;
 }
 
-const API = { creerControleurWebMCP, ETAT_INITIAL, W, H, MUR, SOL, LIEUX, CHALLENGES, POTIONS, ETAGES, ETUDES_BRAIGNAK };
+const API = { creerControleurWebMCP, ETAT_INITIAL, W, H, MUR, SOL, LIEUX, CHALLENGES, POTIONS, ETAGES, ETUDES_BRAIGNAK, SORCIERE };
 
 // Compatibilité double rôle :
 //  · Node  (tests) : require('webmcp/webmcp.js') → module.exports.

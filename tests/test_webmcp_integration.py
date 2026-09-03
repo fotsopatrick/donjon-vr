@@ -34,6 +34,7 @@ OUTILS_ATTENDUS = {
     "defier",
     "raconter",
     "braignak_etude",
+    "marchander",
 }
 
 

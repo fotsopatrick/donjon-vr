@@ -310,6 +310,7 @@
     <span style="color:#8fb8e8">Joueur :</span>
     <button class="bouton" data-j="Patrick" style="padding:6px 18px;margin:0 4px;font-size:15px">Patrick</button>
     <button class="bouton" data-j="Hamda" style="padding:6px 18px;margin:0 4px;font-size:15px">Hamda</button>
+    <button class="bouton" data-j="Clone" style="padding:6px 18px;margin:0 4px;font-size:15px" title="Compétence unique : Bonne Étoile">Clone ★</button>
   </div>
   <div id="choix-classe" style="margin-bottom:16px;font-size:15px">
     <span style="color:#8fb8e8">Classe :</span>
@@ -368,6 +369,8 @@
 { "imports": { "three": "./three.module.js" } }
 </script>
 <script src="assets/sons.js"></script>
+<script src="webmcp/sorciere.js"></script>
+<script src="webmcp/clone.js"></script>
 <script src="webmcp/webmcp.js"></script>
 <script type="module">
 import * as THREE from './three.module.js';
@@ -1465,6 +1468,7 @@ const RUES = [
 ];
 let arbres = [], entree = null, villageois = [];
 let MAP_FORCEE = null;   // null = donjon varie ; 'serveur' = tout en salle serveurs
+let bonneEtoileDispo = true;   // BONNE ÉTOILE du Clone : une seule fois par partie
 
 function genererDehors(){
   H = H_DEHORS;                        // le dehors est LONG : hameau, route, forêt, second village
@@ -4079,6 +4083,16 @@ function blesser(vx, vz){
   dessinerCoeurs(joueur.vie);
   bip(110,0.26,'sawtooth',0.11);
   montrerCoup(vx, vz);
+  // BONNE ÉTOILE — la competence unique du Clone (SPEC-SORCIERE.md).
+  // La PREMIERE fois qu'un coup devrait le tuer, il survit a 1 point de vie.
+  // Une seule fois par partie. Les autres joueurs meurent normalement.
+  if(joueur.vie<=0 && bonneEtoileDispo && String(joueurNom).toLowerCase()==='clone'){
+    bonneEtoileDispo = false;
+    joueur.vie = 1;
+    dessinerCoeurs(joueur.vie);
+    dire((window.KOTOAGE_CLONE && window.KOTOAGE_CLONE.MESSAGE) || 'Bonne Étoile.', 5);
+    return;
+  }
   if(joueur.vie<=0) perdre();
 }
 
@@ -4393,6 +4407,7 @@ function commencer(){
   if(classe==='mage'){ joueur.epee=false; armeMode='poings'; if(!pouvoirs.includes('feu')) pouvoirs.push('feu'); dessinerPouvoirs?.(); }
   else { armeMode='epee'; }
   joueur.cle = false;
+  bonneEtoileDispo = true;   // l'etoile revient a chaque nouvelle partie
   etat = 'jeu';
   installerAvatar();                        // (re)construit l'avatar du joueur choisi
   document.getElementById('titre').classList.add('parti');
@@ -7719,6 +7734,9 @@ try {
       get MAP_FORCEE(){ return MAP_FORCEE; },
       get rooms(){ return rooms; },
       get braignakEtude(){ return braignakEtude; },
+      get joueurNom(){ return joueurNom; },
+      get bonneEtoileDispo(){ return bonneEtoileDispo; },
+      blesser(){ blesser(); },
       get etat(){ return etat; },
       get scene(){ return scene; },
       // demarrer la partie sans clic : indispensable au banc de tests, qui
