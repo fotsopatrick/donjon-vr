@@ -27,7 +27,19 @@ import tempfile
 import time
 import urllib.request
 
-CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+def _trouver_chrome():
+    if os.name == "nt":
+        for c in (r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                  r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"):
+            if os.path.exists(c):
+                return c
+        return CHROME_WIN_DEFAUT
+    return (shutil.which("google-chrome") or shutil.which("google-chrome-stable")
+            or shutil.which("chromium") or shutil.which("chromium-browser")
+            or shutil.which("chrome"))
+
+CHROME_WIN_DEFAUT = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+CHROME = _trouver_chrome()
 PORT = 9333
 URL = sys.argv[1] if len(sys.argv) > 1 else "https://storage.googleapis.com/kotoage-webmcp-20260901-133904/index.html"
 
@@ -150,7 +162,8 @@ def lancer():
          "--user-data-dir=" + d, "--remote-debugging-port=%d" % PORT,
          "--disable-extensions", "about:blank"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+        start_new_session=os.name != "nt",
     )
     # attendre le endpoint CDP
     for _ in range(40):

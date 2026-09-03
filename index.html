@@ -527,7 +527,7 @@ function generer(){
   }
 
   // un thème par salle : le donjon cesse d'être des couloirs vides (façon D&D)
-  const POOL = ['piliers','crypte','garde','reserve','sanctuaire'];
+  const POOL = ['piliers','crypte','garde','reserve','sanctuaire','quantique'];
   for(let i=0;i<rooms.length;i++){
     rooms[i].theme = (i===0) ? null : POOL[(Math.random()*POOL.length)|0];  // l'entrée reste dégagée
   }
@@ -1877,6 +1877,7 @@ function poserProp(nom, x, y, z, ech, rotY){
   monde.add(g); return g;
 }
 function poserPropsSalle(r, cx, cz){
+  if(r.theme === 'quantique') return;   // pas de tapis ni de tableaux medievaux dans la salle serveurs
   // tapis rouge royal au centre de la salle
   const larg = Math.min(2.2, (r.w-1)*T*0.5), lng = (r.h-1)*T*0.82;
   const tapis = new THREE.Mesh(new THREE.PlaneGeometry(larg, lng),
@@ -1991,6 +1992,35 @@ function meublerSalle(r){
       new THREE.MeshStandardMaterial({color:teinte, roughness:0.85, side:THREE.DoubleSide,
         emissive:teinte, emissiveIntensity:0.18}));
     ban.position.set(0,1.7,-1.25); g.add(ban);
+  } else if(r.theme === 'quantique'){
+    // salle serveurs quantique (demande Patrick, 03/09) : armoires metal + coeur qui flotte
+    const rackH = Math.min(HT - 1.2, 2.6);
+    // une armoire-serveur : bloc metal + fentes lumineuses cyan sur sa face avant
+    const armoire = (x, z, rot)=>{
+      const a = new THREE.Group();
+      const corps = new THREE.Mesh(new THREE.BoxGeometry(0.6, rackH, 0.5), fer);
+      corps.position.y = rackH/2; a.add(corps);
+      for(let i=0;i<6;i++){
+        const led = new THREE.Mesh(new THREE.BoxGeometry(0.46,0.09,0.06), MAT.cristal);
+        led.position.set(0, 0.35+i*0.38, 0.28); a.add(led);
+      }
+      a.position.set(x, 0, z); a.rotation.y = rot; g.add(a);
+    };
+    for(const dx of [-1.9, -1.0, 1.0, 1.9]) armoire(dx, -2.2, 0);          // rangee du fond, face au joueur
+    for(const dz of [-0.9, 0.9]){ armoire(-3.0, dz, Math.PI/2); armoire(3.0, dz, -Math.PI/2); }   // rangees des cotes
+    // le sol : un disque lumineux sous le coeur
+    const disque = new THREE.Mesh(new THREE.CircleGeometry(1.15, 28),
+      new THREE.MeshStandardMaterial({ color:0x0b2a3a, emissive:0x1f8fc0, emissiveIntensity:0.9, roughness:0.4 }));
+    disque.rotation.x = -Math.PI/2; disque.position.y = 0.03; g.add(disque);
+    // le coeur quantique : une pierre qui flotte au centre, cerclee de deux anneaux, avec sa propre lumiere
+    // sphere et non icosaedre : fondre() ne sait fusionner que des geometries indexees entre elles
+    const coeur = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), MAT.cristal);
+    coeur.position.set(0, 1.45, 0); g.add(coeur);
+    for(const rx of [Math.PI/2.3, -Math.PI/3]){
+      const anneau = new THREE.Mesh(new THREE.TorusGeometry(0.7,0.035,8,28), MAT.cristal);
+      anneau.rotation.x = rx; anneau.position.set(0,1.45,0); g.add(anneau);
+    }
+    const lum = new THREE.PointLight(0x7fe0ff, 22, 11, 2); lum.position.set(0,1.6,0); g.add(lum);
   }
 
   // fusion par matière : ~3 dessins/salle au lieu de quinze
@@ -7347,7 +7377,7 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
               },
               ouvrirPause, reprendreJeu,
              get pouvoirs(){ return pouvoirs; },
-             get grid(){ return grid; }, get ennemis(){ return ennemis; },
+             get grid(){ return grid; }, get ennemis(){ return ennemis; }, get rooms(){ return rooms; },
              get murIM(){ return murIM; }, get meshPortail(){ return meshPortail; }, get flammes(){ return flammes; },
              get etat(){ return etat; },
              /* inspection (touche E) : pour tester l'indice et la fiche d'objet */
