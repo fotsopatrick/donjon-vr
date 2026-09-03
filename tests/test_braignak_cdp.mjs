@@ -147,6 +147,41 @@ try {
   verifier('choisir DONJON arme la salle serveurs', choix.apresDonjon === 'serveur', 'map = ' + choix.apresDonjon);
   verifier('choisir VILLAGE désarme la salle serveurs', choix.apresVillage === null, 'map = ' + choix.apresVillage);
 
+  // --- 8. LE JEU DÉMARRE VRAIMENT, et on regarde CE QU'IL Y A DEDANS -------
+  //     On ne se contente plus de l'état : on démarre la partie par le code
+  //     (demarrer) et on inspecte la scène 3D elle-même. C'est la seule façon
+  //     de prouver que Braignak et la salle serveurs sont réellement posés.
+  const partie = JSON.parse(await js(
+    '(()=>{const c=window.__webmcpConnexion;'
+    + " const don=[...document.querySelectorAll('.entree-tab')].find(b=>/DONJON/i.test(b.innerText));"
+    + ' if(don) don.onclick();'
+    + " if(typeof c.demarrer !== 'function') return JSON.stringify({demarre:false, raison:'demarrer absent du pont'});"
+    + ' c.demarrer();'
+    + " return JSON.stringify({demarre:true, etat:c.etat, map:c.MAP_FORCEE, niveau:c.niveau});})()"));
+  verifier('le jeu peut démarrer sans clic', partie.demarre === true, partie.raison || '');
+  verifier('la partie est en cours', partie.etat === 'jeu', 'état = ' + partie.etat);
+  verifier('on démarre bien avec la map salle serveurs', partie.map === 'serveur', 'map = ' + partie.map);
+
+  await pause(4000);   // le temps que la scène se construise
+
+  const scene3d = JSON.parse(await js(
+    '(()=>{const c=window.__webmcpConnexion; const s=c.scene;'
+    + " if(!s) return JSON.stringify({scene:false});"
+    + " const b = s.getObjectByName('braignak');"
+    + ' return JSON.stringify({scene:true, braignakVu:!!b,'
+    + '   braignakVisible: !!b && b.visible,'
+    + '   morceaux: b ? b.children.length : 0,'
+    + '   dansLaScene: !!b && !!b.parent,'
+    + "   sallesQuantiques:(c.rooms||[]).filter(r=>r.theme==='quantique').length});})()"));
+  verifier('la scène 3D est lisible', scene3d.scene === true, 'scene absente du pont');
+  verifier('Braignak est posé dans la scène, retrouvé par son nom',
+    scene3d.braignakVu === true && scene3d.dansLaScene === true, JSON.stringify(scene3d));
+  verifier('Braignak a bien tous ses morceaux', scene3d.morceaux >= 5,
+    scene3d.morceaux + ' morceau(x)');
+  verifier('Braignak est visible', scene3d.braignakVisible === true, JSON.stringify(scene3d));
+  verifier('la salle serveurs est bien la map jouée', scene3d.sallesQuantiques > 0,
+    scene3d.sallesQuantiques + ' salle(s) serveurs');
+
   ws.close();
 } catch (e) {
   verifier('le banc va au bout', false, e.message);
