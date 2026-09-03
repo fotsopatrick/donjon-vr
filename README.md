@@ -34,7 +34,7 @@ Sans navigateur WebMCP, le jeu se lance et se joue normalement : le pont n'ajout
 
 Sans WebMCP, `integration.js` ne fait rien (testé). Le jeu reste intact.
 
-## Les 7 outils
+## Les 8 outils
 
 | Outil | Effet réel dans le jeu |
 |---|---|
@@ -45,8 +45,21 @@ Sans WebMCP, `integration.js` ne fait rien (testé). Le jeu reste intact.
 | `inspirer` | donne une piste contextuelle (lieu ou étage) |
 | `defier` | fait surgir de vrais ennemis (gardien/guerrier/horde) |
 | `raconter` | narration d'un étage (1→5, 0 = le hameau) |
+| `braignak_etude` | Braignak, le veilleur du donjon, rend une de ses cinq études — ou en prend une nouvelle |
 
 Chaque réussite s'affiche dans le HUD du joueur (`dire`).
+
+## Braignak, le veilleur
+
+Braignak est l'un des agents de la maison : **il regarde et il informe, il ne
+touche à rien.** Dans le donjon, il flotte près du joueur et répète à voix
+haute ce que le co-maître de jeu vient de faire.
+
+Le 8e outil l'interroge. Il a déjà mené **cinq études** sur ce donjon (les murs
+qui s'ouvrent, le gardien de palier, les pièges, les potions, d'où vient la
+force) et répond depuis son propre travail. Donne-lui un sujet qu'il n'a jamais
+étudié : il s'écarte, il marche dans la pièce en réfléchissant, puis il revient
+te dire ce qu'il a compté — **une seule fois**, ensuite il oublie.
 
 ## Lancer en local
 
