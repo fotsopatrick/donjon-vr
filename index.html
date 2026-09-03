@@ -448,6 +448,7 @@ let HT = 20.0;                        // plafond TRÈS haut : on doit pouvoir vo
                                       // « let » et pas « const » : chaque étage peut avoir SA hauteur (voir ETAGES.theme.haut)
 
 let grid, rooms, keyPos, doorPos, torches, ennemis, niveau = 1;
+let dexter = null;            // le petit génie de la salle quantique : {x, z} en mètres, ou null
 
 /* Cinq étages, cinq ambiances. Le premier est court exprès : on doit pouvoir
    descendre en deux minutes, pas errer. */
@@ -2027,6 +2028,31 @@ function meublerSalle(r){
       anneau.rotation.x = rx; anneau.position.set(0,1.45,0); g.add(anneau);
     }
     const lum = new THREE.PointLight(0x7fe0ff, 22, 11, 2); lum.position.set(0,1.6,0); g.add(lum);
+    // DEXTER, le petit génie (demande Patrick, 03/09) : enfant à grosses lunettes rondes,
+    // blouse blanche, cheveux orange, gants violets, bottes noires — en formes simples.
+    const dx0 = 1.3, dz0 = -0.5;
+    const D = new THREE.Group();
+    const peau = new THREE.MeshStandardMaterial({ color:0xf3c9a5, roughness:0.8 });
+    const blouse = new THREE.MeshStandardMaterial({ color:0xf4f4f0, roughness:0.9 });
+    const noir = new THREE.MeshStandardMaterial({ color:0x15151a, roughness:0.7 });
+    const orange = new THREE.MeshStandardMaterial({ color:0xe8631a, roughness:0.85 });
+    const violet = new THREE.MeshStandardMaterial({ color:0x6a2fb5, roughness:0.7 });
+    const verre = new THREE.MeshStandardMaterial({ color:0xbfe6ff, emissive:0x7fe0ff, emissiveIntensity:0.5, roughness:0.2 });
+    const put = (geo, mat, x, y, z, rx=0, ry=0, rz=0)=>{ const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.rotation.set(rx,ry,rz); D.add(m); return m; };
+    for(const sx of [-0.11, 0.11]){ put(new THREE.BoxGeometry(0.16,0.12,0.22), noir, sx, 0.06, 0.02);          // bottes
+                                     put(new THREE.BoxGeometry(0.12,0.22,0.12), noir, sx, 0.23, 0); }         // jambes
+    put(new THREE.BoxGeometry(0.44,0.5,0.28), blouse, 0, 0.6, 0);                                              // blouse
+    put(new THREE.BoxGeometry(0.06,0.5,0.02), noir, 0, 0.6, 0.15);                                             // la fermeture
+    for(const sx of [-0.28, 0.28]){ put(new THREE.BoxGeometry(0.1,0.42,0.1), blouse, sx, 0.62, 0);            // bras
+                                     put(new THREE.SphereGeometry(0.075,10,8), violet, sx, 0.38, 0); }         // gants
+    put(new THREE.SphereGeometry(0.24,14,12), peau, 0, 1.1, 0);                                                // tête
+    put(new THREE.SphereGeometry(0.245,14,12, 0, Math.PI*2, 0, Math.PI*0.42), orange, 0, 1.13, -0.02);         // cheveux
+    for(const sx of [-0.1, 0.1]){ put(new THREE.TorusGeometry(0.085,0.018,8,20), noir, sx, 1.1, 0.22);         // montures
+                                    put(new THREE.CircleGeometry(0.075,16), verre, sx, 1.1, 0.215); }          // verres
+    put(new THREE.BoxGeometry(0.03,0.02,0.02), noir, 0, 1.1, 0.23);                                             // le pont
+    D.position.set(dx0, 0, dz0); D.rotation.y = 0.35;   // il regarde vers l'entrée
+    g.add(D);
+    dexter = { x: wx + dx0, z: wz + dz0 };
   }
 
   // fusion par matière : ~3 dessins/salle au lieu de quinze
@@ -3821,16 +3847,17 @@ function braignakTexture(txt, largeur, hauteur, taille, couleur){
 function poserBraignak(){
   if(braignak) return;
   braignak = new THREE.Group();
+  braignak.name = 'braignak';   // nom EXACT : les tests le retrouvent sans deviner
 
   // le corps : un petit œil de lumière
   const noyau = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.16, 1),
+    new THREE.IcosahedronGeometry(0.10, 1),
     new THREE.MeshStandardMaterial({ color:0x7fd4ff, emissive:0x2f9fd8, emissiveIntensity:1.6, roughness:0.35 }));
   const halo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 16, 12),
+    new THREE.SphereGeometry(0.15, 16, 12),
     new THREE.MeshBasicMaterial({ color:0x4fb8ee, transparent:true, opacity:0.10, depthWrite:false }));
   const anneau = new THREE.Mesh(
-    new THREE.TorusGeometry(0.26, 0.018, 8, 28),
+    new THREE.TorusGeometry(0.17, 0.012, 8, 28),
     new THREE.MeshBasicMaterial({ color:0x9fe4ff, transparent:true, opacity:0.75 }));
   anneau.rotation.x = Math.PI/2;
   braignak.add(noyau, halo, anneau);
@@ -3842,12 +3869,12 @@ function poserBraignak(){
   // son nom, toujours visible
   const nom = new THREE.Sprite(new THREE.SpriteMaterial({
     map: braignakTexture('BRAIGNAK', 384, 96, 44, '#bfe9ff'), transparent:true, depthWrite:false }));
-  nom.scale.set(1.02, 0.26, 1); nom.position.y = 0.52; nom.renderOrder = 20;
+  nom.scale.set(0.40, 0.10, 1); nom.position.y = 0.34; nom.renderOrder = 20;
   braignak.add(nom);
 
   // sa bulle de parole, cachée tant qu'il n'a rien à dire
   braignakBulle = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, depthWrite:false, opacity:0 }));
-  braignakBulle.scale.set(2.2, 0.62, 1); braignakBulle.position.y = 0.95; braignakBulle.renderOrder = 21;
+  braignakBulle.scale.set(0.86, 0.24, 1); braignakBulle.position.y = 0.58; braignakBulle.renderOrder = 21;
   braignak.add(braignakBulle);
 
   braignak.position.set(joueur.x - 1.1, 1.15, joueur.z - 0.6);
@@ -3909,9 +3936,9 @@ function animerBraignak(dt, t){
   const _dir = new THREE.Vector3(); camera.getWorldDirection(_dir); _dir.y = 0; _dir.normalize();
   const _droite = new THREE.Vector3().crossVectors(_dir, new THREE.Vector3(0,1,0)).normalize();
   const cible = camera.position.clone()
-      .add(_dir.clone().multiplyScalar(3.4))
+      .add(_dir.clone().multiplyScalar(4.2))
       .add(_droite.clone().multiplyScalar(-0.85));
-  cible.y = camera.position.y - 0.35 + Math.sin(t*1.7)*0.09;
+  cible.y = camera.position.y - 0.55 + Math.sin(t*1.7)*0.07;
   braignak.position.lerp(cible, Math.min(1, dt*3.0));
   if(braignak.userData.anneau) braignak.userData.anneau.rotation.z += dt*1.2;
   if(braignak.userData.noyau){
@@ -4208,6 +4235,7 @@ function jouerMusique(lieu){
   _mus.play().catch(()=>{});   // démarre dès le 1er geste (le clic « Entrer » suffit)
 }
 function nouvelEtage(){
+  dexter = null;
   jouerMusique(estArene() ? 'arene' : estDehors() ? 'village' : 'donjon');
   if(estArene()){
     batirArene();
@@ -4574,6 +4602,7 @@ function interagir(){
      Math.hypot(coffre.obj.position.x-joueur.x, coffre.obj.position.z-joueur.z) < 1.5){ ouvrirCoffre(); return; }
   if(meshPortail && meshPortail.visible &&
      Math.hypot(meshPortail.position.x-joueur.x, meshPortail.position.z-joueur.z) < 1.4){ lancerTeleport(); return; }
+  if(dexter && Math.hypot(dexter.x-joueur.x, dexter.z-joueur.z) < 2.2){ ouvrirSaisieDexter(); return; }
   const o = objetProche();                 // un bâtiment du world builder à portée → sa fiche
   if(o){ ouvrirFicheObjet(o); return; }
   basculerStatut();                        // sinon : la fiche du joueur
@@ -5128,14 +5157,53 @@ function ouvrirSaisie(){
   setTimeout(()=>elSaisieT.focus(), 40);              // focus après la libération du pointer lock
 }
 function fermerSaisie(){
-  saisieOuverte = false;
+  saisieOuverte = false; modeDexter = false;
   elSaisie.classList.remove('on'); elSaisieT.blur();
   if(etat==='jeu'){ try{ renderer.domElement.requestPointerLock(); }catch(e){} }   // on reprend le jeu
 }
 // Échap de secours : ferme le champ même si le focus a filé
 addEventListener('keydown', ev=>{ if(saisieOuverte && ev.key==='Escape'){ ev.preventDefault(); fermerSaisie(); } }, true);
+/* ═══ DEXTER : parler au petit génie de la salle quantique (03/09) ═══ */
+let modeDexter = false, dexterHistorique = [], dexterIndiceT = 0, dexterOccupe = false;
+function ouvrirSaisieDexter(){
+  ouvrirSaisie();
+  modeDexter = true;
+  elSaisieT.placeholder = "Demande à Dexter…  (Entrée = valider · Échap = fermer)";
+  if(!dexterHistorique.length) esprit("Dexter : Salut ! Qu'est-ce que tu veux savoir sur ma salle quantique ?", true);
+}
+async function parlerADexter(texte){
+  const q = (texte||'').trim(); if(!q) return;
+  const ia = await import('./dexter-ia.js').catch(()=>null);
+  if(!ia){ esprit("Dexter : mon cerveau est hors de portée (pas de réseau). Reviens plus tard !"); return; }
+  const m = /^cl[ée]\s+(\S+)/i.exec(q);
+  if(m){ ia.poserCle(m[1]); esprit("Dexter : clé rangée dans TON navigateur, jamais envoyée au jeu. On peut parler pour de vrai !"); return; }
+  if(/^oublie(r)? la cl[ée]/i.test(q)){ ia.oublierCle(); esprit("Dexter : clé oubliée."); return; }
+  elEntendu.textContent = '« ' + q + ' »'; elEsprit.classList.add('on');
+  const cle = ia.lireCle();
+  if(!cle){ esprit("Dexter : " + ia.repondreSansCle(q)); return; }
+  if(dexterOccupe) return; dexterOccupe = true;
+  try{
+    const reponse = await ia.repondreDexter({ cle, question:q, historique:dexterHistorique,
+      onTexte: t=>{ elRepond.textContent = 'Dexter : ' + t; elEsprit.classList.add('on'); espritT = 30; } });
+    dexterHistorique.push({ role:'user', content:q }, { role:'assistant', content:reponse });
+    if(dexterHistorique.length > 12) dexterHistorique = dexterHistorique.slice(-12);   // mémoire courte
+    esprit("Dexter : " + reponse);
+  }catch(e){
+    const msg = String(e && e.message || e);
+    esprit("Dexter : " + (/401|auth|api.?key/i.test(msg) ? "cette clé n'ouvre pas. Retape « clé » suivi d'une clé valide."
+                                                       : "mon cerveau a buté (" + msg.slice(0,80) + ")."));
+  }finally{ dexterOccupe = false; }
+}
+// l'indice à l'approche : « E : parler à Dexter », une fois par approche
+setInterval(()=>{
+  if(!dexter || etat !== 'jeu' || saisieOuverte) return;
+  const pres = Math.hypot(dexter.x-joueur.x, dexter.z-joueur.z) < 2.2;
+  if(pres && Date.now() - dexterIndiceT > 12000){ dexterIndiceT = Date.now(); dire('E : parler à Dexter', 2.5); }
+}, 500);
+
 elSaisieT.addEventListener('keydown', ev=>{
   ev.stopPropagation();
+  if(ev.key === 'Enter' && modeDexter){ const v = elSaisieT.value; modeDexter = false; fermerSaisie(); parlerADexter(v); return; }
   if(ev.key === 'Enter'){ const v = elSaisieT.value; fermerSaisie(); traiterChat(v);
     if(/parcours|donjon|sortie|explor|droite|gauche|porte|avance/.test(v) && typeof alice === 'function') alice(v); }
   else if(ev.key === 'Escape') fermerSaisie();
@@ -7587,6 +7655,7 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
               ouvrirPause, reprendreJeu,
              get pouvoirs(){ return pouvoirs; },
              get grid(){ return grid; }, get ennemis(){ return ennemis; }, get rooms(){ return rooms; },
+             get dexter(){ return dexter; }, parlerADexter, ouvrirSaisieDexter,
              get murIM(){ return murIM; }, get meshPortail(){ return meshPortail; }, get flammes(){ return flammes; },
              get etat(){ return etat; },
              /* inspection (touche E) : pour tester l'indice et la fiche d'objet */
@@ -7650,6 +7719,11 @@ try {
       get MAP_FORCEE(){ return MAP_FORCEE; },
       get rooms(){ return rooms; },
       get braignakEtude(){ return braignakEtude; },
+      get etat(){ return etat; },
+      get scene(){ return scene; },
+      // demarrer la partie sans clic : indispensable au banc de tests, qui
+      // n'a pas de vraie souris (un clic simule ne prend pas la souris).
+      demarrer(){ commencer(); return true; },
       get joueur(){ return joueur; },
       get grid(){ return grid; },
       get niveau(){ return niveau; },
