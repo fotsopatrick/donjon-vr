@@ -6,7 +6,7 @@
 //    · window.KOTOAGE_WEBMCP        (couche pure, chargée en classique)
 //    · window.__webmcpConnexion     (pont exposé par le module du jeu)
 //    · document.modelContext        (l'API WebMCP réelle du navigateur)
-//  puis enregistre les 7 outils. Les effets de bord réels sont déclenchés
+//  puis enregistre les 8 outils. Les effets de bord réels sont déclenchés
 //  par des accesseurs/proxy sur `etat` :
 //    · vie   → joueur.vie + HUD (dessinerCoeurs)
 //    · grille → vraie grille du jeu (grid), murs reconstruits
@@ -85,6 +85,14 @@
     set dernierPi(v) { dernierPi = v; },
     get dernierDefi() { return dernierDefi; },
     set dernierDefi(v) { dernierDefi = v; },
+    _etude: null,
+    get derniereEtude() { return this._etude; },
+    // Braignak prend une nouvelle etude : le jeu le fait s'ecarter, reflechir,
+    // puis revenir donner sa trouvaille une seule fois.
+    set derniereEtude(v) {
+      this._etude = v;
+      try { if (typeof C.braignakEtudier === "function") C.braignakEtudier(v); } catch (e) {}
+    },
     get grille() { return grilleReelle(); },
   };
 

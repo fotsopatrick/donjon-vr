@@ -19,6 +19,32 @@
 //  pour que l'intégration réelle sache OÙ poser le piège et QUEL défi lancer.
 // =====================================================================
 
+
+// Les cinq etudes que Braignak a deja menees dans le donjon. Ce sont SES
+// travaux a lui, sur ce monde-ci : il regarde, il note, il ne touche a rien.
+const ETUDES_BRAIGNAK = {
+  murs: {
+    titre: "Les murs qui s'ouvrent",
+    trouvaille: "Un mur ouvert ne se referme jamais tout seul. Sur 40 ouvertures observees, zero refermeture : ce que l'agent ouvre reste ouvert, et le plan de l'etage change pour de bon.",
+  },
+  gardien: {
+    titre: "Le gardien de palier",
+    trouvaille: "Le gardien frappe toujours apres un temps d'arret. Ce temps d'arret est sa faiblesse : trois joueurs sur quatre gagnent en attendant ce moment au lieu de foncer.",
+  },
+  pieges: {
+    titre: "Les pieges poses par l'agent",
+    trouvaille: "Un piege sert deux fois plus quand il est pose DERRIERE le joueur : les creatures suivent, le joueur non.",
+  },
+  potions: {
+    titre: "Les potions offertes",
+    trouvaille: "Une potion donnee a vie pleine ne sert a rien. J'ai compte : une fois sur trois, l'agent soigne quelqu'un qui n'est pas blesse.",
+  },
+  force: {
+    titre: "D'ou vient la force",
+    trouvaille: "Aucun joueur n'a gagne un niveau sans combattre. La force ne se recoit pas ici : elle se debloque. C'est la regle de ce monde, et elle tient sur 100 parties.",
+  },
+};
+
 // Grille du donjon (mêmes constantes que index.html) : 28 × 18.
 const W = 28;
 const H = 18;
@@ -227,6 +253,55 @@ function creerControleurWebMCP({ modelContext, etat }) {
         };
       },
     },
+    {
+      name: "braignak_etude",
+      description:
+        "Interroge Braignak, le veilleur du donjon : il rend une de ses cinq etudes deja menees, ou il en prend une nouvelle sur le sujet demande. Sans sujet, il liste ses etudes.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sujet: {
+            type: "string",
+            description:
+              "Le sujet a etudier. Un des cinq deja etudies (murs, gardien, pieges, potions, force) rend la trouvaille tout de suite ; tout autre sujet lance une nouvelle etude.",
+          },
+        },
+      },
+      execute: async ({ sujet } = {}) => {
+        const liste = Object.keys(ETUDES_BRAIGNAK).map(
+          (c) => c + " — " + ETUDES_BRAIGNAK[c].titre
+        );
+        if (!sujet) {
+          return {
+            ok: true,
+            etudes: liste,
+            message: "Braignak a mene cinq etudes : " + liste.join(" · "),
+          };
+        }
+        const cle = String(sujet).trim().toLowerCase();
+        const connue = ETUDES_BRAIGNAK[cle];
+        if (connue) {
+          etat.derniereEtude = { sujet: cle, nouvelle: false };
+          return {
+            ok: true,
+            sujet: cle,
+            titre: connue.titre,
+            nouvelle: false,
+            message: connue.titre + " : " + connue.trouvaille,
+          };
+        }
+        etat.derniereEtude = { sujet: String(sujet).slice(0, 80), nouvelle: true };
+        return {
+          ok: true,
+          sujet: String(sujet).slice(0, 80),
+          nouvelle: true,
+          message:
+            "Braignak prend une nouvelle etude : « " +
+            String(sujet).slice(0, 80) +
+            " ». Il s'ecarte, il observe, il revient te dire ce qu'il a vu.",
+        };
+      },
+    },
   ];
 
   for (const outil of outils) {
@@ -235,7 +310,7 @@ function creerControleurWebMCP({ modelContext, etat }) {
   return outils;
 }
 
-const API = { creerControleurWebMCP, ETAT_INITIAL, W, H, MUR, SOL, LIEUX, CHALLENGES, POTIONS, ETAGES };
+const API = { creerControleurWebMCP, ETAT_INITIAL, W, H, MUR, SOL, LIEUX, CHALLENGES, POTIONS, ETAGES, ETUDES_BRAIGNAK };
 
 // Compatibilité double rôle :
 //  · Node  (tests) : require('webmcp/webmcp.js') → module.exports.

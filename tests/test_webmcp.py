@@ -34,6 +34,7 @@ OUTILS_ATTENDUS = {
     "inspirer",
     "defier",
     "raconter",
+    "braignak_etude",
 }
 
 
@@ -309,6 +310,38 @@ class TestRaconter(unittest.TestCase):
     def test_etage_invalide_refuse(self):
         for etage_invalide in [-1, 6, 12]:
             self.assertFalse(node("raconter", {"etage": etage_invalide})["ok"])
+
+
+class TestEtudeDeBraignak(unittest.TestCase):
+    """L'outil 8 — Braignak rend une étude déjà menée, ou en prend une neuve.
+
+    Braignak est l'un des agents de la maison : il regarde et il informe, il ne
+    touche à rien. Ses cinq études portent sur CE donjon, jamais sur l'intérieur
+    de la maison (règle de confidentialité)."""
+
+    def test_sans_sujet_il_liste_ses_cinq_etudes(self):
+        rep = node("braignak_etude", {})
+        self.assertTrue(rep["ok"])
+        self.assertEqual(len(rep["etudes"]), 5)
+        for cle in ("murs", "gardien", "pieges", "potions", "force"):
+            self.assertTrue(any(e.startswith(cle) for e in rep["etudes"]), cle)
+
+    def test_sujet_deja_etudie_rend_la_trouvaille_tout_de_suite(self):
+        rep = node("braignak_etude", {"sujet": "gardien"})
+        self.assertTrue(rep["ok"])
+        self.assertFalse(rep["nouvelle"])
+        self.assertIn("gardien", rep["message"].lower())
+
+    def test_sujet_inconnu_lance_une_nouvelle_etude(self):
+        rep = node("braignak_etude", {"sujet": "la couleur des torches"})
+        self.assertTrue(rep["ok"])
+        self.assertTrue(rep["nouvelle"])
+        self.assertIn("couleur des torches", rep["message"])
+
+    def test_meme_sujet_meme_reponse(self):
+        a = node("braignak_etude", {"sujet": "force"})
+        b = node("braignak_etude", {"sujet": "force"})
+        self.assertEqual(a["message"], b["message"])
 
 
 if __name__ == "__main__":

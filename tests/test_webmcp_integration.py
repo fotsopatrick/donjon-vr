@@ -33,6 +33,7 @@ OUTILS_ATTENDUS = {
     "inspirer",
     "defier",
     "raconter",
+    "braignak_etude",
 }
 
 

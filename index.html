@@ -3748,6 +3748,185 @@ function dessinerCoeurs(perte=-1){
 }
 function dire(t, duree=3.4){ elMsg.textContent=t; elMsg.classList.add('on'); msgT=duree; }
 
+/* ═══ BRAIGNAK — l'œil de la tour, compagnon dans le donjon ═══════════════
+   Braignak est l'un des agents de la maison (il veille sur la vitrine
+   publique). Son métier : il REGARDE et il INFORME, il ne touche à rien.
+   Ici il flotte à côté du joueur et redit à voix haute ce que le co-maître
+   de jeu WebMCP vient de faire. Il ne lit que le bandeau du HUD : aucun
+   couplage avec la couche WebMCP, donc rien à casser si elle est absente. */
+let braignak = null, braignakBulle = null, braignakDernier = '', braignakReste = 0;
+
+/* Braignak prend une NOUVELLE etude : il s'ecarte, il marche en reflechissant
+   dans la piece, puis il revient donner sa trouvaille au joueur — UNE fois.
+   Ensuite il oublie : l'etude n'est plus en memoire, il redevient veilleur. */
+let braignakEtude = null;   // { sujet, phase:'cherche'|'revient', reste, point }
+
+function braignakEtudier(info){
+  if(!info || !info.nouvelle) return;          // deja etudie : il repond direct
+  braignakEtude = { sujet: String(info.sujet||'').slice(0,60), phase:'cherche',
+                    reste: 8.5, point: null, depart: null };
+}
+
+function braignakTrouvaille(sujet){
+  // Une trouvaille HONNETE : il ne raconte que ce qu'il peut vraiment compter
+  // dans l'etat du jeu a cet instant.
+  let n = 0, pv = 0, et = 1;
+  try { n = (ennemis||[]).filter(e=>!e.mort).length; } catch(e){}
+  try { pv = Math.round(joueur.vie); } catch(e){}
+  try { et = etageCourant || niveau || 1; } catch(e){}
+  return 'Etude « ' + sujet + ' » : a l\'etage ' + et + ', j\'ai compte '
+       + n + ' creature(s) en vie et ' + pv + ' point(s) de vie chez toi. '
+       + 'Voila ce que j\'ai vu, rien de plus. J\'oublie maintenant.';
+}
+
+
+function braignakTexture(txt, largeur, hauteur, taille, couleur){
+  const c = document.createElement('canvas');
+  c.width = largeur; c.height = hauteur;
+  const g = c.getContext('2d');
+  g.clearRect(0,0,largeur,hauteur);
+  g.fillStyle = 'rgba(6,12,24,0.82)';
+  g.strokeStyle = 'rgba(120,200,255,0.55)'; g.lineWidth = 3;
+  const r = 14;
+  g.beginPath();
+  g.moveTo(r,0); g.lineTo(largeur-r,0); g.quadraticCurveTo(largeur,0,largeur,r);
+  g.lineTo(largeur,hauteur-r); g.quadraticCurveTo(largeur,hauteur,largeur-r,hauteur);
+  g.lineTo(r,hauteur); g.quadraticCurveTo(0,hauteur,0,hauteur-r);
+  g.lineTo(0,r); g.quadraticCurveTo(0,0,r,0); g.closePath();
+  g.fill(); g.stroke();
+  g.fillStyle = couleur; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '600 ' + taille + 'px system-ui, sans-serif';
+  const mots = String(txt).split(' ');
+  const lignes = []; let ligne = '';
+  for(const m of mots){
+    const essai = ligne ? ligne + ' ' + m : m;
+    if(g.measureText(essai).width > largeur - 40 && ligne){ lignes.push(ligne); ligne = m; }
+    else ligne = essai;
+  }
+  if(ligne) lignes.push(ligne);
+  const dep = hauteur/2 - (lignes.length-1)*taille*0.62;
+  lignes.slice(0,3).forEach((l,i)=> g.fillText(l, largeur/2, dep + i*taille*1.24));
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function poserBraignak(){
+  if(braignak) return;
+  braignak = new THREE.Group();
+
+  // le corps : un petit œil de lumière
+  const noyau = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.16, 1),
+    new THREE.MeshStandardMaterial({ color:0x7fd4ff, emissive:0x2f9fd8, emissiveIntensity:1.6, roughness:0.35 }));
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 16, 12),
+    new THREE.MeshBasicMaterial({ color:0x4fb8ee, transparent:true, opacity:0.10, depthWrite:false }));
+  const anneau = new THREE.Mesh(
+    new THREE.TorusGeometry(0.26, 0.018, 8, 28),
+    new THREE.MeshBasicMaterial({ color:0x9fe4ff, transparent:true, opacity:0.75 }));
+  anneau.rotation.x = Math.PI/2;
+  braignak.add(noyau, halo, anneau);
+  braignak.userData.noyau = noyau; braignak.userData.anneau = anneau;
+
+  const lum = new THREE.PointLight(0x6fc8ff, 0.9, 4.2);
+  braignak.add(lum);
+
+  // son nom, toujours visible
+  const nom = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: braignakTexture('BRAIGNAK', 384, 96, 44, '#bfe9ff'), transparent:true, depthWrite:false }));
+  nom.scale.set(1.02, 0.26, 1); nom.position.y = 0.52; nom.renderOrder = 20;
+  braignak.add(nom);
+
+  // sa bulle de parole, cachée tant qu'il n'a rien à dire
+  braignakBulle = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, depthWrite:false, opacity:0 }));
+  braignakBulle.scale.set(2.2, 0.62, 1); braignakBulle.position.y = 0.95; braignakBulle.renderOrder = 21;
+  braignak.add(braignakBulle);
+
+  braignak.position.set(joueur.x - 1.1, 1.15, joueur.z - 0.6);
+  scene.add(braignak);
+}
+
+function braignakParle(txt){
+  if(!braignakBulle) return;
+  const t = String(txt || '').trim();
+  if(!t) return;
+  if(braignakBulle.material.map) braignakBulle.material.map.dispose();
+  braignakBulle.material.map = braignakTexture(t, 768, 216, 34, '#e8f6ff');
+  braignakBulle.material.needsUpdate = true;
+  braignakReste = 4.2;
+}
+
+function animerBraignak(dt, t){
+  if(etat !== 'jeu') { if(braignak) braignak.visible = false; return; }
+  poserBraignak();
+  if(!braignak) return;
+  braignak.visible = true;
+
+  // il suit le joueur, en retrait, et flotte
+  // ETUDE EN COURS : il quitte le joueur, marche dans la piece en
+  // reflechissant, puis revient donner sa trouvaille une seule fois.
+  if(braignakEtude){
+    const e = braignakEtude;
+    if(e.phase === 'cherche'){
+      e.reste -= dt;
+      if(!e.point || braignak.position.distanceTo(e.point) < 0.7){
+        const ang = Math.random()*Math.PI*2, ray = 2.5 + Math.random()*3.5;
+        e.point = new THREE.Vector3(joueur.x + Math.cos(ang)*ray, 1.05 + Math.random()*0.5, joueur.z + Math.sin(ang)*ray);
+      }
+      braignak.position.lerp(e.point, Math.min(1, dt*1.3));
+      if(braignak.userData.anneau) braignak.userData.anneau.rotation.z += dt*4.5;
+      if(braignakReste <= 0 && Math.random() < dt*0.7) braignakParle('… je regarde …');
+      if(e.reste <= 0){ e.phase = 'revient'; }
+      if(braignakReste > 0){ braignakReste -= dt; braignakBulle.material.opacity = Math.min(1, braignakReste*2.2); }
+      else braignakBulle.material.opacity = 0;
+      return;
+    }
+    if(e.phase === 'revient'){
+      const pres = new THREE.Vector3(joueur.x, 1.15, joueur.z);
+      braignak.position.lerp(pres, Math.min(1, dt*2.2));
+      if(braignak.position.distanceTo(pres) < 1.6){
+        const txt = braignakTrouvaille(e.sujet);
+        braignakParle(txt);
+        try{ dire(txt, 6); }catch(err){}
+        braignakEtude = null;              // il oublie : une seule fois
+        braignakDernier = txt;
+      }
+      if(braignakReste > 0){ braignakReste -= dt; braignakBulle.material.opacity = Math.min(1, braignakReste*2.2); }
+      return;
+    }
+  }
+
+  // Il se cale par rapport a la CAMERA : devant, un peu a gauche, toujours
+  // dans le champ. Se placer par rapport au joueur le mettait hors de l'ecran.
+  const _dir = new THREE.Vector3(); camera.getWorldDirection(_dir); _dir.y = 0; _dir.normalize();
+  const _droite = new THREE.Vector3().crossVectors(_dir, new THREE.Vector3(0,1,0)).normalize();
+  const cible = camera.position.clone()
+      .add(_dir.clone().multiplyScalar(3.4))
+      .add(_droite.clone().multiplyScalar(-0.85));
+  cible.y = camera.position.y - 0.35 + Math.sin(t*1.7)*0.09;
+  braignak.position.lerp(cible, Math.min(1, dt*3.0));
+  if(braignak.userData.anneau) braignak.userData.anneau.rotation.z += dt*1.2;
+  if(braignak.userData.noyau){
+    braignak.userData.noyau.rotation.y += dt*0.9;
+    braignak.userData.noyau.material.emissiveIntensity = 1.3 + Math.sin(t*3.1)*0.35;
+  }
+
+  // il redit ce que la voix du monde vient d'annoncer
+  try{
+    const msg = elMsg && elMsg.classList.contains('on') ? (elMsg.textContent||'').trim() : '';
+    if(msg && msg !== braignakDernier){ braignakDernier = msg; braignakParle(msg); }
+  }catch(e){}
+
+  if(braignakReste > 0){
+    braignakReste -= dt;
+    braignakBulle.material.opacity = Math.min(1, braignakReste*2.2);
+  } else if(braignakBulle) {
+    braignakBulle.material.opacity = 0;
+  }
+}
+
+
 /* ═══════════════ 7. COMBAT ═══════════════ */
 const avant = new THREE.Vector3();
 function frapper(){
@@ -7189,6 +7368,7 @@ function boucle(){
     majIndiceExaminer();
   }
 
+  try{ animerBraignak(dt, t); }catch(e){}
   renderer.render(scene, camera);
 
   img++;
@@ -7354,6 +7534,7 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              get faits(){ return faits; }, noterFait, lireFait, ouvrirCoffre,
              get coffre(){ return coffre; },
              poserLesVillageois,
+             braignakEtudier,
              /* aller directement à un étage — pour essayer un gardien sans tout refaire */
               allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
               /* inspection des créatures : fabrique UNE créature seule, à un endroit */
