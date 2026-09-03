@@ -526,13 +526,18 @@ function generer(){
     if(c.length) { const [dx,dy]=c[(Math.random()*c.length)|0]; torches.push({x,y,dx,dy,ph:Math.random()*6}); }
   }
 
+  // MAP FORCEE (demande Patrick, 04/09) : quand une map est choisie, TOUTES
+  // les salles prennent son theme. 'serveur' = la salle serveurs quantique.
   // un thème par salle : le donjon cesse d'être des couloirs vides (façon D&D)
   const POOL = ['piliers','crypte','garde','reserve','sanctuaire','quantique'];
   for(let i=0;i<rooms.length;i++){
-    rooms[i].theme = (i===0) ? null : POOL[(Math.random()*POOL.length)|0];  // l'entrée reste dégagée
+    // L'ENTREE EST LA SALLE SERVEURS (demande Patrick, 04/09) : on arrive
+    // dans la salle quantique, c'est de la qu'on part explorer.
+    if(MAP_FORCEE === 'serveur'){ rooms[i].theme = 'quantique'; continue; }
+    rooms[i].theme = (i===0) ? 'quantique' : POOL[(Math.random()*POOL.length)|0];
   }
   const derniere = rooms[rooms.length-1];
-  if(derniere) derniere.theme = bossSalle ? null : 'tresor';   // la dernière salle : la récompense
+  if(derniere && MAP_FORCEE !== 'serveur') derniere.theme = bossSalle ? null : 'tresor';   // la dernière salle : la récompense
 
   ennemis = [];
   const nb = Math.min(14, 5 + niveau + (Math.random()*3|0));
@@ -1458,6 +1463,7 @@ const RUES = [
   { x:6,  y:46, w:16, h:2 },   // la transversale du second village
 ];
 let arbres = [], entree = null, villageois = [];
+let MAP_FORCEE = null;   // null = donjon varie ; 'serveur' = tout en salle serveurs
 
 function genererDehors(){
   H = H_DEHORS;                        // le dehors est LONG : hameau, route, forêt, second village
@@ -3762,7 +3768,8 @@ let braignak = null, braignakBulle = null, braignakDernier = '', braignakReste =
 let braignakEtude = null;   // { sujet, phase:'cherche'|'revient', reste, point }
 
 function braignakEtudier(info){
-  if(!info || !info.nouvelle) return;          // deja etudie : il repond direct
+  if(!info){ braignakEtude = null; return; }   // on lui fait tout oublier
+  if(!info.nouvelle) return;                   // deja etudie : il repond direct
   braignakEtude = { sujet: String(info.sujet||'').slice(0,60), phase:'cherche',
                     reste: 8.5, point: null, depart: null };
 }
@@ -4074,6 +4081,21 @@ function bip(f,d,forme,vol,quand=0){
 /* ═══════════════ 9. ÉTAGES, MORT, DÉPART ═══════════════ */
 let etat = 'titre';   // titre | jeu | mort
 
+/* ═══ CHANGEMENT DE MAP ═══════════════════════════════════════════════
+   changerMap('serveur') refait l'etage courant entierement en salle
+   serveurs quantique. changerMap(null) revient aux salles variees.
+   Le nom est libre : tout nom inconnu revient au donjon normal. */
+function changerMap(nom){
+  MAP_FORCEE = (nom === 'serveur') ? 'serveur' : null;
+  // La salle serveurs est une map de DONJON : au village (niveau 0) ou dans
+  // l'arene (-1) il n'y a aucune salle a themer, on descend donc au premier
+  // etage. Sans ca, changerMap('serveur') ne changeait rien du tout.
+  if(MAP_FORCEE === 'serveur' && niveau < 1) niveau = 1;
+  nouvelEtage();
+  dire(MAP_FORCEE === 'serveur' ? 'Salle serveurs — la map a change.' : 'Donjon — map normale.', 3);
+  return { ok:true, map: MAP_FORCEE || 'donjon', niveau };
+}
+
 function texGrilleNeon(){
   const c=document.createElement('canvas'); c.width=c.height=256; const x=c.getContext('2d');
   x.fillStyle='#05070f'; x.fillRect(0,0,256,256);
@@ -4249,6 +4271,10 @@ function nouvelEtage(){
   jour.intensity = 2.2;
   renderer.toneMappingExposure = 1.3;
   if(niveau===1){ genererDepuisPlan(PLAN_ETAGE1); } else { generer(); }
+  // MAP FORCEE : l'etage 1 suit un PLAN FIXE (genererDepuisPlan), qui ne passe
+  // pas par la boucle des themes de generer(). On applique donc la map forcee
+  // ICI, apres la generation, pour que les deux chemins la respectent.
+  if(MAP_FORCEE === 'serveur'){ for(const r of rooms) r.theme = 'quantique'; }
   batir();
   if(coffresPlan.length) poserCoffre(coffresPlan[0].x, coffresPlan[0].y, 'etage'+niveau+':coffre');   // un coffre posé (ouvrable avec E), mémorisé
   if(niveau===5) poserDragon();                                             // le squelette de dragon trône à l'étage 5
@@ -4399,6 +4425,9 @@ document.querySelectorAll('.classe-tab').forEach(b=>{
 });
 document.querySelectorAll('.entree-tab').forEach(b=>{
   b.onclick = ()=>{ departNiveau = +b.dataset.niv;
+    // DEMANDE PATRICK (04/09) : entrer par le DONJON, c'est arriver dans la
+    // SALLE SERVEURS. Le village et l'entrainement gardent leur decor.
+    MAP_FORCEE = (departNiveau === 1) ? 'serveur' : null;
     document.querySelectorAll('.entree-tab').forEach(x=>x.classList.toggle('on', x===b)); };
 });
 
@@ -7534,7 +7563,6 @@ window.D = { THREE, scene, camera, renderer, lampe, lumieres, joueur, tete, mur,
              get faits(){ return faits; }, noterFait, lireFait, ouvrirCoffre,
              get coffre(){ return coffre; },
              poserLesVillageois,
-             braignakEtudier,
              /* aller directement à un étage — pour essayer un gardien sans tout refaire */
               allerA(n){ niveau = n; nouvelEtage(); dire('Étage ' + n, 2); },
               /* inspection des créatures : fabrique UNE créature seule, à un endroit */
@@ -7618,6 +7646,10 @@ window.KOTOAGE = {
 try {
   if (window.KOTOAGE_WEBMCP && !window.__webmcpConnexion) {
     window.__webmcpConnexion = {
+      braignakEtudier, changerMap,
+      get MAP_FORCEE(){ return MAP_FORCEE; },
+      get rooms(){ return rooms; },
+      get braignakEtude(){ return braignakEtude; },
       get joueur(){ return joueur; },
       get grid(){ return grid; },
       get niveau(){ return niveau; },
